@@ -1972,7 +1972,9 @@ window.initEventBindingsA = async function(state, db) {
       state.globalSettings.globalCss = document.getElementById('global-css-input').value.trim();
       state.globalSettings.notificationSoundUrl = document.getElementById('notification-sound-url-input').value.trim();
       state.globalSettings.notificationVolume = parseInt(document.getElementById('notification-volume-slider').value) / 100;
+      state.globalSettings.apiMaxTokens = parseInt(document.getElementById('api-max-tokens-input').value) || 0;
       state.globalSettings.showStatusBar = document.getElementById('status-bar-toggle-switch').checked;
+      state.globalSettings.showSeconds = document.getElementById('global-show-seconds-switch').checked;
 
       state.globalSettings.showPhoneFrame = document.getElementById('phone-frame-toggle-switch').checked;
       state.globalSettings.enableMinimalChatUI = document.getElementById('minimal-chat-ui-switch').checked;

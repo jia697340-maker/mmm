@@ -2576,15 +2576,9 @@ ${getActiveThoughtsPrompt()}
         }
       }
 
-      // 注入 思维链 底部触发器
+      // 按用户在思维链 APP 中配置的位置、深度、顺序和预填开关注入。
       if (typeof ThoughtChainManager !== 'undefined' && ThoughtChainManager.enabled) {
-          const chunks = ThoughtChainManager.getPayloadChunks();
-          if (chunks.bottom && chunks.bottom.length > 0) {
-              messagesPayload.push(...chunks.bottom.map(c => ({
-                  role: c.role,
-                  content: c.content
-              })));
-          }
+          messagesPayload = ThoughtChainManager.injectIntoMessages(messagesPayload);
       }
 
       let isGemini = proxyUrl === GEMINI_API_URL;

@@ -258,7 +258,7 @@ ${linkedContents}
 
       systemPrompt = processPromptWithSettings(systemPrompt, chat.isGroup && chat.settings.isOfflineMode ? 'group_offline' : 'single');
 
-      const messagesForApi = historySlice.map(msg => ({
+      let messagesForApi = historySlice.map(msg => ({
         role: msg.role,
         content: String(msg.content)
       }));
@@ -269,13 +269,7 @@ ${linkedContents}
       });
 
       if (typeof ThoughtChainManager !== 'undefined' && ThoughtChainManager.enabled) {
-          const chunks = ThoughtChainManager.getPayloadChunks();
-          if (chunks.bottom && chunks.bottom.length > 0) {
-              messagesForApi.push(...chunks.bottom.map(c => ({
-                  role: c.role,
-                  content: c.content
-              })));
-          }
+          messagesForApi = ThoughtChainManager.injectIntoMessages(messagesForApi);
       }
 
       let isGemini = proxyUrl === GEMINI_API_URL;

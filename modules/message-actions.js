@@ -31,7 +31,10 @@
                     // 点击查看深度思考
                     viewThoughtChainBtn.onclick = () => {
                         hideMessageActions();
-                        showCustomAlert('AI 深度思考', parseMarkdown(processMentions(String(prevMsg.content), chat)).replace(/\n/g, '<br>'));
+                        const safeThought = typeof ThoughtChainManager !== 'undefined'
+                            ? ThoughtChainManager.escapeHtml(String(prevMsg.content))
+                            : String(prevMsg.content).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                        showCustomAlert('AI 深度思考', parseMarkdown(processMentions(safeThought, chat)).replace(/\n/g, '<br>'));
                     };
                 }
                 break; // 无论是否隐藏，只看最近的一个，防止找太远

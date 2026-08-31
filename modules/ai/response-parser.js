@@ -7,13 +7,23 @@
     let trimmedContent = content.trim();
     let prefixResults = [];
 
-    // 兼容AI回复中可能缺少开头 <thinking> 标签的情况
-    const thinkingMatch = trimmedContent.match(/^(?:<thinking>)?([\s\S]*?)<\/thinking>/i);
-    if (thinkingMatch && thinkingMatch[1]) {
-      prefixResults.push({
-        type: 'thought_chain_block',
-        content: thinkingMatch[1].trim()
-      });
+    if (typeof ThoughtChainManager !== 'undefined' && typeof ThoughtChainManager.extractReasoning === 'function') {
+      const extraction = ThoughtChainManager.extractReasoning(trimmedContent);
+      if (extraction.error) console.warn('思考内容提取配置无效，已保留原始回复:', extraction.error);
+      if (extraction.reasoning) {
+        prefixResults.push({ type: 'thought_chain_block', content: extraction.reasoning });
+      }
+      trimmedContent = extraction.body;
+      if (!trimmedContent && prefixResults.length) return prefixResults;
+    } else {
+      // 旧环境兼容：保持历史 <thinking> 提取能力。
+      const thinkingMatch = trimmedContent.match(/^(?:<thinking>)?([\s\S]*?)<\/thinking>/i);
+      if (thinkingMatch && thinkingMatch[1]) {
+        prefixResults.push({
+          type: 'thought_chain_block',
+          content: thinkingMatch[1].trim()
+        });
+      }
     }
 
     const markdownRegex = /```json\s*([\s\S]*?)\s*```/;

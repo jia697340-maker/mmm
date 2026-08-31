@@ -750,7 +750,12 @@
                 <span style="opacity: 0.6; font-size: 11px;">深度思考</span>
             </summary>
             <div class="thought-chain-content">
-                ${parseMarkdown(processMentions(String(msg.content), chat)).replace(/\n/g, '<br>')}
+                ${parseMarkdown(processMentions(
+                  typeof ThoughtChainManager !== 'undefined'
+                    ? ThoughtChainManager.escapeHtml(String(msg.content))
+                    : String(msg.content).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'),
+                  chat
+                )).replace(/\n/g, '<br>')}
             </div>
         </details>
       `;

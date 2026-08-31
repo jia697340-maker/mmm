@@ -452,7 +452,7 @@
       <div class="settings-container ios-scroll-container" style="background-color: #f5f5f7;">
         
         <!-- 全局开关与重置 -->
-        <div class="settings-section" style="margin: 15px; border-radius: 12px; overflow: hidden; background: white; flex-shrink: 0;">
+        <div class="settings-section thought-chain-settings-card">
           <div class="settings-item" style="border-bottom: 1px solid #eee;">
             <div>
               <div style="font-weight: 500;">启用自定义思维链</div>
@@ -472,14 +472,70 @@
                      <option value="current">当前配置 (未保存)</option>
                  </select>
              </div>
-             <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; width: 100%;">
-                 <button id="new-thought-chain-preset-btn" class="settings-mini-btn">新建</button>
+             <div id="thought-chain-unsaved-indicator" class="thought-chain-unsaved-indicator" hidden>当前配置有未保存修改</div>
+             <div class="thought-chain-preset-actions">
+                  <button id="new-thought-chain-preset-btn" class="settings-mini-btn">新建</button>
+                 <button id="duplicate-thought-chain-preset-btn" class="settings-mini-btn">复制</button>
+                 <button id="rename-thought-chain-preset-btn" class="settings-mini-btn">重命名</button>
                  <button id="import-thought-chain-preset-btn" class="settings-mini-btn">导入</button>
                  <button id="export-thought-chain-preset-btn" class="settings-mini-btn">导出</button>
                  <button id="save-thought-chain-preset-btn" class="settings-mini-btn">保存</button>
+                 <button id="revert-thought-chain-preset-btn" class="settings-mini-btn">撤销修改</button>
                  <button id="delete-thought-chain-preset-btn" class="settings-mini-btn" style="color: #ff3b30; border-color: rgba(255,59,48,0.3);">删除</button>
                  <input type="file" id="import-thought-chain-preset-file" accept=".json" style="display: none;">
              </div>
+          </div>
+
+          <div class="settings-item thought-chain-compatibility-heading">
+            <div>
+              <div style="font-weight: 500;">手动兼容设置</div>
+              <div class="settings-desc thought-chain-inline-desc">所有行为只由这里的开关控制，不自动识别模型</div>
+            </div>
+          </div>
+          <div class="settings-item">
+            <div>
+              <div style="font-weight: 500;">发送底部 / Assistant 预填条目</div>
+              <div class="settings-desc thought-chain-inline-desc">关闭后保留条目，但不把底部条目追加到请求末尾</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="thought-chain-prefill-switch" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="settings-item">
+            <div>
+              <div style="font-weight: 500;">提取思考内容</div>
+              <div class="settings-desc thought-chain-inline-desc">关闭后不拆分思考块，完整回复交给原正文解析</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="thought-chain-extraction-switch" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div id="thought-chain-extraction-settings" class="thought-chain-advanced-settings">
+            <label>提取方式
+              <select id="thought-chain-extraction-mode">
+                <option value="tags">开始 / 结束标记</option>
+                <option value="regex">正则表达式</option>
+              </select>
+            </label>
+            <div id="thought-chain-tag-settings" class="thought-chain-field-grid">
+              <label>开始标记<input type="text" id="thought-chain-start-marker" value="&lt;thinking&gt;"></label>
+              <label>结束标记<input type="text" id="thought-chain-end-marker" value="&lt;/thinking&gt;"></label>
+            </div>
+            <label id="thought-chain-regex-setting" hidden>正则表达式
+              <input type="text" id="thought-chain-extraction-regex" placeholder="例如：&lt;thinking&gt;([\s\S]*?)&lt;/thinking&gt;">
+            </label>
+            <div class="thought-chain-check-grid">
+              <label><input type="checkbox" id="thought-chain-ignore-case-switch" checked> 忽略大小写</label>
+              <label><input type="checkbox" id="thought-chain-remove-from-body-switch" checked> 从正文移除</label>
+              <label><input type="checkbox" id="thought-chain-allow-missing-start-switch" checked> 兼容缺少开始标记</label>
+              <label><input type="checkbox" id="thought-chain-extract-all-switch"> 提取全部匹配</label>
+            </div>
+            <div class="thought-chain-test-actions">
+              <button id="thought-chain-preview-btn" class="settings-mini-btn">最终注入预览</button>
+              <button id="thought-chain-parser-test-btn" class="settings-mini-btn">测试提取规则</button>
+            </div>
           </div>
           
           <button id="thought-chain-reset-btn" style="width: 100%; padding: 12px; background: none; border: none; color: #ff3b30; font-size: 15px; font-weight: 500; cursor: pointer;">
@@ -512,6 +568,9 @@
                 <option value="head">头部 (System)</option>
                 <option value="middle">中间 (System)</option>
                 <option value="bottom">底部 (AI Role - 触发器)</option>
+                <option value="before_history">聊天记录之前</option>
+                <option value="in_chat">聊天记录内部</option>
+                <option value="after_history">聊天记录之后</option>
               </select>
             </div>
             <div style="flex: 1;">
@@ -521,10 +580,23 @@
                 <option value="assistant">AI自己 (Assistant)</option>
                 <option value="user">用户 (User)</option>
               </select>
+              <div class="settings-desc thought-chain-inline-desc">“头部 / 中间”沿用原有合并到主提示词的逻辑；独立消息位置会按此身份发送</div>
             </div>
           </div>
+          <div class="form-group thought-chain-field-grid">
+            <label>聊天深度
+              <input type="number" id="tc-depth-input" min="0" value="0">
+            </label>
+            <label>同位置顺序
+              <input type="number" id="tc-order-input" value="0">
+            </label>
+          </div>
+          <div class="form-group">
+            <label>条目备注（不会发送给模型）</label>
+            <input type="text" id="tc-note-input" placeholder="可选">
+          </div>
           <div class="form-group" style="flex-grow: 1; display: flex; flex-direction: column;">
-            <label>内容文本 <span style="font-size: 12px; color: #999; font-weight: normal;">(支持 <code><变量名></code>)</span></label>
+            <label>内容文本 <span style="font-size: 12px; color: #999; font-weight: normal;">(支持 <code>{{变量名}}</code>)</span></label>
             <textarea id="tc-content-input" style="flex-grow: 1; width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; resize: none; font-family: monospace; font-size: 14px; box-sizing: border-box;" placeholder="输入具体的提示词内容..."></textarea>
           </div>
           <div class="form-group" style="display: flex; justify-content: space-between; align-items: center;">
@@ -538,6 +610,22 @@
         <div class="modal-footer">
           <button class="cancel" id="tc-cancel-btn">取消</button>
           <button class="save" id="tc-save-btn">保存</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="thought-chain-tools-modal" class="modal">
+      <div class="modal-content thought-chain-tools-modal-content">
+        <div class="modal-header">
+          <span id="thought-chain-tools-title">思维链工具</span>
+        </div>
+        <div class="modal-body thought-chain-tools-body">
+          <textarea id="thought-chain-test-input" class="thought-chain-tools-input" placeholder="测试提取规则时，在这里粘贴一段模型返回内容"></textarea>
+          <pre id="thought-chain-tools-output" class="thought-chain-tools-output"></pre>
+        </div>
+        <div class="modal-footer">
+          <button class="cancel" id="thought-chain-tools-close-btn">关闭</button>
+          <button class="save" id="thought-chain-tools-run-btn">运行测试</button>
         </div>
       </div>
     </div>

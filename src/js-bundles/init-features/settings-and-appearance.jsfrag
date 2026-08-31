@@ -237,46 +237,6 @@ window.initFeatures = function(state, db) {
     });
 
 
-    document.getElementById('save-wallpaper-btn').addEventListener('click', async () => {
-
-      if (newWallpaperBase64) {
-        state.globalSettings.wallpaper = newWallpaperBase64;
-      }
-
-
-
-      state.globalSettings.globalCss = document.getElementById('global-css-input').value.trim();
-      state.globalSettings.notificationSoundUrl = document.getElementById('notification-sound-url-input').value.trim();
-      state.globalSettings.notificationVolume = parseInt(document.getElementById('notification-volume-slider').value) / 100;
-      state.globalSettings.apiMaxTokens = parseInt(document.getElementById('api-max-tokens-input').value) || 0;
-      state.globalSettings.showStatusBar = document.getElementById('status-bar-toggle-switch').checked;
-      state.globalSettings.showSeconds = document.getElementById('global-show-seconds-switch').checked;
-      state.globalSettings.dropdownPopupMode = document.getElementById('dropdown-popup-mode-switch').checked;
-      state.globalSettings.lockScreenEnabled = document.getElementById('lock-screen-toggle').checked;
-      state.globalSettings.lockScreenBypassEnabled = document.getElementById('lock-screen-bypass-toggle').checked;
-      state.globalSettings.lockScreenPassword = document.getElementById('lock-screen-password-input').value.trim();
-
-      const lockPreview = document.getElementById('lock-wallpaper-preview');
-      if (lockPreview.dataset.tempUrl) {
-        state.globalSettings.lockScreenWallpaper = lockPreview.dataset.tempUrl;
-      }
-
-      await db.globalSettings.put(state.globalSettings);
-
-
-      applyGlobalWallpaper();
-      newWallpaperBase64 = null;
-      applyAppIcons();
-      applyCPhoneAppIcons();
-      applyMyPhoneAppIconsGlobal();
-      applyGlobalCss(state.globalSettings.globalCss);
-      applyStatusBarVisibility();
-      initLockScreen();
-      alert('外观设置已保存并应用！');
-      showScreen('home-screen');
-    });
-
-
     document.getElementById('upload-global-bg-url-btn').addEventListener('click', async () => {
 
       const url = await showCustomPrompt("网络图片", "请输入背景图片的URL", "", "url");

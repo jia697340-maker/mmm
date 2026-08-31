@@ -167,19 +167,13 @@ ${linkedContents}
         systemPrompt += `\n# 【【【线下聚会模式 (最高优先级)】】】\n- **当前情景**: 你们现在正处于【线下现实聚会】状态，不在网络群聊中！大家正面对面聚在一起。\n- **现场人员**: 现场有【${participantNames}】（注意：本次聚会用户不在场）。\n- **行为规范**: \n  - 你们可以产生互相的肢体接触、观察对方的神态、注意周围的环境。\n  - 请在发言的文本内容中，像小说一样自然地加入动作、神态、环境描写（建议将动作描写用括号或星号包裹，比如：*喝了一口咖啡*）。\n  - 绝不能表现出"正在用手机打字群聊"的状态！\n  - **【重要字数要求】**: 每个角色的单次回复文本长度必须在 ${minLength} 到 ${maxLength} 字之间。\n  - **绝对注意**: 这个字数限制是针对【每一个发言的角色】单独计算的，绝不是所有人的字数总和！请确保每个人的描写都足够充实。\n`;
       }
 
-      const messagesPayload = filteredHistory.map(msg => ({
+      let messagesPayload = filteredHistory.map(msg => ({
         role: 'user',
         content: `${getDisplayNameInGroup(chat, msg.senderName)}: ${msg.content}`
       }));
 
       if (typeof ThoughtChainManager !== 'undefined' && ThoughtChainManager.enabled) {
-          const chunks = ThoughtChainManager.getPayloadChunks();
-          if (chunks.bottom && chunks.bottom.length > 0) {
-              messagesPayload.push(...chunks.bottom.map(c => ({
-                  role: c.role,
-                  content: c.content
-              })));
-          }
+          messagesPayload = ThoughtChainManager.injectIntoMessages(messagesPayload);
       }
 
       let isGemini = proxyUrl.includes('generativelanguage.googleapis.com');
