@@ -14,17 +14,18 @@ timing remain compatible while the source is organized by feature domain.
 ## Generated entry files
 
 `index.html` is a small document shell. `modules/bootstrap/document-loader.js`
-loads the ordered fragments from `src/html/` and replaces the shell with their
-combined document. `html-fragments.json` preserves the exact source order.
+loads ordered local script fragments and replaces the shell with their combined
+document. This keeps direct `index.html` double-click (`file://`) compatible;
+`html-fragments.json` preserves the maintained source order in `src/html/`.
 
 ```sh
 npm run build:index
 npm run check:index
 ```
 
-The same command generates `html-fragments.json` and `asset-manifest.json`.
-The service worker caches the loader, fragment manifest, every HTML fragment,
-and all local assets for offline use.
+The same command generates `html-fragments.json`, the local fragment scripts,
+their runtime manifest, and `asset-manifest.json`. The service worker caches the
+loader, runtime manifest, generated fragments, and all local assets for offline use.
 
 Four scope-sensitive classic-script bundles remain generated runtime files.
 Their maintained fragments live in `src/js-bundles/` so their original shared

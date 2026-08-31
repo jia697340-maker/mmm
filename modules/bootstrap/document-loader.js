@@ -1,26 +1,9 @@
-(async function loadDocumentFragments() {
-  const loadJson = async path => {
-    const response = await fetch(path, { cache: 'no-cache' });
-    if (!response.ok) throw new Error(`${path}: HTTP ${response.status}`);
-    return response.json();
-  };
+(function loadDocumentFragments() {
+  const fragmentScripts = window.__EPHONE_HTML_FRAGMENT_SCRIPTS;
+  const htmlParts = [];
+  window.__EPHONE_HTML_PARTS = htmlParts;
 
-  const loadText = async path => {
-    const response = await fetch(path, { cache: 'no-cache' });
-    if (!response.ok) throw new Error(`${path}: HTTP ${response.status}`);
-    return response.text();
-  };
-
-  try {
-    const fragments = await loadJson('html-fragments.json');
-    const htmlParts = await Promise.all(
-      fragments.map(fragment => loadText(`src/html/${fragment}`))
-    );
-
-    document.open('text/html', 'replace');
-    document.write(htmlParts.join(''));
-    document.close();
-  } catch (error) {
+  const showFailure = error => {
     console.error('[DocumentLoader] 页面片段加载失败:', error);
     document.body.innerHTML = '';
     const message = document.createElement('main');
@@ -28,8 +11,39 @@
     const title = document.createElement('h1');
     title.textContent = '页面加载失败';
     const detail = document.createElement('p');
-    detail.textContent = '无法读取页面片段，请检查网络连接后刷新。';
+    detail.textContent = '无法读取页面片段，请确认项目文件完整后刷新。';
     message.append(title, detail);
     document.body.appendChild(message);
+  };
+
+  if (!Array.isArray(fragmentScripts) || fragmentScripts.length === 0) {
+    showFailure(new Error('HTML fragment script manifest is missing.'));
+    return;
   }
+
+  let nextFragmentIndex = 0;
+
+  const loadNextFragment = () => {
+    if (nextFragmentIndex === fragmentScripts.length) {
+      delete window.__EPHONE_HTML_FRAGMENT_SCRIPTS;
+      delete window.__EPHONE_HTML_PARTS;
+      document.open('text/html', 'replace');
+      document.write(htmlParts.join(''));
+      document.close();
+      return;
+    }
+
+    const fragmentPath = fragmentScripts[nextFragmentIndex];
+    nextFragmentIndex += 1;
+    const script = document.createElement('script');
+    script.src = fragmentPath;
+    script.onload = () => {
+      script.remove();
+      loadNextFragment();
+    };
+    script.onerror = () => showFailure(new Error(`Unable to load ${fragmentPath}`));
+    document.head.appendChild(script);
+  };
+
+  loadNextFragment();
 })();

@@ -6,6 +6,8 @@ const fragmentDirectory = path.join(projectRoot, 'src', 'html');
 const outputPath = path.join(projectRoot, 'index.html');
 const assetManifestPath = path.join(projectRoot, 'asset-manifest.json');
 const fragmentManifestPath = path.join(projectRoot, 'html-fragments.json');
+const scriptManifestPath = path.join(projectRoot, 'modules', 'bootstrap', 'html-fragment-manifest.js');
+const generatedFragmentDirectory = path.join(projectRoot, 'generated', 'html-fragments');
 
 const fragments = [
   'document-head.html',
@@ -35,6 +37,28 @@ const generatedHtml = fragments
   .map(fragment => fs.readFileSync(path.join(fragmentDirectory, fragment), 'utf8'))
   .join('');
 
+const fragmentScripts = fragments.map(fragment => ({
+  outputName: fragment.replace(/\.html$/, '.js'),
+  source: fs.readFileSync(path.join(fragmentDirectory, fragment), 'utf8')
+}));
+
+const fragmentScriptPaths = fragmentScripts.map(
+  fragment => `generated/html-fragments/${fragment.outputName}`
+);
+
+const generatedFragmentScripts = fragmentScripts.map(fragment => ({
+  ...fragment,
+  contents: `window.__EPHONE_HTML_PARTS.push(${JSON.stringify(fragment.source)
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029')});\n`
+}));
+
+const generatedScriptManifest = `window.__EPHONE_HTML_FRAGMENT_SCRIPTS = ${JSON.stringify(
+  fragmentScriptPaths,
+  null,
+  2
+)};\n`;
+
 const generatedShell = `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -44,6 +68,7 @@ const generatedShell = `<!DOCTYPE html>
 </head>
 <body>
   <noscript>此应用需要启用 JavaScript。</noscript>
+  <script src="modules/bootstrap/html-fragment-manifest.js"></script>
   <script src="modules/bootstrap/document-loader.js"></script>
 </body>
 </html>
@@ -64,8 +89,9 @@ const generatedAssetManifest = `${JSON.stringify(
     'index.html',
     'manifest.json',
     'html-fragments.json',
+    'modules/bootstrap/html-fragment-manifest.js',
     'modules/bootstrap/document-loader.js',
-    ...fragments.map(fragment => `src/html/${fragment}`),
+    ...fragmentScriptPaths,
     ...localAssets
   ])),
   null,
@@ -82,6 +108,17 @@ if (process.argv.includes('--check')) {
     console.error('html-fragments.json is out of sync with the fragment order.');
     process.exit(1);
   }
+  if (fs.readFileSync(scriptManifestPath, 'utf8') !== generatedScriptManifest) {
+    console.error('HTML fragment script manifest is out of sync with the fragment order.');
+    process.exit(1);
+  }
+  for (const fragment of generatedFragmentScripts) {
+    const output = path.join(generatedFragmentDirectory, fragment.outputName);
+    if (!fs.existsSync(output) || fs.readFileSync(output, 'utf8') !== fragment.contents) {
+      console.error(`${fragment.outputName} is out of sync with its HTML source fragment.`);
+      process.exit(1);
+    }
+  }
   const currentAssetManifest = fs.readFileSync(assetManifestPath, 'utf8');
   if (currentAssetManifest !== generatedAssetManifest) {
     console.error('asset-manifest.json is out of sync with index.html.');
@@ -89,8 +126,16 @@ if (process.argv.includes('--check')) {
   }
   console.log(`Document shell and ${fragments.length} HTML fragments verified.`);
 } else {
+  fs.mkdirSync(generatedFragmentDirectory, { recursive: true });
   fs.writeFileSync(outputPath, generatedShell);
   fs.writeFileSync(fragmentManifestPath, generatedFragmentManifest);
+  fs.writeFileSync(scriptManifestPath, generatedScriptManifest);
+  for (const fragment of generatedFragmentScripts) {
+    fs.writeFileSync(
+      path.join(generatedFragmentDirectory, fragment.outputName),
+      fragment.contents
+    );
+  }
   fs.writeFileSync(assetManifestPath, generatedAssetManifest);
-  console.log(`Document shell and manifests generated for ${fragments.length} HTML fragments.`);
+  console.log(`Document shell and local scripts generated for ${fragments.length} HTML fragments.`);
 }
