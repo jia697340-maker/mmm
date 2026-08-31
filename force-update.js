@@ -3,30 +3,19 @@
 
 const ForceUpdater = (() => {
 
-  // 需要更新的文件列表（静态资源，不包含用户数据）
-  const FILES_TO_UPDATE = [
-    'index.html',
-    'style.css',
-    'online-app.css',
-    'script.js',
-    'sw.js',
-    'manifest.json',
-    'prompt-manager.js',
-    'online-chat-manager.js',
-    'online-chat-integration.js',
-    'sticker-vision.js',
-    'notification-manager.js',
-    'character-generator.js',
-    'structured-memory.js',
-    'structured-memory.css',
-    'helper-assistant.js',
-    'update-notification.js',
-    'update-notification.css',
-    'data-persistence.js',
-    'qq-undefined-filter.js',
-    'server.js',
-    'force-update.js'
-  ];
+  // 直接从当前文档收集入口资源，避免模块拆分后维护一份易遗漏的硬编码清单。
+  function getFilesToUpdate() {
+    const documentAssets = Array.from(
+      document.querySelectorAll('script[src], link[rel="stylesheet"][href], link[rel="manifest"][href]')
+    ).map(element => element.getAttribute('src') || element.getAttribute('href'));
+
+    const localAssets = documentAssets
+      .filter(Boolean)
+      .filter(path => !/^(?:https?:)?\/\//i.test(path))
+      .map(path => path.replace(/^\.\//, '').split(/[?#]/, 1)[0]);
+
+    return Array.from(new Set(['index.html', 'sw.js', 'manifest.json', 'asset-manifest.json', ...localAssets]));
+  }
 
   // 创建备份提醒弹窗
   function _showBackupReminder() {
@@ -134,7 +123,8 @@ const ForceUpdater = (() => {
   async function _doUpdate() {
     const progress = _showProgress();
     let completed = 0;
-    const total = FILES_TO_UPDATE.length + 2; // +2 for SW unregister + cache clear
+    const filesToUpdate = getFilesToUpdate();
+    const total = filesToUpdate.length + 2; // +2 for SW unregister + cache clear
 
     try {
       // Step 1: 注销 Service Worker
@@ -161,7 +151,7 @@ const ForceUpdater = (() => {
       const timestamp = Date.now();
       let failedFiles = [];
 
-      for (const file of FILES_TO_UPDATE) {
+      for (const file of filesToUpdate) {
         const url = `./${file}?_force=${timestamp}`;
         progress.setProgress(
           Math.round(completed / total * 100),
@@ -178,9 +168,9 @@ const ForceUpdater = (() => {
 
       progress.close();
 
-      if (failedFiles.length > 0 && failedFiles.length < FILES_TO_UPDATE.length) {
+      if (failedFiles.length > 0 && failedFiles.length < filesToUpdate.length) {
         _showResult(true, `大部分文件已更新成功。<br>以下文件拉取失败（可能是网络问题）：<br><span style="font-size:11px;color:#999;">${failedFiles.join(', ')}</span><br><br>点击刷新页面加载最新版本。`);
-      } else if (failedFiles.length === FILES_TO_UPDATE.length) {
+      } else if (failedFiles.length === filesToUpdate.length) {
         _showResult(false, '所有文件拉取失败，请检查网络连接后重试。');
       } else {
         _showResult(true, '所有文件已更新成功！<br>点击下方按钮刷新页面加载最新版本。');

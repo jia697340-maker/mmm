@@ -1,0 +1,186 @@
+           /* ========== 真心话悬浮球样式 ========== */
+           #truth-game-float-ball {
+               position: fixed;
+               bottom: 80px;
+               right: 20px;
+               width: 60px;
+               height: 60px;
+               border-radius: 50%;
+               cursor: pointer;
+               z-index: 9999;
+               box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+               transition: transform 0.2s ease;
+               overflow: hidden;
+               border: 3px solid #fff;
+           }
+
+           #truth-game-float-ball:hover {
+               transform: scale(1.1);
+           }
+
+           #truth-game-float-ball:active {
+               transform: scale(0.95);
+           }
+
+           #truth-game-float-avatar {
+               width: 100%;
+               height: 100%;
+               object-fit: cover;
+           }
+
+           #truth-game-float-indicator {
+               position: absolute;
+               top: -2px;
+               right: -2px;
+               width: 16px;
+               height: 16px;
+               background-color: #ff4444;
+               border-radius: 50%;
+               border: 2px solid #fff;
+               display: none;
+               animation: pulse-indicator 1.5s ease-in-out infinite;
+           }
+
+           #truth-game-float-indicator.active {
+               display: block;
+           }
+
+           @keyframes pulse-indicator {
+
+               0%,
+               100% {
+                   transform: scale(1);
+                   opacity: 1;
+               }
+
+               50% {
+                   transform: scale(1.2);
+                   opacity: 0.7;
+               }
+           }
+
+           /* 真心话modal最小化时隐藏 */
+           #truth-game-modal.minimized {
+               display: none !important;
+           }
+
+           /* ========== 真心话游戏移动端适配 ========== */
+           /* 桌面端优化 */
+           @media (min-width: 769px) {
+               #truth-game-buttons {
+                   flex: 0 1 auto !important;
+               }
+
+               #truth-input {
+                   flex: 1 1 auto !important;
+               }
+           }
+
+           /* 平板和小屏幕适配 */
+           @media (max-width: 768px) {
+
+               /* 真心话对话框宽度适配 */
+               #truth-game-modal .modal-content {
+                   max-width: 100% !important;
+                   margin: 0 10px !important;
+                   height: 88vh !important;
+               }
+
+               /* 输入区域容器 */
+               #truth-game-input-area {
+                   padding: 10px 12px !important;
+               }
+
+               /* 输入框 */
+               #truth-input {
+                   font-size: 15px !important;
+                   padding: 10px !important;
+                   min-height: 42px !important;
+                   margin-bottom: 8px !important;
+               }
+
+               /* 按钮组 */
+               #truth-game-buttons {
+                   gap: 8px !important;
+               }
+
+               /* 三个按钮 */
+               #truth-start-game-btn,
+               #truth-call-api-btn,
+               #truth-send-btn {
+                   padding: 10px 10px !important;
+                   font-size: 14px !important;
+                   min-height: 42px !important;
+               }
+           }
+
+           /* 手机竖屏适配 */
+           @media (max-width: 480px) {
+
+               /* 真心话对话框占满屏幕 */
+               #truth-game-modal .modal-content {
+                   max-width: 100% !important;
+                   margin: 0 !important;
+                   height: 100vh !important;
+                   border-radius: 0 !important;
+               }
+
+               /* 输入区域更紧凑 */
+               #truth-game-input-area {
+                   padding: 8px 10px !important;
+               }
+
+               /* 输入框 */
+               #truth-input {
+                   font-size: 14px !important;
+                   padding: 8px 10px !important;
+                   min-height: 38px !important;
+                   margin-bottom: 8px !important;
+               }
+
+               /* 按钮组 */
+               #truth-game-buttons {
+                   gap: 6px !important;
+               }
+
+               /* 三个按钮均分宽度并优化间距 */
+               #truth-start-game-btn,
+               #truth-call-api-btn,
+               #truth-send-btn {
+                   padding: 9px 6px !important;
+                   font-size: 13px !important;
+                   min-height: 38px !important;
+                   flex: 1 1 0 !important;
+               }
+           }
+
+           /* 超小屏幕适配 */
+           @media (max-width: 360px) {
+
+               /* 输入区域 */
+               #truth-game-input-area {
+                   padding: 6px 8px !important;
+               }
+
+               /* 输入框 */
+               #truth-input {
+                   font-size: 13px !important;
+                   padding: 7px 8px !important;
+                   min-height: 36px !important;
+               }
+
+               /* 按钮组 */
+               #truth-game-buttons {
+                   gap: 5px !important;
+               }
+
+               /* 三个按钮 */
+               #truth-start-game-btn,
+               #truth-call-api-btn,
+               #truth-send-btn {
+                   font-size: 12px !important;
+                   padding: 8px 4px !important;
+                   min-height: 36px !important;
+               }
+           }
+

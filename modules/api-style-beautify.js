@@ -57,7 +57,7 @@
     if (styleEl) return;
     styleEl = document.createElement('link');
     styleEl.rel = 'stylesheet';
-    styleEl.href = 'style-scheme-2.css?v=0.0.37';
+    styleEl.href = 'css/settings/style-scheme-2.css?v=0.0.37';
     styleEl.id = 'api-style-beautify-css';
     document.head.appendChild(styleEl);
   }

@@ -4,6 +4,12 @@
   "description": "真人联机WebSocket服务器 - 为E-phone应用提供实时通信支持",
   "main": "server.js",
   "scripts": {
+    "build": "npm run build:bundles && npm run build:index",
+    "check:structure": "npm run check:bundles && npm run check:index",
+    "build:index": "node scripts/build-index.js",
+    "check:index": "node scripts/build-index.js --check",
+    "build:bundles": "node scripts/build-script-bundles.js",
+    "check:bundles": "node scripts/build-script-bundles.js --check",
     "start": "node server.js",
     "dev": "node server.js",
     "pm2:start": "pm2 start server.js --name online-chat",

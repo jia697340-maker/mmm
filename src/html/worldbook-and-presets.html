@@ -1,0 +1,85 @@
+    <!-- 角色生成器屏幕将由character-generator.js动态创建 -->
+    
+    <div id="world-book-screen" class="screen">
+      <div class="header">
+        <div class="header-left-actions"> <span class="back-btn" onclick="showScreen('home-screen')">‹</span> <span class="action-btn" id="import-world-book-btn" title="导入世界书"data-lang-key-title="worldBookImportTitle"> <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="17 8 12 3 7 8"></polyline>
+              <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg> </span> <span class="action-btn" id="export-world-book-btn" title="导出世界书"> <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg> </span> </div> <span data-lang-key="worldBookTitle">世界书</span>
+        <div class="header-actions"> <span class="action-btn" id="manage-world-book-categories-btn" title="管理分类"> <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+              <polyline points="10 9 9 9 8 9"></polyline>
+            </svg> </span> <span class="action-btn" id="add-world-book-btn">+</span> </div>
+      </div>
+      <div id="world-book-tabs"></div>
+      <div id="world-book-content-container"></div>
+    </div>
+    <div id="world-book-editor-screen" class="screen">
+      <div class="header"> <span class="back-btn" onclick="showScreen('world-book-screen')">‹</span> <span id="world-book-editor-title"data-lang-key="worldBookEditorTitle"data-lang-key="edit">编辑世界书</span> <span class="save-btn" id="save-world-book-btn"data-lang-key="save">保存</span> </div>
+      <div class="form-container">
+        <div class="form-group"> <label for="world-book-name-input"data-lang-key="worldBookNameLabel">书名</label> <input type="text" id="world-book-name-input" placeholder="请输入世界书的名称..."data-lang-key-placeholder="worldBookNamePlaceholder"> </div>
+        <div class="form-group"> <label for="world-book-category-select"data-lang-key="worldBookCategoryLabel">分类</label> <select id="world-book-category-select"></select> </div>
+        <div class="form-group">
+          <label style="display: flex; align-items: center; justify-content: space-between; cursor: pointer;">
+            <span>
+              <span style="font-weight: 500;">全局世界书</span>
+              <span style="font-size: 12px; color: var(--text-secondary); display: block; margin-top: 4px;">开启后，所有角色将自动关联此世界书</span>
+            </span>
+            <input type="checkbox" id="world-book-global-switch" style="width: 44px; height: 24px; cursor: pointer;">
+          </label>
+        </div>
+        <div class="form-group" id="world-book-inject-position-group">
+          <label for="world-book-inject-position-select">
+            <span style="font-weight: 500;">注入位置</span>
+            <span style="font-size: 12px; color: var(--text-secondary); display: block; margin-top: 4px;">选择世界书内容在提示词中的注入位置</span>
+          </label>
+          <select id="world-book-inject-position-select" style="margin-top: 8px; padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-primary); font-size: 14px;">
+            <option value="before">前 - 提示词前面</option>
+            <option value="middle">中 - 提示词中间</option>
+            <option value="after">后 - 提示词最后</option>
+          </select>
+        </div>
+        <div class="form-group" style="flex-grow: 1; display: flex; flex-direction: column;"> <label data-lang-key="worldBookEntriesLabel">内容条目</label>
+          <div id="world-book-entries-container" style="display: flex; flex-direction: column; gap: 15px; overflow-y: auto; padding: 5px; flex-grow: 1;"> </div>
+        </div> <button id="add-world-book-entry-btn" class="form-button form-button-secondary"data-lang-key="worldBookAddEntryBtn"> [+] 添加新条目 </button>
+      </div>
+    </div>
+    <div id="preset-screen" class="screen">
+      <div class="header"> <span class="back-btn" onclick="showScreen('home-screen')">‹</span> <span data-lang-key="presetTitle">预设</span>
+        <div class="header-actions"> <span class="action-btn" id="import-preset-btn" title="导入预设文件" data-lang-key-title="presetImportTitle"> <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="17 8 12 3 7 8"></polyline>
+              <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg> </span> <span class="action-btn" id="manage-preset-categories-btn" title="管理分类"data-lang-key-title="presetManageCategoriesTitle"> <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+            </svg> </span> <span class="action-btn" id="add-preset-btn">+</span> </div>
+      </div>
+      <div id="preset-tabs"></div>
+      <div id="preset-content-container"></div>
+    </div>
+    <div id="tutorial-screen" class="screen">
+      <div class="header"> <span class="back-btn" onclick="showScreen('home-screen')">‹</span> <span data-lang-key="tutorialTitle">教程</span> <span style="width: 30px;"></span> </div>
+      <div class="list-container" style="padding: 0; overflow: hidden;"> <iframe id="tutorial-iframe" src="tutorial.html" style="width: 100%; height: 100%; border: none;"></iframe> </div>
+    </div>
+    <div id="preset-editor-screen" class="screen">
+      <div class="header"> <span class="back-btn" onclick="showScreen('preset-screen')">‹</span> <span id="preset-editor-title"data-lang-key="presetEditorTitle">编辑预设</span> <span class="save-btn" id="save-preset-btn"data-lang-key="save">保存</span> </div>
+      <div class="form-container">
+        <div class="form-group"> <label for="preset-name-input"data-lang-key="presetNameLabel">预设名称</label> <input type="text" id="preset-name-input" placeholder="请输入预设的名称..."data-lang-key-placeholder="presetNamePlaceholder"> </div>
+        <div class="form-group"> <label for="preset-category-select"data-lang-key="presetCategoryLabel">分类</label> <select id="preset-category-select"></select> </div>
+        <div class="form-group" style="flex-grow: 1; display: flex; flex-direction: column;"> <label data-lang-key="presetEntriesLabel">内容条目</label>
+          <div id="preset-entries-container" style="display: flex; flex-direction: column; gap: 15px; overflow-y: auto; padding: 5px; flex-grow: 1;"> </div>
+        </div> <button type="button" id="add-preset-entry-btn" class="form-button form-button-secondary"data-lang-key="presetAddEntryBtn"> [+] 添加新条目 </button>
+      </div>
+    </div>

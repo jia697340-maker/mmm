@@ -2,21 +2,10 @@
 // 【智能缓存策略】- 根据资源类型使用不同的缓存策略，优化加载速度
 
 // 缓存版本号（智能缓存策略）
-const CACHE_VERSION = 'v0.0.36';
+const CACHE_VERSION = 'v0.0.36-domain-split';
 const CACHE_NAME = `ephone-cache-${CACHE_VERSION}`;
 
-// 需要被缓存的文件列表（仅用于离线访问）
-const URLS_TO_CACHE = [
-  './index.html',
-  './style.css',
-  './online-app.css',
-  './script.js',
-  'https://unpkg.com/dexie/dist/dexie.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js',
-  'https://phoebeboo.github.io/mewoooo/pp.js',
-  'https://cdn.jsdelivr.net/npm/streamsaver@2.0.6/StreamSaver.min.js',
-  'https://i.postimg.cc/nMbyyt1t/D7CD735A73F5FD1D7B8407E0EB8BBAC0.png'
-];
+const CORE_URLS_TO_CACHE = ['./index.html', './manifest.json', './asset-manifest.json'];
 
 // 1. 安装事件：当 Service Worker 首次被注册时触发
 self.addEventListener('install', event => {
@@ -24,8 +13,16 @@ self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
-        console.log('[SW] 缓存已打开，正在缓存核心文件（用于离线访问）...');
-        return cache.addAll(URLS_TO_CACHE);
+        console.log('[SW] 缓存已打开，正在读取本地资源清单...');
+        return fetch('./asset-manifest.json', { cache: 'no-store' })
+          .then(response => {
+            if (!response.ok) throw new Error(`资源清单读取失败: ${response.status}`);
+            return response.json();
+          })
+          .then(files => {
+            const localFiles = files.map(file => `./${String(file).replace(/^\.\//, '')}`);
+            return cache.addAll(Array.from(new Set([...CORE_URLS_TO_CACHE, ...localFiles])));
+          });
       })
       .then(() => {
         console.log('[SW] 所有核心文件已缓存成功！');
