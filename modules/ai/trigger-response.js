@@ -2,6 +2,16 @@
     if (!state.activeChatId) return;
     const chatId = state.activeChatId;
     const chat = state.chats[state.activeChatId];
+    let replyGuardianTaskId = null;
+    let replyGuardianTaskSettled = false;
+    async function safelyUpdateReplyGuardian(operation) {
+      try {
+        return await operation();
+      } catch (guardianError) {
+        console.warn('[回复守护] 任务状态保存失败，不影响本次回复:', guardianError);
+        return null;
+      }
+    }
 
     let thoughtChainContextHead = '';
     let thoughtChainContextMiddle = '';
@@ -2611,6 +2621,28 @@ ${getActiveThoughtsPrompt()}
         apiUrl: isGemini ? geminiConfig.url : `${proxyUrl}/v1/chat/completions`
       };
 
+      // 回复守护只保存恢复所需元数据，不保存 API Key 或完整提示词。
+      if (window.ReplyTaskStore && (!window.ReplyGuardian || window.ReplyGuardian.settings().enabled)) {
+        try {
+          const latestUserMessage = [...(chat.history || [])].reverse().find(message =>
+            message && message.role === 'user' && !message.isHidden
+          );
+          replyGuardianTaskId = await window.ReplyTaskStore.begin({
+            chatId,
+            chatName: chat.name,
+            model,
+            provider: isGemini ? 'Gemini' : proxyUrl,
+            stream: useStream,
+            userMessageTimestamp: latestUserMessage && latestUserMessage.timestamp,
+            userMessagePreview: latestUserMessage && typeof latestUserMessage.content === 'string'
+              ? latestUserMessage.content
+              : ''
+          });
+        } catch (guardianError) {
+          console.warn('[回复守护] 创建任务记录失败，不影响本次回复:', guardianError);
+        }
+      }
+
       let response;
       let aiResponseContent = '';
       let responsePayload = null;
@@ -2701,6 +2733,10 @@ ${getActiveThoughtsPrompt()}
         throw new Error(errorMsg);
       }
 
+      if (replyGuardianTaskId && window.ReplyTaskStore) {
+        window.ReplyTaskStore.setStage(replyGuardianTaskId, 'receiving', '正在接收回复').catch(() => {});
+      }
+
       if (useStream) {
         aiResponseContent = await readOpenAiStreamResponse(response, streamedText => {
           updateTemporaryStreamMessage(streamedText);
@@ -2714,6 +2750,10 @@ ${getActiveThoughtsPrompt()}
         const data = await response.json();
         aiResponseContent = getGeminiResponseText(data);
         responsePayload = data;
+      }
+
+      if (replyGuardianTaskId && window.ReplyTaskStore) {
+        await safelyUpdateReplyGuardian(() => window.ReplyTaskStore.saveResponse(replyGuardianTaskId, aiResponseContent));
       }
 
       // 记录API响应数据
@@ -2747,6 +2787,9 @@ ${getActiveThoughtsPrompt()}
       lastResponseTimestamps = [];
       chat.history = chat.history.filter(msg => !msg.isTemporary);
       const messagesArray = parseAiResponse(aiResponseContent);
+      if (replyGuardianTaskId && window.ReplyTaskStore) {
+        window.ReplyTaskStore.setStage(replyGuardianTaskId, 'applying', '正在写入聊天').catch(() => {});
+      }
 
       let consolidatedMessages = [];
       if (chat.settings.isOfflineMode) {
@@ -5487,10 +5530,22 @@ ${getActiveThoughtsPrompt()}
         }
       }
       if (needsImmediateReaction) {
+        if (replyGuardianTaskId && window.ReplyTaskStore) {
+          const completedTask = await safelyUpdateReplyGuardian(() =>
+            window.ReplyTaskStore.complete(replyGuardianTaskId, { messageCount: messagesArray.length })
+          );
+          replyGuardianTaskSettled = !!completedTask;
+        }
         await triggerAiResponse();
         return;
       }
       await db.chats.put(chat);
+      if (replyGuardianTaskId && window.ReplyTaskStore) {
+        const completedTask = await safelyUpdateReplyGuardian(() =>
+          window.ReplyTaskStore.complete(replyGuardianTaskId, { messageCount: messagesArray.length })
+        );
+        replyGuardianTaskSettled = !!completedTask;
+      }
 
       const qzoneActionTaken = messagesArray.some(action =>
         action.type === 'qzone_post' ||
@@ -5508,6 +5563,16 @@ ${getActiveThoughtsPrompt()}
 
 
     } catch (error) {
+
+      if (replyGuardianTaskId && window.ReplyTaskStore) {
+        // 即使持久化失败状态本身失败，也不能在 finally 中把真实失败误记为完成。
+        replyGuardianTaskSettled = true;
+        try {
+          await window.ReplyTaskStore.fail(replyGuardianTaskId, error, error.name === 'AbortError');
+        } catch (guardianError) {
+          console.warn('[回复守护] 保存失败状态时出错:', guardianError);
+        }
+      }
 
       chat.history = chat.history.filter(msg => !msg.isTemporary);
 
@@ -5533,6 +5598,15 @@ ${getActiveThoughtsPrompt()}
 
       videoCallState.isAwaitingResponse = false;
     } finally {
+      // 某些合法的指令处理分支会提前 return；只要未进入错误分支，就将已有响应记为完成。
+      if (replyGuardianTaskId && !replyGuardianTaskSettled && window.ReplyTaskStore) {
+        try {
+          await window.ReplyTaskStore.complete(replyGuardianTaskId, {});
+          replyGuardianTaskSettled = true;
+        } catch (guardianError) {
+          console.warn('[回复守护] 完成任务记录失败:', guardianError);
+        }
+      }
       currentApiController = null;
       if (stopBtn) {
         stopBtn.style.display = 'none';

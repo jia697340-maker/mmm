@@ -2,6 +2,16 @@
     if (!state.activeChatId) return;
     const chatId = state.activeChatId;
     const chat = state.chats[state.activeChatId];
+    let replyGuardianTaskId = null;
+    let replyGuardianTaskSettled = false;
+    async function safelyUpdateReplyGuardian(operation) {
+      try {
+        return await operation();
+      } catch (guardianError) {
+        console.warn('[回复守护] 任务状态保存失败，不影响本次回复:', guardianError);
+        return null;
+      }
+    }
 
     let thoughtChainContextHead = '';
     let thoughtChainContextMiddle = '';

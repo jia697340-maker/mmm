@@ -211,6 +211,28 @@
         apiUrl: isGemini ? geminiConfig.url : `${proxyUrl}/v1/chat/completions`
       };
 
+      // 回复守护只保存恢复所需元数据，不保存 API Key 或完整提示词。
+      if (window.ReplyTaskStore && (!window.ReplyGuardian || window.ReplyGuardian.settings().enabled)) {
+        try {
+          const latestUserMessage = [...(chat.history || [])].reverse().find(message =>
+            message && message.role === 'user' && !message.isHidden
+          );
+          replyGuardianTaskId = await window.ReplyTaskStore.begin({
+            chatId,
+            chatName: chat.name,
+            model,
+            provider: isGemini ? 'Gemini' : proxyUrl,
+            stream: useStream,
+            userMessageTimestamp: latestUserMessage && latestUserMessage.timestamp,
+            userMessagePreview: latestUserMessage && typeof latestUserMessage.content === 'string'
+              ? latestUserMessage.content
+              : ''
+          });
+        } catch (guardianError) {
+          console.warn('[回复守护] 创建任务记录失败，不影响本次回复:', guardianError);
+        }
+      }
+
       let response;
       let aiResponseContent = '';
       let responsePayload = null;
@@ -301,6 +323,10 @@
         throw new Error(errorMsg);
       }
 
+      if (replyGuardianTaskId && window.ReplyTaskStore) {
+        window.ReplyTaskStore.setStage(replyGuardianTaskId, 'receiving', '正在接收回复').catch(() => {});
+      }
+
       if (useStream) {
         aiResponseContent = await readOpenAiStreamResponse(response, streamedText => {
           updateTemporaryStreamMessage(streamedText);
@@ -314,6 +340,10 @@
         const data = await response.json();
         aiResponseContent = getGeminiResponseText(data);
         responsePayload = data;
+      }
+
+      if (replyGuardianTaskId && window.ReplyTaskStore) {
+        await safelyUpdateReplyGuardian(() => window.ReplyTaskStore.saveResponse(replyGuardianTaskId, aiResponseContent));
       }
 
       // 记录API响应数据
@@ -347,6 +377,9 @@
       lastResponseTimestamps = [];
       chat.history = chat.history.filter(msg => !msg.isTemporary);
       const messagesArray = parseAiResponse(aiResponseContent);
+      if (replyGuardianTaskId && window.ReplyTaskStore) {
+        window.ReplyTaskStore.setStage(replyGuardianTaskId, 'applying', '正在写入聊天').catch(() => {});
+      }
 
       let consolidatedMessages = [];
       if (chat.settings.isOfflineMode) {

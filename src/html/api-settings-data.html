@@ -46,6 +46,37 @@
         <!-- 后台保活 -->
         <div class="settings-header">后台保活</div>
         <div class="settings-section">
+            <div class="settings-item reply-guardian-setting-row">
+                <label>
+                    <span style="display: block;">回复守护</span>
+                    <span class="reply-guardian-setting-note">保存回复任务并在页面被暂停或重载后提供恢复。</span>
+                </label>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="reply-guardian-enabled-switch">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="settings-item reply-guardian-setting-row">
+                <label>
+                    <span style="display: block;">回复完成通知</span>
+                    <span class="reply-guardian-setting-note">仅在已开启系统通知且已授权时发送，不会额外索取权限。</span>
+                </label>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="reply-guardian-notification-switch">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="settings-item reply-guardian-diagnostic-row">
+                <div class="reply-guardian-diagnostic-copy">
+                    <label>当前保护能力</label>
+                    <span id="reply-guardian-capability-summary">检测中...</span>
+                    <span id="reply-guardian-task-summary">暂无待恢复回复</span>
+                </div>
+                <button id="reply-guardian-refresh-btn" class="settings-mini-btn" type="button">重新检测</button>
+            </div>
+
             <div class="settings-item" style="display: flex !important; flex-direction: column !important; align-items: flex-start !important; gap: 12px !important;">
                 <label>
                     <span style="display: block;">无声智能保活 (双平台适配)</span>
@@ -135,6 +166,11 @@
                                 <input type="text" id="keep-alive-audio-url" class="sc-url-input" placeholder="输入音频URL...">
                                 <button id="keep-alive-audio-load-url" class="sc-load-btn">加载</button>
                             </div>
+                            <div class="sc-input-row sc-audio-secondary-actions">
+                                <button id="keep-alive-audio-default" class="sc-secondary-btn" type="button">使用内置静音</button>
+                                <button id="keep-alive-audio-test" class="sc-secondary-btn" type="button">测试播放</button>
+                            </div>
+                            <div id="keep-alive-audio-source-status" class="sc-audio-source-status">尚未选择音频</div>
                         </div>
 
                         <!-- Footer Hint -->

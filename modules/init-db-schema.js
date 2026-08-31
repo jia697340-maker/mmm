@@ -108,4 +108,11 @@ db.version(58).stores({
   thoughtChainPresets: '++id, name'
 });
 
+// 回复守护：保存未完成的 AI 回复任务与用户自定义保活音频。
+// 只新增独立表，不修改任何既有表结构或数据。
+db.version(59).stores({
+  replyTasks: '&id, chatId, status, updatedAt, createdAt',
+  keepAliveAssets: '&id, updatedAt'
+});
+
 window.db = db;

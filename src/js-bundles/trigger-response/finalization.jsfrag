@@ -687,10 +687,22 @@
         }
       }
       if (needsImmediateReaction) {
+        if (replyGuardianTaskId && window.ReplyTaskStore) {
+          const completedTask = await safelyUpdateReplyGuardian(() =>
+            window.ReplyTaskStore.complete(replyGuardianTaskId, { messageCount: messagesArray.length })
+          );
+          replyGuardianTaskSettled = !!completedTask;
+        }
         await triggerAiResponse();
         return;
       }
       await db.chats.put(chat);
+      if (replyGuardianTaskId && window.ReplyTaskStore) {
+        const completedTask = await safelyUpdateReplyGuardian(() =>
+          window.ReplyTaskStore.complete(replyGuardianTaskId, { messageCount: messagesArray.length })
+        );
+        replyGuardianTaskSettled = !!completedTask;
+      }
 
       const qzoneActionTaken = messagesArray.some(action =>
         action.type === 'qzone_post' ||
@@ -708,6 +720,16 @@
 
 
     } catch (error) {
+
+      if (replyGuardianTaskId && window.ReplyTaskStore) {
+        // 即使持久化失败状态本身失败，也不能在 finally 中把真实失败误记为完成。
+        replyGuardianTaskSettled = true;
+        try {
+          await window.ReplyTaskStore.fail(replyGuardianTaskId, error, error.name === 'AbortError');
+        } catch (guardianError) {
+          console.warn('[回复守护] 保存失败状态时出错:', guardianError);
+        }
+      }
 
       chat.history = chat.history.filter(msg => !msg.isTemporary);
 
@@ -733,6 +755,15 @@
 
       videoCallState.isAwaitingResponse = false;
     } finally {
+      // 某些合法的指令处理分支会提前 return；只要未进入错误分支，就将已有响应记为完成。
+      if (replyGuardianTaskId && !replyGuardianTaskSettled && window.ReplyTaskStore) {
+        try {
+          await window.ReplyTaskStore.complete(replyGuardianTaskId, {});
+          replyGuardianTaskSettled = true;
+        } catch (guardianError) {
+          console.warn('[回复守护] 完成任务记录失败:', guardianError);
+        }
+      }
       currentApiController = null;
       if (stopBtn) {
         stopBtn.style.display = 'none';

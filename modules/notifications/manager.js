@@ -190,6 +190,26 @@ class NotificationManager {
     }
 
     /**
+     * 回复守护完成通知。只由已经获得权限的守护流程调用，
+     * 不会在后台主动弹出权限请求。
+     */
+    async notifyReplyComplete(chatName, chatId) {
+        return await this.showNotification(chatName || 'EPhone', {
+            body: '回复已经完成，点击查看。',
+            tag: `reply-complete-${chatId}`,
+            data: {
+                type: 'reply-complete',
+                chatId: chatId,
+                timestamp: Date.now()
+            },
+            requireInteraction: false,
+            vibrate: [160, 80, 160],
+            silent: false,
+            renotify: true
+        });
+    }
+
+    /**
      * 测试通知（强制横幅显示）
      */
     async testNotification() {
