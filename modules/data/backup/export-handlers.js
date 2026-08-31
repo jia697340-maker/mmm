@@ -36,7 +36,7 @@
     const encoder = new TextEncoder();
 
     try {
-      const tablesToBackup = db.tables.map(t => t.name);
+      const tablesToBackup = db.tables.filter(t => t.name !== 'mcpSecrets').map(t => t.name);
 
       for (const tableName of tablesToBackup) {
         console.log(`正在打包表: ${tableName}...`);
@@ -184,7 +184,7 @@
 
       await writer.write(encoder.encode('{\n"version": 3,\n"timestamp": ' + Date.now() + ',\n"data": {\n'));
 
-      const tablesToBackup = await db.tables.map(t => t.name);
+      const tablesToBackup = db.tables.filter(t => t.name !== 'mcpSecrets').map(t => t.name);
 
       for (let i = 0; i < tablesToBackup.length; i++) {
         const tableName = tablesToBackup[i];
@@ -246,7 +246,7 @@
         data: {}
       };
 
-      const tablesToBackup = db.tables.map(t => t.name);
+      const tablesToBackup = db.tables.filter(t => t.name !== 'mcpSecrets').map(t => t.name);
 
       for (const tableName of tablesToBackup) {
         let tableData = await db.table(tableName).toArray();

@@ -2,6 +2,19 @@
   // 导出函数
   // ============================================================
 
+  function sanitizeMcpConnectionsForBackup(connections) {
+    return (connections || []).map(connection => {
+      const copy = JSON.parse(JSON.stringify(connection));
+      delete copy.secret;
+      delete copy.sessionId;
+      delete copy.pairingCode;
+      delete copy.deviceId;
+      copy.enabled = false;
+      copy.status = 'disabled';
+      return copy;
+    });
+  }
+
   async function exportBackup() {
     try {
       const backupData = {
@@ -44,7 +57,10 @@
         auctions,
         inventory,
         emails,
-        watchTogetherPlaylist
+        watchTogetherPlaylist,
+        mcpConnections,
+        mcpActivities,
+        mcpSettings
       ] = await Promise.all([
         db.chats.toArray(),
         db.worldBooks.toArray(),
@@ -94,7 +110,10 @@
         db.auctions.toArray(),
         db.inventory.toArray(),
         db.emails.toArray(),
-        db.watchTogetherPlaylist.toArray()
+        db.watchTogetherPlaylist.toArray(),
+        db.mcpConnections.toArray(),
+        db.mcpActivities.toArray(),
+        db.mcpSettings.get('main')
       ]);
 
       // 方案3：导出时移除API历史记录
@@ -153,6 +172,9 @@
         inventory,
         emails,
         watchTogetherPlaylist,
+        mcpConnections: sanitizeMcpConnectionsForBackup(mcpConnections),
+        mcpActivities,
+        mcpSettings,
         
         // 情侣空间 localStorage 数据
         localStorage: coupleSpaceLocalStorage
@@ -184,7 +206,7 @@
   // 清理指定数据表
   async function cleanupTableData(tableName, statElem) {
     // 不可清理的核心表
-    const protectedTables = ['apiConfig', 'globalSettings', 'userWallet'];
+    const protectedTables = ['apiConfig', 'globalSettings', 'userWallet', 'mcpSecrets'];
     
     if (protectedTables.includes(tableName)) {
       await showCustomAlert("无法清理", "此数据表为系统核心配置，不可清理。");
@@ -272,7 +294,11 @@
         auctions: '拍卖',
         inventory: '背包',
         emails: '邮件',
-        watchTogetherPlaylist: '观影播放列表'
+        watchTogetherPlaylist: '观影播放列表',
+        mcpConnections: 'MCP连接',
+        mcpActivities: 'MCP活动记录',
+        mcpSettings: 'MCP设置',
+        mcpSecrets: 'MCP本机凭证'
       };
 
       // 统计各表数据
@@ -343,7 +369,7 @@
       stats.forEach((stat, index) => {
         const percentage = ((stat.size / totalSize) * 100).toFixed(1);
         const bgColor = index % 2 === 0 ? 'transparent' : 'var(--bg-secondary, #f9f9f9)';
-        const canClean = !['apiConfig', 'globalSettings', 'userWallet'].includes(stat.tableName);
+        const canClean = !['apiConfig', 'globalSettings', 'userWallet', 'mcpSecrets'].includes(stat.tableName);
         
         html += `
           <tr class="stat-row" data-table-name="${stat.tableName}" data-table-cn-name="${stat.name}" style="background: ${bgColor};">
@@ -446,7 +472,7 @@
 
         for (const tableName in backupData) {
           // 跳过 localStorage 字段，它不是数据库表
-          if (tableName === 'localStorage') continue;
+          if (tableName === 'localStorage' || tableName === 'mcpSecrets') continue;
           
           if (Array.isArray(backupData[tableName])) {
             console.log(`正在导入表: ${tableName}, 记录数: ${backupData[tableName].length}`);
@@ -564,6 +590,9 @@
       'inventory': '物品清单',
       'emails': '邮件',
       'watchTogetherPlaylist': '观影播放列表',
+      'mcpConnections': 'MCP连接',
+      'mcpActivities': 'MCP活动记录',
+      'mcpSettings': 'MCP设置',
       'localStorage': '情侣空间数据'
     };
 
@@ -725,6 +754,9 @@
       'inventory': '物品清单',
       'emails': '邮件',
       'watchTogetherPlaylist': '观影播放列表',
+      'mcpConnections': 'MCP连接',
+      'mcpActivities': 'MCP活动记录',
+      'mcpSettings': 'MCP设置',
       'localStorage': '情侣空间数据'
     };
 
@@ -943,6 +975,9 @@
         if (Array.isArray(backupData.inventory)) await db.inventory.bulkPut(backupData.inventory);
         if (Array.isArray(backupData.emails)) await db.emails.bulkPut(backupData.emails);
         if (Array.isArray(backupData.watchTogetherPlaylist)) await db.watchTogetherPlaylist.bulkPut(backupData.watchTogetherPlaylist);
+        if (Array.isArray(backupData.mcpConnections)) await db.mcpConnections.bulkPut(sanitizeMcpConnectionsForBackup(backupData.mcpConnections));
+        if (Array.isArray(backupData.mcpActivities)) await db.mcpActivities.bulkPut(backupData.mcpActivities);
+        if (backupData.mcpSettings) await db.mcpSettings.put(backupData.mcpSettings);
       });
       
       // 3. 如果备份中有 localStorage 数据，则恢复

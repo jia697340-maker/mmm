@@ -201,7 +201,8 @@
       'char-generator': '角色生成',
       'online-app': '联机',
       'forum': '论坛',
-      'new-world': '情侣空间'
+      'new-world': '情侣空间',
+      'mcp': 'MCP'
     };
 
 

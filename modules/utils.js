@@ -613,7 +613,8 @@ const DEFAULT_APP_ICONS = {
     'char-generator': 'https://i.postimg.cc/nzGYM8qb/character-gen.jpg',
     'online-app': 'https://i.postimg.cc/MTC3Tkw8/IMG-6436.jpg',
     'forum': 'https://i.postimg.cc/MTC3Tkw8/IMG-6436.jpg',
-    'new-world': 'https://i.postimg.cc/MTC3Tkw8/IMG-6436.jpg'
+    'new-world': 'https://i.postimg.cc/MTC3Tkw8/IMG-6436.jpg',
+    'mcp': "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'%3E%3Crect width='96' height='96' rx='22' fill='%2323272f'/%3E%3Cpath d='M26 62V38l22 13 22-13v24' fill='none' stroke='%23f5f6f7' stroke-width='7' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='26' cy='34' r='6' fill='%2359c3ff'/%3E%3Ccircle cx='48' cy='51' r='6' fill='%2368d391'/%3E%3Ccircle cx='70' cy='34' r='6' fill='%23ffcb6b'/%3E%3C/svg%3E"
   };
 
 

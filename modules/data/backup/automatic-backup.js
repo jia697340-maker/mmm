@@ -125,6 +125,7 @@
         }
         const dataPart = json.data || json;
         for (const tableName of Object.keys(dataPart)) {
+          if (tableName === 'mcpSecrets') continue;
           const records = dataPart[tableName];
           if (Array.isArray(records) && records.length > 0) await db.table(tableName).bulkPut(records);
         }
@@ -165,6 +166,7 @@
           } else {
             const dataPart = json.data || json;
             for (const tableName of Object.keys(dataPart)) {
+              if (tableName === 'mcpSecrets') continue;
               const records = dataPart[tableName];
               if (Array.isArray(records) && records.length > 0) await db.table(tableName).bulkPut(records);
             }
@@ -181,6 +183,7 @@
           
           const dataPart = parsed.data || parsed;
           for (const tableName of Object.keys(dataPart)) {
+            if (tableName === 'mcpSecrets') continue;
             const records = dataPart[tableName];
             if (Array.isArray(records) && records.length > 0) await db.table(tableName).bulkPut(records);
           }

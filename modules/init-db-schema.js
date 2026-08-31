@@ -115,4 +115,12 @@ db.version(59).stores({
   keepAliveAssets: '&id, updatedAt'
 });
 
+// MCP 使用独立表，避免改变任何既有聊天或设置数据结构。
+db.version(60).stores({
+  mcpConnections: '&id, type, enabled, status, updatedAt',
+  mcpActivities: '&id, connectionId, status, chatId, createdAt',
+  mcpSettings: '&id',
+  mcpSecrets: '&id'
+});
+
 window.db = db;

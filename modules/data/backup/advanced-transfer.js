@@ -16,6 +16,7 @@
       'NPC与故事': ['npcs', 'npcGroups', 'grAuthors', 'grStories'],
       '快捷回复': ['quickReplies', 'quickReplyCategories'],
       '邮件系统': ['emails'],
+      'MCP连接': ['mcpConnections', 'mcpActivities', 'mcpSettings'],
       '外观设置': ['appearancePresets']
     };
 
@@ -730,6 +731,7 @@
       let importedRecords = 0;
 
       for (const tableName in data) {
+        if (tableName === 'mcpSecrets') continue;
         if (db[tableName]) {
           const tableData = data[tableName];
           if (Array.isArray(tableData) && tableData.length > 0) {

@@ -1,3 +1,36 @@
+    <div id="mcp-screen" class="screen mcp-screen">
+      <div class="header mcp-header">
+        <span class="back-btn" onclick="showScreen('home-screen')">‹</span>
+        <span>MCP 连接</span>
+        <button type="button" class="mcp-header-add" id="mcp-add-connection-btn" aria-label="添加连接" title="添加连接">+</button>
+      </div>
+      <div class="mcp-summary" aria-live="polite">
+        <div>
+          <strong id="mcp-summary-title">尚未连接</strong>
+          <span id="mcp-summary-detail">不会预装服务，由你连接自己的 MCP</span>
+        </div>
+        <span class="mcp-summary-dot" id="mcp-summary-dot"></span>
+      </div>
+      <div class="mcp-tabs" role="tablist" aria-label="MCP 页面">
+        <button type="button" class="mcp-tab active" data-mcp-tab="connections" role="tab" aria-selected="true">连接</button>
+        <button type="button" class="mcp-tab" data-mcp-tab="capabilities" role="tab" aria-selected="false">能力</button>
+        <button type="button" class="mcp-tab" data-mcp-tab="activity" role="tab" aria-selected="false">活动</button>
+        <button type="button" class="mcp-tab" data-mcp-tab="settings" role="tab" aria-selected="false">设置</button>
+      </div>
+      <div class="mcp-scroll" id="mcp-content"></div>
+      <input id="mcp-import-input" type="file" accept="application/json,.json" hidden>
+      <div class="mcp-sheet-backdrop" id="mcp-sheet-backdrop" aria-hidden="true">
+        <section class="mcp-sheet" role="dialog" aria-modal="true" aria-labelledby="mcp-sheet-title">
+          <div class="mcp-sheet-header">
+            <button type="button" class="mcp-sheet-close" id="mcp-sheet-close" aria-label="关闭">×</button>
+            <strong id="mcp-sheet-title"></strong>
+            <span class="mcp-sheet-header-spacer"></span>
+          </div>
+          <div class="mcp-sheet-body" id="mcp-sheet-body"></div>
+          <div class="mcp-sheet-actions" id="mcp-sheet-actions"></div>
+        </section>
+      </div>
+    </div>
     <div id="search-history-screen" class="screen">
       <div class="header"> <span class="back-btn" id="search-history-back-btn">‹</span> <span>搜索聊天记录</span> <span style="width: 30px;"></span> </div>
       <div id="search-bar" style="padding: 10px 15px; border-bottom: 1px solid var(--border-color); background-color: var(--secondary-bg); flex-shrink: 0;">

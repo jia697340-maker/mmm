@@ -164,7 +164,7 @@
       };
 
       // --- 3. 流式遍历数据库 ---
-      const tablesToBackup = db.tables.map(t => t.name);
+      const tablesToBackup = db.tables.filter(t => t.name !== 'mcpSecrets').map(t => t.name);
 
       for (const tableName of tablesToBackup) {
         const totalCount = await db.table(tableName).count();

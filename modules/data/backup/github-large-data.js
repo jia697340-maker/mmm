@@ -205,7 +205,7 @@
 
       // --- 3. 流式生成完整 JSON 并自动分片 ---
       await writeToStream('{\n"version": 3,\n"timestamp": ' + Date.now() + ',\n"data": {\n');
-      const tablesToBackup = db.tables.map(t => t.name);
+      const tablesToBackup = db.tables.filter(t => t.name !== 'mcpSecrets').map(t => t.name);
 
       for (let i = 0; i < tablesToBackup.length; i++) {
         const tableName = tablesToBackup[i];
