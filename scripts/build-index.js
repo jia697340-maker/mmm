@@ -5,6 +5,7 @@ const projectRoot = path.resolve(__dirname, '..');
 const fragmentDirectory = path.join(projectRoot, 'src', 'html');
 const outputPath = path.join(projectRoot, 'index.html');
 const assetManifestPath = path.join(projectRoot, 'asset-manifest.json');
+const fragmentManifestPath = path.join(projectRoot, 'html-fragments.json');
 
 const fragments = [
   'document-head.html',
@@ -34,6 +35,22 @@ const generatedHtml = fragments
   .map(fragment => fs.readFileSync(path.join(fragmentDirectory, fragment), 'utf8'))
   .join('');
 
+const generatedShell = `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EPhone</title>
+</head>
+<body>
+  <noscript>此应用需要启用 JavaScript。</noscript>
+  <script src="modules/bootstrap/document-loader.js"></script>
+</body>
+</html>
+`;
+
+const generatedFragmentManifest = `${JSON.stringify(fragments, null, 2)}\n`;
+
 const localAssets = Array.from(
   generatedHtml.matchAll(/<(?:script|link)\b[^>]*(?:src|href)="([^"]+)"/gi),
   match => match[1]
@@ -43,15 +60,26 @@ const localAssets = Array.from(
   .filter(Boolean);
 
 const generatedAssetManifest = `${JSON.stringify(
-  Array.from(new Set(['index.html', 'manifest.json', ...localAssets])),
+  Array.from(new Set([
+    'index.html',
+    'manifest.json',
+    'html-fragments.json',
+    'modules/bootstrap/document-loader.js',
+    ...fragments.map(fragment => `src/html/${fragment}`),
+    ...localAssets
+  ])),
   null,
   2
 )}\n`;
 
 if (process.argv.includes('--check')) {
   const currentHtml = fs.readFileSync(outputPath, 'utf8');
-  if (currentHtml !== generatedHtml) {
-    console.error('index.html is out of sync with src/html fragments.');
+  if (currentHtml !== generatedShell) {
+    console.error('index.html is out of sync with the generated document shell.');
+    process.exit(1);
+  }
+  if (fs.readFileSync(fragmentManifestPath, 'utf8') !== generatedFragmentManifest) {
+    console.error('html-fragments.json is out of sync with the fragment order.');
     process.exit(1);
   }
   const currentAssetManifest = fs.readFileSync(assetManifestPath, 'utf8');
@@ -59,9 +87,10 @@ if (process.argv.includes('--check')) {
     console.error('asset-manifest.json is out of sync with index.html.');
     process.exit(1);
   }
-  console.log(`index.html and asset manifest verified from ${fragments.length} fragments.`);
+  console.log(`Document shell and ${fragments.length} HTML fragments verified.`);
 } else {
-  fs.writeFileSync(outputPath, generatedHtml);
+  fs.writeFileSync(outputPath, generatedShell);
+  fs.writeFileSync(fragmentManifestPath, generatedFragmentManifest);
   fs.writeFileSync(assetManifestPath, generatedAssetManifest);
-  console.log(`index.html and asset manifest generated from ${fragments.length} fragments.`);
+  console.log(`Document shell and manifests generated for ${fragments.length} HTML fragments.`);
 }
