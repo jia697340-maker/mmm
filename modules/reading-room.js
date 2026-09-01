@@ -18,6 +18,21 @@
 
   let readingState = {};
 
+  function getReadingDisplaySettings(chatFontSize) {
+    try {
+      return Object.assign({ fontSize: Number(chatFontSize) || 13, lineHeight: 1.8, theme: 'default' }, JSON.parse(localStorage.getItem('reading-display-settings') || '{}'));
+    } catch (_) {
+      return { fontSize: Number(chatFontSize) || 13, lineHeight: 1.8, theme: 'default' };
+    }
+  }
+
+  function applyReadingDisplaySettings(contentEl, settings) {
+    contentEl.style.fontSize = `${Math.min(24, Math.max(12, Number(settings.fontSize) || 13))}px`;
+    contentEl.style.lineHeight = String(Math.min(2.2, Math.max(1.4, Number(settings.lineHeight) || 1.8)));
+    contentEl.classList.remove('reading-theme-paper', 'reading-theme-white', 'reading-theme-dark');
+    if (settings.theme && settings.theme !== 'default') contentEl.classList.add(`reading-theme-${settings.theme}`);
+  }
+
   // ========== 来源：script.js 第 52560~53310 行 ==========
 
   function openReadingRoom() {
@@ -75,8 +90,40 @@
       currentPage: 0,
       totalPages: 0,
       linesPerPage: 15,
-      currentSnippet: ''
+      currentSnippet: '',
+      structuredPages: [],
+      isStructuredStory: false,
+      currentChapterTitle: ''
     };
+  }
+
+  function buildStructuredReadingPages(chapters, targetChars = 1100) {
+    const pages = [];
+    (chapters || []).forEach((chapter, chapterIndex) => {
+      const normalized = window.GreenRiverStoryEngine
+        ? window.GreenRiverStoryEngine.ensureChapter(chapter, chapterIndex)
+        : chapter;
+      const commentMap = window.GreenRiverStoryEngine ? window.GreenRiverStoryEngine.paragraphCommentMap(normalized) : new Map();
+      const titleUnit = { type: 'title', chapterId: normalized.id, chapterTitle: normalized.title, text: normalized.title };
+      const units = (normalized.paragraphs || []).map(paragraph => ({
+        type: 'paragraph', chapterId: normalized.id, chapterTitle: normalized.title, paragraphId: paragraph.id, text: paragraph.text,
+        comments: commentMap.get(paragraph.id) || []
+      }));
+      let currentPage = [titleUnit];
+      let currentSize = 80;
+      units.forEach(unit => {
+        const unitSize = Math.max(20, unit.text.length);
+        if (currentPage.length > 1 && currentSize + unitSize > targetChars) {
+          pages.push(currentPage);
+          currentPage = [];
+          currentSize = 0;
+        }
+        currentPage.push(unit);
+        currentSize += unitSize;
+      });
+      if (currentPage.length) pages.push(currentPage);
+    });
+    return pages;
   }
 
 
@@ -111,10 +158,7 @@
     const contentEl = document.getElementById('reading-content');
 
     // 2. 将字体大小应用到读书容器
-    contentEl.style.fontSize = `${fontSize}px`;
-    // 3. 动态调整行高 (Line Height)，防止字体变大后文字挤在一起
-    // 1.6 是一个比较舒适的阅读倍率
-    contentEl.style.lineHeight = '1.6';
+    applyReadingDisplaySettings(contentEl, getReadingDisplaySettings(fontSize));
     // --- 【新增/修改部分结束】 ---
 
     const titleEl = document.getElementById('reading-title');
@@ -125,7 +169,30 @@
 
     titleEl.textContent = session.title;
 
-    if (session.contentLines.length === 0) {
+    if (session.isStructuredStory && session.structuredPages.length > 0) {
+      contentEl.innerHTML = '';
+      const page = session.structuredPages[session.currentPage] || [];
+      page.forEach(unit => {
+        const element = document.createElement(unit.type === 'title' ? 'h3' : 'p');
+        element.className = unit.type === 'title' ? 'reading-chapter-heading' : 'reading-structured-paragraph';
+        element.textContent = unit.text;
+        if (unit.paragraphId) element.dataset.paragraphId = unit.paragraphId;
+        if (unit.type === 'paragraph') element.dataset.readingText = unit.text;
+        element.dataset.chapterId = unit.chapterId || '';
+        if (unit.type === 'paragraph' && unit.comments?.length) {
+          const commentButton = document.createElement('button');
+          commentButton.className = 'reading-comment-button';
+          commentButton.textContent = `💬 ${unit.comments.length}`;
+          commentButton.title = '查看段评';
+          commentButton.onclick = () => showCustomAlert('段评', unit.comments.map(comment => `${comment.name || '读者'}：${comment.content || ''}`).join('\n\n'));
+          element.appendChild(commentButton);
+        }
+        contentEl.appendChild(element);
+      });
+      const firstParagraph = page.find(unit => unit.type === 'paragraph');
+      session.currentChapterTitle = firstParagraph?.chapterTitle || page.find(unit => unit.type === 'title')?.chapterTitle || '';
+      session.currentSnippet = page.filter(unit => unit.type === 'paragraph').slice(0, 3).map(unit => unit.text).join('\n');
+    } else if (session.contentLines.length === 0) {
       contentEl.innerHTML = '<p style="text-align:center; padding-top:50px; color:#888;">点击"导入"按钮，<br>从本地.txt文件或网络URL加载书籍内容。</p>';
       session.totalPages = 0;
       session.currentPage = 0;
@@ -135,7 +202,9 @@
       contentEl.textContent = session.contentLines.slice(startLine, endLine).join('\n');
     }
 
-    pageIndicator.textContent = `${session.currentPage + 1} / ${session.totalPages}`;
+    pageIndicator.textContent = session.totalPages > 0
+      ? `${session.currentPage + 1} / ${session.totalPages}${session.currentChapterTitle ? ` · ${session.currentChapterTitle}` : ''}`
+      : '0 / 0';
     prevBtn.disabled = session.currentPage === 0;
     nextBtn.disabled = session.currentPage >= session.totalPages - 1;
   }
@@ -152,7 +221,7 @@
       await saveReadingProgress(session.activeBookId, session.currentPage);
 
 
-      await notifyAiOfPageTurn(state.activeChatId, session);
+      if (typeof notifyAiOfPageTurn === 'function') await notifyAiOfPageTurn(state.activeChatId, session);
     }
   }
 
@@ -264,9 +333,12 @@
   async function saveReadingProgress(bookId, pageNumber) {
     if (!bookId) return;
     try {
-
+      const book = await db.readingLibrary.get(bookId);
+      const currentPagesByChat = Object.assign({}, book?.currentPagesByChat || {});
+      if (state.activeChatId) currentPagesByChat[state.activeChatId] = pageNumber;
       await db.readingLibrary.update(bookId, {
-        currentPage: pageNumber
+        currentPage: pageNumber,
+        currentPagesByChat
       });
     } catch (error) {
       console.error(`保存书籍(ID: ${bookId})的阅读进度失败:`, error);
@@ -282,7 +354,7 @@
       await saveReadingProgress(session.activeBookId, session.currentPage);
 
 
-      await notifyAiOfPageTurn(state.activeChatId, session);
+      if (typeof notifyAiOfPageTurn === 'function') await notifyAiOfPageTurn(state.activeChatId, session);
     }
   }
 
@@ -323,10 +395,18 @@
     books.forEach(book => {
       const item = document.createElement('div');
       item.className = 'existing-group-item';
-      item.innerHTML = `
-            <span class="group-name" style="cursor:pointer;" data-book-id="${book.id}">${book.title}</span>
-            <button class="delete-group-btn" data-book-id="${book.id}" title="删除书籍">×</button>
-        `;
+      const name = document.createElement('span');
+      name.className = 'group-name';
+      name.style.cursor = 'pointer';
+      name.dataset.bookId = book.id;
+      name.textContent = book.title;
+      const deleteBtn = document.createElement('button');
+      deleteBtn.className = 'delete-group-btn';
+      deleteBtn.dataset.bookId = book.id;
+      deleteBtn.title = '删除书籍';
+      deleteBtn.textContent = '×';
+      item.appendChild(name);
+      item.appendChild(deleteBtn);
       listEl.appendChild(item);
     });
   }
@@ -348,6 +428,7 @@
       try {
         const grStory = await db.grStories.get(book.linkedStoryId);
         if (grStory) {
+          if (window.GreenRiverStoryEngine) window.GreenRiverStoryEngine.normalizeStory(grStory);
           console.log(`[同步] 正在从绿江同步《${grStory.title}》的最新章节...`);
 
           // 拼接所有章节内容
@@ -364,11 +445,19 @@
           // 更新内存里的临时对象
           book.title = grStory.title; // 同步标题
           book.content = fullContent; // 同步内容
+          book.structuredChapters = grStory.chapters.map(chapter => ({
+            id: chapter.id,
+            title: chapter.title,
+            summary: chapter.summary,
+            paragraphs: chapter.paragraphs.map(paragraph => ({ id: paragraph.id, text: paragraph.text })),
+            readerComments: chapter.readerComments
+          }));
 
           // 同时更新数据库，保持缓存最新
           await db.readingLibrary.update(bookId, {
             title: grStory.title,
             content: fullContent,
+            structuredChapters: book.structuredChapters,
             lastOpened: Date.now()
           });
         } else {
@@ -388,14 +477,18 @@
     const session = readingState[chatId];
     session.activeBookId = bookId;
     session.title = book.title;
+    session.isStructuredStory = Boolean(book.linkedStoryId && Array.isArray(book.structuredChapters));
+    session.structuredPages = session.isStructuredStory ? buildStructuredReadingPages(book.structuredChapters) : [];
     // 处理内容换行
     session.contentLines = (book.content || "").split(/\r\n?|\n/).map(line => line.replace(/ +/g, ' '));
-    session.totalPages = Math.ceil(session.contentLines.length / session.linesPerPage);
+    session.totalPages = session.isStructuredStory ? session.structuredPages.length : Math.ceil(session.contentLines.length / session.linesPerPage);
 
     // 如果总页数为0，至少设为1
     if (session.totalPages === 0) session.totalPages = 1;
 
-    session.currentPage = book.currentPage || 0;
+    session.currentPage = book.currentPagesByChat && Object.prototype.hasOwnProperty.call(book.currentPagesByChat, chatId)
+      ? Number(book.currentPagesByChat[chatId]) || 0
+      : Number(book.currentPage) || 0;
 
     // 防止页码越界（比如同步后内容变短了，虽然一般是变长）
     if (session.currentPage >= session.totalPages) {
@@ -413,6 +506,7 @@
     try {
       const story = await db.grStories.get(storyId);
       if (!story) return;
+      if (window.GreenRiverStoryEngine) window.GreenRiverStoryEngine.normalizeStory(story);
 
       // 防止重复添加
       const existing = await db.readingLibrary.where('linkedStoryId').equals(storyId).first();
@@ -435,7 +529,14 @@
         content: fullContent,
         lastOpened: Date.now(),
         currentPage: 0,
-        linkedStoryId: story.id
+        linkedStoryId: story.id,
+        structuredChapters: story.chapters.map(chapter => ({
+          id: chapter.id,
+          title: chapter.title,
+          summary: chapter.summary,
+          paragraphs: chapter.paragraphs.map(paragraph => ({ id: paragraph.id, text: paragraph.text })),
+          readerComments: chapter.readerComments
+        }))
       });
 
       // 【核心修改】更新按钮UI为"已添加"状态，并绑定移除事件
@@ -524,6 +625,9 @@
 
     const session = readingState[chatId];
     session.title = title.replace(/\.txt$/i, '');
+    session.isStructuredStory = false;
+    session.structuredPages = [];
+    session.currentChapterTitle = '';
     session.contentLines = textContent.split(/\r\n?|\n/);
     session.totalPages = Math.ceil(session.contentLines.length / session.linesPerPage);
     session.currentPage = 0;
@@ -688,14 +792,22 @@
     let contentForAI = '';
     let contextLabel = '';
 
+    const selection = window.getSelection ? window.getSelection() : null;
+    const readingContent = document.getElementById('reading-content');
+    const selectedText = selection && readingContent && selection.rangeCount > 0 && readingContent.contains(selection.anchorNode)
+      ? selection.toString().trim().slice(0, 2000)
+      : '';
 
-    if (session.currentSnippet && session.currentSnippet.trim()) {
+    if (selectedText) {
+      contentForAI = selectedText;
+      contextLabel = '用户刚刚选中的原文';
+    } else if (session.currentSnippet && session.currentSnippet.trim()) {
       contentForAI = session.currentSnippet;
       contextLabel = '你正在阅读的段落';
     } else if (session.contentLines.length > 0) {
       const startLine = session.currentPage * session.linesPerPage;
       const endLine = startLine + session.linesPerPage;
-      contentForAI = session.contentLines.slice(startLine, endLine).join('\n').substring(0, 200);
+      contentForAI = session.contentLines.slice(startLine, endLine).join('\n').substring(0, 1200);
       contextLabel = '当前页内容摘要';
     } else {
       contentForAI = '(无内容)';
@@ -703,7 +815,8 @@
     }
     return `
     - **书名**: 《${title}》
-    - **${contextLabel}**: "${contentForAI}..."
+    ${session.currentChapterTitle ? `- **当前章节**: ${session.currentChapterTitle}` : ''}
+    - **${contextLabel}**: "${contentForAI}${contentForAI.length >= 1200 ? '…' : ''}"
     #一起读书模式 | 行为铁律
     1.  **角色定位**: 你【不是】书中的任何角色，你是【你自己】(${state.chats[chatId]?.originalName || 'AI角色'})，正在和用户一起【阅读和讨论】这本书。
     2.  **行为准则**: 你的回复【必须】是作为读者的【感想、评论、提问或联想】。你可以：
@@ -725,6 +838,16 @@
     const container = document.getElementById('reading-content');
 
     if (!container) return;
+
+    if (session.isStructuredStory) {
+      const containerRect = container.getBoundingClientRect();
+      const visible = Array.from(container.querySelectorAll('.reading-structured-paragraph')).filter(element => {
+        const rect = element.getBoundingClientRect();
+        return rect.bottom > containerRect.top && rect.top < containerRect.bottom;
+      });
+      if (visible.length) session.currentSnippet = visible.map(element => element.dataset.readingText || element.textContent).join('\n').slice(0, 1600);
+      return;
+    }
 
 
     const chat = state.chats[chatId];
@@ -789,6 +912,34 @@
   window.debounce = debounce;
   window.formatReadingStateForAI = formatReadingStateForAI;
   window.updateReadingContextOnScroll = updateReadingContextOnScroll;
+
+  function openReadingDisplaySettings() {
+    const chat = state.chats[state.activeChatId];
+    const settings = getReadingDisplaySettings(chat?.settings?.fontSize);
+    const modal = document.getElementById('reading-display-settings-modal');
+    const fontRange = document.getElementById('reading-font-size-range');
+    const lineRange = document.getElementById('reading-line-height-range');
+    const fontValue = document.getElementById('reading-font-size-value');
+    const lineValue = document.getElementById('reading-line-height-value');
+    const theme = document.getElementById('reading-theme-select');
+    fontRange.value = settings.fontSize;
+    lineRange.value = settings.lineHeight;
+    theme.value = settings.theme;
+    fontValue.textContent = `${fontRange.value}px`;
+    lineValue.textContent = lineRange.value;
+    fontRange.oninput = () => { fontValue.textContent = `${fontRange.value}px`; };
+    lineRange.oninput = () => { lineValue.textContent = lineRange.value; };
+    modal.classList.add('visible');
+    document.getElementById('cancel-reading-display-settings').onclick = () => modal.classList.remove('visible');
+    document.getElementById('save-reading-display-settings').onclick = () => {
+      localStorage.setItem('reading-display-settings', JSON.stringify({ fontSize: Number(fontRange.value), lineHeight: Number(lineRange.value), theme: theme.value }));
+      modal.classList.remove('visible');
+      if (state.activeChatId && readingState[state.activeChatId]) renderReadingRoom(state.activeChatId);
+    };
+  }
+  window.openReadingDisplaySettings = openReadingDisplaySettings;
+  const readingDisplaySettingsBtn = document.getElementById('reading-display-settings-btn');
+  if (readingDisplaySettingsBtn) readingDisplaySettingsBtn.onclick = openReadingDisplaySettings;
 
   // ========== 从 script.js 迁移：toggleReadingFullscreen ==========
   function toggleReadingFullscreen() {

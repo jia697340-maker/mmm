@@ -403,6 +403,17 @@
       </div>
     </div>
   </div>
+  <div id="reading-display-settings-modal" class="modal">
+    <div class="modal-content" style="height:auto;max-width:360px;">
+      <div class="modal-header"><span>阅读显示</span></div>
+      <div class="modal-body">
+        <div class="form-group"><label>字号 <span id="reading-font-size-value">16px</span></label><input id="reading-font-size-range" type="range" min="12" max="24" step="1" value="16" style="width:100%;"></div>
+        <div class="form-group"><label>行距 <span id="reading-line-height-value">1.8</span></label><input id="reading-line-height-range" type="range" min="1.4" max="2.2" step="0.1" value="1.8" style="width:100%;"></div>
+        <div class="form-group"><label>阅读背景</label><select id="reading-theme-select"><option value="default">跟随界面</option><option value="paper">暖纸</option><option value="white">纯白</option><option value="dark">深色</option></select></div>
+      </div>
+      <div class="modal-footer"><button class="cancel" id="cancel-reading-display-settings">取消</button><button class="save" id="save-reading-display-settings">保存</button></div>
+    </div>
+  </div>
   <div id="product-category-manager-modal" class="modal">
     <div class="modal-content" style="height: 60%;">
       <div class="modal-header"> <span>管理商品分类</span> </div>

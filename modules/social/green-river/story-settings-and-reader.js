@@ -11,18 +11,21 @@
     if (!story) return;
 
     document.getElementById('gr-story-title').value = story.title;
-    await loadStorySettingsUI(story.settings, story.authorId);
+    await loadStorySettingsUI(story.settings, story.authorId, story.storyBible);
 
     document.getElementById('gr-settings-modal').classList.add('visible');
   }
 
   // 加载设置弹窗中的选项
   // 加载设置弹窗中的选项 (修复版：增加字数和条数的回显)
-  async function loadStorySettingsUI(settings = {}, selectedAuthorId = null) {
+  async function loadStorySettingsUI(settings = {}, selectedAuthorId = null, storyBible = {}) {
+    const engine = window.GreenRiverStoryEngine;
+    storyBible = Object.assign({}, engine.DEFAULT_STORY_BIBLE, storyBible || {});
     const exportBtn = document.getElementById('gr-export-txt-btn');
     if (exportBtn) {
       if (grState.activeStoryId) {
         exportBtn.style.display = 'block';
+        exportBtn.textContent = '导出作品';
         exportBtn.onclick = () => openExportTxtModal(grState.activeStoryId);
       } else {
         exportBtn.style.display = 'none';
@@ -94,7 +97,18 @@
     document.getElementById('gr-output-length').value = settings.outputLength || 500;
     document.getElementById('gr-context-limit').value = settings.contextLimit || 20;
     document.getElementById('gr-reader-comments-enabled').checked = settings.readerCommentsEnabled || false;
+    document.getElementById('gr-reader-comment-density').value = settings.readerCommentDensity || 'natural';
+    document.getElementById('gr-reader-comment-tone').value = settings.readerCommentTone || 'mixed';
     document.getElementById('gr-macro-world-view').value = settings.macroWorldView || '';
+    document.getElementById('gr-story-synopsis').value = storyBible.synopsis || '';
+    document.getElementById('gr-story-genre').value = storyBible.genre || '';
+    document.getElementById('gr-story-tone').value = storyBible.tone || '';
+    document.getElementById('gr-story-status').value = storyBible.status || '连载中';
+    document.getElementById('gr-story-tags').value = (storyBible.tags || []).join(', ');
+    document.getElementById('gr-story-pov').value = storyBible.pov || '第三人称有限视角';
+    document.getElementById('gr-story-tense').value = storyBible.tense || '自然叙事';
+    document.getElementById('gr-ending-direction').value = storyBible.endingDirection || '';
+    document.getElementById('gr-forbidden-content').value = storyBible.forbiddenContent || '';
 
     // 绑定按钮事件
     const saveBtn = document.getElementById('gr-save-story-btn');
@@ -107,6 +121,7 @@
     saveBtn.parentNode.replaceChild(newSaveBtn, saveBtn);
     cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
 
+    newSaveBtn.textContent = grState.activeStoryId ? '保存设定' : '开始创作';
     newSaveBtn.onclick = () => saveStorySettings();
     newCancelBtn.onclick = () => document.getElementById('gr-settings-modal').classList.remove('visible');
   }
@@ -131,29 +146,48 @@
     const outputLength = parseInt(outputLengthInput.value) || 500;
     const contextLimit = parseInt(contextLimitInput.value) || 20;
     const readerCommentsEnabled = document.getElementById('gr-reader-comments-enabled').checked;
+    const readerCommentDensity = document.getElementById('gr-reader-comment-density').value;
+    const readerCommentTone = document.getElementById('gr-reader-comment-tone').value;
     const macroWorldView = macroWorldViewInput.value.trim();
     if (!title) return alert("请输入书名");
     if (charIds.length === 0) return alert("请至少选择一个角色或群聊");
 
-    const settings = {
+    const existingStory = grState.activeStoryId ? await db.grStories.get(grState.activeStoryId) : null;
+    const settings = Object.assign({}, existingStory?.settings || {}, {
       charIds,
       bookIds,
       userPersonaId,
       outputLength, // 这里的名字要和 prompt 里的对应
       contextLimit,
       macroWorldView,
-      readerCommentsEnabled
-    };
+      readerCommentsEnabled,
+      readerCommentDensity,
+      readerCommentTone
+    });
+
+    const oldBible = existingStory?.storyBible || {};
+    const storyBible = Object.assign({}, window.GreenRiverStoryEngine.DEFAULT_STORY_BIBLE, oldBible, {
+      synopsis: document.getElementById('gr-story-synopsis').value.trim(),
+      genre: document.getElementById('gr-story-genre').value.trim(),
+      tone: document.getElementById('gr-story-tone').value.trim(),
+      status: document.getElementById('gr-story-status').value,
+      tags: document.getElementById('gr-story-tags').value.split(/[,，]/).map(text => text.trim()).filter(Boolean),
+      pov: document.getElementById('gr-story-pov').value,
+      tense: document.getElementById('gr-story-tense').value,
+      endingDirection: document.getElementById('gr-ending-direction').value.trim(),
+      forbiddenContent: document.getElementById('gr-forbidden-content').value.trim()
+    });
 
     if (grState.activeStoryId) {
       // 更新现有作品
-      await db.grStories.update(grState.activeStoryId, { title, authorId, settings });
+      await db.grStories.update(grState.activeStoryId, { title, authorId, settings, storyBible, lastUpdated: Date.now() });
     } else {
       // 新建作品
       const newStory = {
         title,
         authorId,
         settings,
+        storyBible,
         chapters: [],
         lastUpdated: Date.now()
       };
@@ -168,7 +202,7 @@
     openReader(grState.activeStoryId, lastIndex);
   }
 
-  function showReaderCommentsPopup(comments) {
+  function showReaderCommentsPopup(comments, paragraphId) {
     const popup = document.getElementById('gr-reader-comments-popup');
     const listEl = popup && popup.querySelector('.gr-comments-popup-list');
     if (!popup || !listEl) return;
@@ -176,13 +210,42 @@
     listEl.innerHTML = (comments || []).map(c => {
       const name = escapeHtml(c.name || '读者');
       const content = escapeHtml(c.content || '');
-      return `<div class="gr-comment-item"><div class="gr-comment-name">${name}</div><div class="gr-comment-content">${content}</div></div>`;
+      const likes = Math.max(0, Number(c.likes) || 0);
+      return `<div class="gr-comment-item"><div class="gr-comment-name">${name}</div><div class="gr-comment-content">${content}</div>${likes ? `<div class="gr-comment-meta">♡ ${likes}</div>` : ''}</div>`;
     }).join('');
+    if (!listEl.innerHTML) listEl.innerHTML = '<div class="gr-comments-empty">这里还没有段评</div>';
     popup.style.display = 'flex';
     const close = () => { popup.style.display = 'none'; };
     popup.onclick = (e) => { if (e.target === popup) close(); };
     const closeBtn = popup.querySelector('.gr-comments-popup-close');
     if (closeBtn) closeBtn.onclick = close;
+    const input = document.getElementById('gr-user-comment-input');
+    const submit = document.getElementById('gr-user-comment-submit');
+    if (input) input.value = '';
+    if (submit) submit.onclick = async () => {
+      const content = input?.value.trim();
+      if (!content || !paragraphId || !grState.activeStoryId) return;
+      const story = await db.grStories.get(grState.activeStoryId);
+      window.GreenRiverStoryEngine.normalizeStory(story);
+      const chapter = story.chapters[grState.currentChapterIndex];
+      if (!chapter) return;
+      let group = chapter.readerComments.find(item => item.paragraphId === paragraphId);
+      if (!group) {
+        const segmentIndex = chapter.paragraphs.findIndex(item => item.id === paragraphId);
+        group = { paragraphId, segmentIndex, comments: [] };
+        chapter.readerComments.push(group);
+      }
+      group.comments.push({ id: window.GreenRiverStoryEngine.makeId('comment'), name: '我', content, likes: 0, timestamp: Date.now(), isUser: true });
+      story.lastUpdated = Date.now();
+      await db.grStories.put(story);
+      grState.currentReaderChapter = chapter;
+      const bubble = Array.from(document.querySelectorAll('.gr-reader-comment-bubble')).find(item => item.dataset.paragraphId === paragraphId);
+      if (bubble) bubble.textContent = `${group.comments.length}条`;
+      showReaderCommentsPopup(group.comments, paragraphId);
+    };
+    if (input) input.onkeydown = event => {
+      if (event.key === 'Enter' && !event.isComposing) { event.preventDefault(); submit?.click(); }
+    };
   }
 
   // 6. 阅读器逻辑 - 分页版 (Jinjiang Style)
@@ -190,6 +253,9 @@
     grState.activeStoryId = storyId;
     const story = await db.grStories.get(storyId);
     if (!story) return;
+    window.GreenRiverStoryEngine.normalizeStory(story);
+    // 旧作品首次打开时持久化稳定章节/段落 ID，保证段评、共读进度和修订记录不漂移。
+    await db.grStories.put(story);
 
     // 确保索引合法
     const totalChapters = story.chapters.length;
@@ -197,6 +263,7 @@
     if (chapterIndex < 0) chapterIndex = 0;
 
     grState.currentChapterIndex = chapterIndex;
+    applyGreenRiverReadingMode();
 
     // 更新顶部标题
     document.getElementById('gr-book-name-display').textContent = story.title;
@@ -216,6 +283,17 @@
       // 显示写作控制栏，隐藏翻页栏
       document.getElementById('gr-pagination-controls').style.display = 'none';
       document.getElementById('gr-writing-controls').style.display = 'flex';
+      contentArea.style.paddingBottom = '190px';
+      const creatorTools = document.getElementById('gr-creator-tools');
+      if (creatorTools) creatorTools.style.display = 'flex';
+      const bibleBtn = document.getElementById('gr-story-bible-btn');
+      const newChapterBtn = document.getElementById('gr-new-chapter-btn');
+      if (bibleBtn) { bibleBtn.disabled = false; bibleBtn.onclick = () => openStoryBibleEditor(storyId); }
+      if (newChapterBtn) { newChapterBtn.disabled = false; newChapterBtn.onclick = () => openChapterEditor(storyId, null); }
+      ['gr-edit-chapter-btn', 'gr-diagnose-btn', 'gr-revisions-btn', 'gr-regenerate-comments-btn', 'gr-create-branch-btn'].forEach(id => {
+        const button = document.getElementById(id);
+        if (button) button.disabled = true;
+      });
 
       // 绑定生成按钮
       updateGenButtonBinding();
@@ -226,6 +304,7 @@
     // --- 场景 B: 显示特定章节 ---
     const chapter = story.chapters[chapterIndex];
     grState.currentReaderChapter = chapter;
+    const engine = window.GreenRiverStoryEngine;
     const chapterTitle = chapter.title || `第 ${chapterIndex + 1} 章`; // 如果没有标题，使用默认
 
     document.getElementById('gr-chapter-title-display').textContent = chapterTitle;
@@ -235,52 +314,39 @@
       contentArea.innerHTML += `
             <details class="gr-summary-box top-summary">
                 <summary>📖 上文提要 (Context)</summary>
-                <div class="gr-summary-content" style="font-size:12px; color:#888;">${chapter.prevSummary}</div>
+                <div class="gr-summary-content" style="font-size:12px; color:#888;">${engine.escapeHtml(chapter.prevSummary)}</div>
             </details>
         `;
     }
 
     // 2. 章节大标题
-    contentArea.innerHTML += `<div class="gr-chapter-title-large">${chapterTitle}</div>`;
+    contentArea.innerHTML += `<div class="gr-chapter-title-large">${engine.escapeHtml(chapterTitle)}</div>`;
 
     // 3. 正文（有读者评论时按段渲染+气泡，否则整块）
     const commentMap = {};
-    (chapter.readerComments || []).forEach(rc => {
-      const idx = typeof rc.segmentIndex === 'number' ? rc.segmentIndex : parseInt(rc.segmentIndex, 10);
-      if (!isNaN(idx)) commentMap[idx] = Array.isArray(rc.comments) ? rc.comments : [];
-    });
-    
-    // 调试信息
-    console.log('[绿江调试] 章节评论数据:', chapter.readerComments);
-    console.log('[绿江调试] 评论映射:', commentMap);
-    
-    const segments = (chapter.content || '').split(/\n\n/);
-    console.log('[绿江调试] 段落数量:', segments.length);
-    console.log('[绿江调试] 前3个段落:', segments.slice(0, 3));
+    const anchoredComments = engine.paragraphCommentMap(chapter);
+    const segments = chapter.paragraphs || [];
     
     const escapeHtml = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-    if (segments.length <= 1 && Object.keys(commentMap).length === 0) {
-      contentArea.innerHTML += `<div class="gr-chapter-text">${(chapter.content || '').replace(/\n/g, '<br>')}</div>`;
+    if (segments.length <= 1 && anchoredComments.size === 0) {
+      contentArea.innerHTML += `<div class="gr-chapter-text">${escapeHtml(chapter.content || '').replace(/\n/g, '<br>')}</div>`;
     } else {
       let bodyHtml = '';
-      segments.forEach((seg, i) => {
+      segments.forEach((paragraph, i) => {
         // 先转义文本内容，然后替换换行符
-        const text = escapeHtml(seg.trim()).replace(/\n/g, '<br>');
-        const comments = commentMap[i];
+        const text = escapeHtml(paragraph.text.trim()).replace(/\n/g, '<br>');
+        const comments = anchoredComments.get(paragraph.id);
         
         // 创建段落div
-        bodyHtml += '<div class="gr-chapter-segment">' + text;
+        bodyHtml += `<div class="gr-chapter-segment" data-paragraph-id="${engine.escapeHtml(paragraph.id)}">${text}`;
         
         // 如果有评论，添加气泡（不转义，因为这是我们自己生成的HTML）
         if (comments && comments.length > 0) {
-          console.log(`[绿江调试] 段落 ${i} 有 ${comments.length} 条评论`);
-          bodyHtml += ` <span class="gr-reader-comment-bubble" data-segment-index="${i}">${comments.length}条</span>`;
+          bodyHtml += ` <span class="gr-reader-comment-bubble" data-paragraph-id="${engine.escapeHtml(paragraph.id)}" data-segment-index="${i}">${comments.length}条</span>`;
         }
         
         bodyHtml += '</div>';
       });
-      console.log('[绿江调试] 生成的HTML长度:', bodyHtml.length);
-      console.log('[绿江调试] HTML片段示例:', bodyHtml.substring(0, 500));
       contentArea.innerHTML += bodyHtml;
     }
 
@@ -293,10 +359,11 @@
         e.preventDefault();
         const curChapter = grState.currentReaderChapter;
         if (!curChapter || !curChapter.readerComments) return;
+        const paragraphId = bubble.dataset.paragraphId;
         const idx = parseInt(bubble.dataset.segmentIndex, 10);
-        const list = curChapter.readerComments.find(r => Number(r.segmentIndex) === idx);
+        const list = curChapter.readerComments.find(r => r.paragraphId === paragraphId || (!r.paragraphId && Number(r.segmentIndex) === idx));
         const comments = list ? (list.comments || []) : [];
-        showReaderCommentsPopup(comments);
+        showReaderCommentsPopup(comments, paragraphId);
       });
     }
 
@@ -307,13 +374,15 @@
                     <span class="gr-summary-title">Chapter Checkpoint · 剧情存档</span>
                     <button class="gr-mini-btn save-summary-btn" data-index="${chapterIndex}">保存修改</button>
                 </div>
-                <textarea class="gr-summary-input" data-index="${chapterIndex}" placeholder="在此处概括本章关键剧情点，供AI记忆...">${chapter.summary || ''}</textarea>
+                <textarea class="gr-summary-input" data-index="${chapterIndex}" placeholder="在此处概括本章关键剧情点，供AI记忆..."></textarea>
                  <div class="gr-summary-footer">
                     * AI续写时将读取此框内容作为唯一记忆依据。
                 </div>
             </div>
         `;
     contentArea.innerHTML += summaryHtml;
+    const summaryInput = contentArea.querySelector(`.gr-summary-input[data-index="${chapterIndex}"]`);
+    if (summaryInput) summaryInput.value = chapter.summary || '';
     contentArea.innerHTML += `<div style="height: 100px;"></div>`;
 
     // 绑定保存摘要按钮
@@ -333,6 +402,8 @@
     const paginationDiv = document.getElementById('gr-pagination-controls');
     const writingDiv = document.getElementById('gr-writing-controls');
     const rerollBtn = document.getElementById('gr-reroll-btn');
+    const creatorTools = document.getElementById('gr-creator-tools');
+    if (creatorTools) creatorTools.style.display = 'flex';
 
     // 总是显示分页栏，写作栏只在最后一页显示
     paginationDiv.style.display = 'flex';
@@ -345,6 +416,7 @@
       nextBtn.textContent = "下一章";
       nextBtn.onclick = () => openReader(storyId, chapterIndex + 1);
       writingDiv.style.display = 'none'; // 隐藏写作栏
+      contentArea.style.paddingBottom = '120px';
     } else {
       // 如果是最后一章
       nextBtn.textContent = "续写下一章";
@@ -356,16 +428,18 @@
       };
       // 默认也显示写作栏
       writingDiv.style.display = 'flex';
+      contentArea.style.paddingBottom = '230px';
 
       // 绑定重写按钮
       rerollBtn.onclick = async () => {
-        const confirmed = await showCustomConfirm("重写本章", "确定要删除当前章节并重新生成吗？", { confirmText: "重写", confirmButtonClass: "btn-danger" });
+        const confirmed = await showCustomConfirm("重写本章", "将生成一份新的本章内容。当前原稿会保存在修订记录中，生成失败不会改变原稿。", { confirmText: "重写", confirmButtonClass: "btn-danger" });
         if (confirmed) handleGenerateStoryContent(true);
       };
     }
 
     // 绑定生成按钮
     updateGenButtonBinding();
+    bindCreatorToolButtons(storyId, chapterIndex);
 
     showScreen('gr-reader-screen');
     contentArea.scrollTop = 0;
@@ -409,7 +483,7 @@
     const rerollBtn = document.getElementById('gr-reroll-btn');
     if (rerollBtn) {
       rerollBtn.onclick = async () => {
-        const confirmed = await showCustomConfirm("重写本章", "确定要删除当前最新章节并重新生成吗？\n(如果你刚才修改了摘要，重写后需要重新修改)", { confirmText: "重写", confirmButtonClass: "btn-danger" });
+        const confirmed = await showCustomConfirm("重写本章", "将生成一份新的本章内容。当前原稿会保存在修订记录中，生成失败不会改变原稿。", { confirmText: "重写", confirmButtonClass: "btn-danger" });
         if (confirmed) {
           handleGenerateStoryContent(true); // true = 是重写
         }
@@ -426,4 +500,263 @@
       console.log("摘要已手动更新");
     }
   }
-  // 7. 核心生成逻辑 (The Writer) - 字数强力修正版
+
+  function applyGreenRiverReadingMode() {
+    const screen = document.getElementById('gr-reader-screen');
+    const button = document.getElementById('gr-reading-mode-toggle');
+    if (!screen || !button) return;
+    screen.classList.toggle('reading-only', Boolean(grState.readingOnly));
+    button.textContent = grState.readingOnly ? '创作' : '阅读';
+    button.setAttribute('aria-pressed', String(Boolean(grState.readingOnly)));
+    button.onclick = () => {
+      grState.readingOnly = !grState.readingOnly;
+      applyGreenRiverReadingMode();
+    };
+  }
+
+  function bindCreatorToolButtons(storyId, chapterIndex) {
+    const bibleBtn = document.getElementById('gr-story-bible-btn');
+    const newChapterBtn = document.getElementById('gr-new-chapter-btn');
+    const editBtn = document.getElementById('gr-edit-chapter-btn');
+    const diagnoseBtn = document.getElementById('gr-diagnose-btn');
+    const revisionsBtn = document.getElementById('gr-revisions-btn');
+    const commentsBtn = document.getElementById('gr-regenerate-comments-btn');
+    const branchBtn = document.getElementById('gr-create-branch-btn');
+    [bibleBtn, newChapterBtn, editBtn, diagnoseBtn, revisionsBtn, commentsBtn, branchBtn].forEach(button => { if (button) button.disabled = false; });
+    if (bibleBtn) bibleBtn.onclick = () => openStoryBibleEditor(storyId);
+    if (newChapterBtn) newChapterBtn.onclick = () => openChapterEditor(storyId, null);
+    if (editBtn) editBtn.onclick = () => openChapterEditor(storyId, chapterIndex);
+    if (diagnoseBtn) diagnoseBtn.onclick = () => showChapterDiagnostics(storyId, chapterIndex);
+    if (revisionsBtn) revisionsBtn.onclick = () => openChapterRevisions(storyId, chapterIndex);
+    if (commentsBtn) commentsBtn.onclick = () => regenerateReaderComments(storyId, chapterIndex);
+    if (branchBtn) branchBtn.onclick = () => createStoryBranch(storyId, chapterIndex);
+  }
+
+  async function ensureStoryCharacterProfiles(story) {
+    const profiles = story.storyBible.storyCharacters;
+    for (const id of (story.settings.charIds || [])) {
+      if (profiles[id]) continue;
+      if (String(id).startsWith('npc_')) {
+        const npc = await db.npcs.get(parseInt(String(id).replace('npc_', ''), 10));
+        if (npc) profiles[id] = { name: npc.name, sourceId: id, persona: npc.persona || '', role: '', goal: '', voice: '', relationships: '', knowledge: '' };
+      } else {
+        const chat = state.chats[id];
+        if (chat) profiles[id] = { name: chat.name, sourceId: id, persona: chat.settings?.aiPersona || '', role: '', goal: '', voice: '', relationships: '', knowledge: '' };
+      }
+    }
+  }
+
+  async function openStoryBibleEditor(storyId) {
+    const story = await db.grStories.get(storyId);
+    if (!story) return;
+    const engine = window.GreenRiverStoryEngine;
+    engine.normalizeStory(story);
+    await ensureStoryCharacterProfiles(story);
+    await db.grStories.put(story);
+    const bible = story.storyBible;
+    document.getElementById('gr-global-story-summary').value = bible.globalSummary || '';
+    document.getElementById('gr-open-threads-input').value = bible.openThreads.map(item => typeof item === 'string' ? item : item.text).filter(Boolean).join('\n');
+    const characterEditor = document.getElementById('gr-story-character-editor');
+    characterEditor.innerHTML = '';
+    Object.entries(bible.storyCharacters).forEach(([id, profile]) => {
+      const card = document.createElement('div');
+      card.className = 'gr-story-character-card';
+      const heading = document.createElement('strong');
+      heading.textContent = profile.name || id;
+      card.appendChild(heading);
+      [['role', '小说内身份'], ['goal', '当前目标'], ['voice', '说话特点'], ['relationships', '关系与状态'], ['knowledge', '当前掌握的信息']].forEach(([field, label]) => {
+        const wrapper = document.createElement('label');
+        wrapper.textContent = label;
+        const input = document.createElement('textarea');
+        input.rows = field === 'relationships' || field === 'knowledge' ? 2 : 1;
+        input.className = 'gr-input';
+        input.dataset.characterId = id;
+        input.dataset.field = field;
+        input.value = profile[field] || '';
+        wrapper.appendChild(input);
+        card.appendChild(wrapper);
+      });
+      characterEditor.appendChild(card);
+    });
+    if (!characterEditor.children.length) characterEditor.innerHTML = '<div class="gr-empty-state">人物档案会在首次生成时从已选择角色建立。</div>';
+    const timeline = document.getElementById('gr-story-timeline');
+    timeline.innerHTML = '';
+    bible.timeline.slice().reverse().slice(0, 30).forEach(item => {
+      const row = document.createElement('div');
+      row.textContent = typeof item === 'string' ? item : item.text;
+      timeline.appendChild(row);
+    });
+    if (!timeline.children.length) timeline.innerHTML = '<div class="gr-empty-state">生成章节后会自动记录关键事件。</div>';
+    const modal = document.getElementById('gr-story-bible-modal');
+    modal.classList.add('visible');
+    document.getElementById('gr-cancel-story-bible').onclick = () => modal.classList.remove('visible');
+    document.getElementById('gr-save-story-bible').onclick = async () => {
+      const latest = await db.grStories.get(storyId);
+      engine.normalizeStory(latest);
+      latest.storyBible.globalSummary = document.getElementById('gr-global-story-summary').value.trim();
+      latest.storyBible.openThreads = document.getElementById('gr-open-threads-input').value.split(/\n/).map(text => text.trim()).filter(Boolean).map(text => ({ id: engine.makeId('thread'), text }));
+      characterEditor.querySelectorAll('[data-character-id][data-field]').forEach(input => {
+        const profile = latest.storyBible.storyCharacters[input.dataset.characterId];
+        if (profile) profile[input.dataset.field] = input.value.trim();
+      });
+      latest.lastUpdated = Date.now();
+      await db.grStories.put(latest);
+      modal.classList.remove('visible');
+      await showCustomAlert('已保存', '剧情档案会在后续续写中参与连续性判断。');
+    };
+  }
+
+  async function openChapterEditor(storyId, chapterIndex) {
+    const story = await db.grStories.get(storyId);
+    const isNewChapter = chapterIndex === null;
+    if (!story || (!isNewChapter && !story.chapters?.[chapterIndex])) return;
+    window.GreenRiverStoryEngine.normalizeStory(story);
+    const chapter = isNewChapter ? { title: `第 ${story.chapters.length + 1} 章`, content: '', summary: '' } : story.chapters[chapterIndex];
+    document.getElementById('gr-edit-chapter-title').value = chapter.title || '';
+    document.getElementById('gr-edit-chapter-content').value = chapter.content || '';
+    document.getElementById('gr-edit-chapter-summary').value = chapter.summary || '';
+    const modal = document.getElementById('gr-chapter-editor-modal');
+    modal.classList.add('visible');
+    document.getElementById('gr-cancel-chapter-edit').onclick = () => modal.classList.remove('visible');
+    modal.querySelectorAll('[data-gr-transform]').forEach(button => {
+      button.onclick = () => transformSelectedChapterText(button.dataset.grTransform, button);
+    });
+    document.getElementById('gr-save-chapter-edit').onclick = async () => {
+      const latest = await db.grStories.get(storyId);
+      window.GreenRiverStoryEngine.normalizeStory(latest);
+      let target = isNewChapter ? null : latest.chapters[chapterIndex];
+      const title = document.getElementById('gr-edit-chapter-title').value.trim();
+      const content = document.getElementById('gr-edit-chapter-content').value.trim();
+      const summary = document.getElementById('gr-edit-chapter-summary').value.trim();
+      if (!content) return alert('正文不能为空');
+      if (isNewChapter) {
+        target = {
+          id: window.GreenRiverStoryEngine.makeId('chapter'),
+          title: title || `第 ${latest.chapters.length + 1} 章`,
+          content: '', paragraphs: [], summary: '', prevSummary: latest.chapters[latest.chapters.length - 1]?.summary || '这是故事的开始。',
+          readerComments: [], revisions: [], storyDelta: {}, timestamp: Date.now(), writingMode: 'manual'
+        };
+      } else {
+        window.GreenRiverStoryEngine.snapshotRevision(target, '手动编辑前');
+      }
+      const oldCommentsByText = new Map((target.paragraphs || []).map(p => [p.text.trim(), p.id]));
+      target.title = title || target.title;
+      target.content = content;
+      target.summary = summary;
+      target.paragraphs = window.GreenRiverStoryEngine.splitParagraphs(content).map(text => ({
+        id: oldCommentsByText.get(text.trim()) || window.GreenRiverStoryEngine.makeId('paragraph'),
+        text
+      }));
+      target.readerComments = window.GreenRiverStoryEngine.attachCommentAnchors(target, target.readerComments);
+      if (isNewChapter) latest.chapters.push(target);
+      latest.lastUpdated = Date.now();
+      await db.grStories.put(latest);
+      modal.classList.remove('visible');
+      await openReader(storyId, isNewChapter ? latest.chapters.length - 1 : chapterIndex);
+    };
+  }
+
+  async function transformSelectedChapterText(operation, button) {
+    const textarea = document.getElementById('gr-edit-chapter-content');
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    if (start === end) return showCustomAlert('请先选择文字', '在正文编辑框中选中需要处理的段落后再使用此工具。');
+    const selected = textarea.value.slice(start, end);
+    if (selected.length > 8000) return showCustomAlert('选择内容过长', '请一次选择不超过 8000 个字符，以免局部处理失去重点。');
+    const instruction = {
+      polish: '自然润色这段中文小说文字，保持事实、人物意图和信息不变，使表达流畅克制，不增加新剧情。',
+      deai: '去除这段小说文字的AI腔：删掉重复解释、模板化情绪、滥用的目光指尖呼吸心跳和空泛比喻；保持原事实、语气和人物关系。',
+      expand: '扩写这段小说文字，补充能推动场景或体现人物意图的有效动作、对话和感官细节，不得注水或重复心理。',
+      condense: '精简这段小说文字，删除重复、空泛抒情和无效动作，保留所有关键事实、人物情绪转折和必要语气。',
+      dialogue: '改进这段小说中的人物对话，使不同人物声音更有区分度，并增加潜台词；保留原有事实和剧情结果。'
+    }[operation];
+    if (!instruction || typeof callGreenRiverModel !== 'function') return;
+    const before = textarea.value.slice(Math.max(0, start - 600), start);
+    const after = textarea.value.slice(end, Math.min(textarea.value.length, end + 600));
+    const oldText = button.textContent;
+    button.disabled = true;
+    button.textContent = '处理中…';
+    try {
+      const output = await callGreenRiverModel('你是中文小说局部编辑器。严格只返回处理后的选中文字，不要解释，不要引号，不要代码围栏。', `${instruction}\n\n前文参考：${before}\n\n【待处理文字】\n${selected}\n\n后文参考：${after}`, 0.65);
+      const replacement = String(output || '').trim().replace(/^```(?:text)?\s*/i, '').replace(/\s*```$/i, '');
+      if (!replacement) throw new Error('AI未返回处理结果');
+      textarea.setRangeText(replacement, start, end, 'select');
+      document.getElementById('gr-edit-chapter-hint').textContent = '局部处理已放入编辑框，确认效果后点击“保存修改”；取消则不会写入作品。';
+    } catch (error) {
+      alert(`局部处理失败：${error.message}`);
+    } finally {
+      button.disabled = false;
+      button.textContent = oldText;
+    }
+  }
+
+  async function createStoryBranch(storyId, chapterIndex) {
+    const branchName = await showCustomPrompt('创建剧情分支', '输入分支名称。新作品会保留到当前章节，原作品不受影响。', '另一条可能');
+    if (branchName === null || !String(branchName).trim()) return;
+    const story = await db.grStories.get(storyId);
+    if (!story) return;
+    window.GreenRiverStoryEngine.normalizeStory(story);
+    const branch = window.GreenRiverStoryEngine.clone(story);
+    delete branch.id;
+    branch.title = `${story.title} · ${String(branchName).trim()}`;
+    branch.chapters = branch.chapters.slice(0, chapterIndex + 1);
+    branch.parentStoryId = story.id;
+    branch.branchFromChapterId = story.chapters[chapterIndex]?.id || null;
+    branch.deletedChapters = [];
+    const retainedChapterIds = new Set(branch.chapters.map(chapter => chapter.id));
+    branch.storyBible.timeline = (branch.storyBible.timeline || []).filter(item => !item.chapterId || retainedChapterIds.has(item.chapterId));
+    branch.storyBible.openThreads = (branch.storyBible.openThreads || []).filter(item => !item.chapterId || retainedChapterIds.has(item.chapterId));
+    window.GreenRiverStoryEngine.refreshGlobalSummary(branch);
+    branch.lastUpdated = Date.now();
+    const branchId = await db.grStories.add(branch);
+    await openReader(branchId, branch.chapters.length - 1);
+    await showCustomAlert('分支已创建', `《${branch.title}》已作为独立作品加入绿江书架。`);
+  }
+
+  async function showChapterDiagnostics(storyId, chapterIndex) {
+    const story = await db.grStories.get(storyId);
+    const chapter = story?.chapters?.[chapterIndex];
+    if (!chapter) return;
+    const result = window.GreenRiverStoryEngine.analyseChapter(chapter);
+    const content = document.getElementById('gr-diagnostics-content');
+    content.innerHTML = `<div class="gr-diagnostic-stats"><span>${result.charCount} 字</span><span>${result.paragraphCount} 段</span></div><div class="gr-diagnostic-message">${window.GreenRiverStoryEngine.escapeHtml(result.message).replace(/\n/g, '<br>')}</div>`;
+    const modal = document.getElementById('gr-diagnostics-modal');
+    modal.classList.add('visible');
+    document.getElementById('gr-close-diagnostics').onclick = () => modal.classList.remove('visible');
+  }
+
+  async function openChapterRevisions(storyId, chapterIndex) {
+    const story = await db.grStories.get(storyId);
+    window.GreenRiverStoryEngine.normalizeStory(story);
+    const chapter = story?.chapters?.[chapterIndex];
+    if (!chapter) return;
+    const list = document.getElementById('gr-revisions-list');
+    const revisions = (chapter.revisions || []).slice().reverse();
+    list.innerHTML = revisions.length ? '' : '<div class="gr-empty-state">当前章节还没有修订记录。</div>';
+    revisions.forEach(revision => {
+      const item = document.createElement('div');
+      item.className = 'gr-revision-item';
+      const info = document.createElement('div');
+      info.innerHTML = `<strong>${window.GreenRiverStoryEngine.escapeHtml(revision.reason || '历史稿')}</strong><span>${new Date(revision.timestamp).toLocaleString()}</span>`;
+      const restoreBtn = document.createElement('button');
+      restoreBtn.className = 'gr-tool-btn';
+      restoreBtn.textContent = '恢复此稿';
+      restoreBtn.onclick = async () => {
+        const confirmed = await showCustomConfirm('恢复历史稿', '当前内容会先自动存档，然后恢复所选历史稿。', { confirmText: '恢复' });
+        if (!confirmed) return;
+        const latest = await db.grStories.get(storyId);
+        window.GreenRiverStoryEngine.normalizeStory(latest);
+        window.GreenRiverStoryEngine.restoreRevision(latest.chapters[chapterIndex], revision);
+        latest.lastUpdated = Date.now();
+        await db.grStories.put(latest);
+        document.getElementById('gr-revisions-modal').classList.remove('visible');
+        await openReader(storyId, chapterIndex);
+      };
+      item.appendChild(info);
+      item.appendChild(restoreBtn);
+      list.appendChild(item);
+    });
+    const modal = document.getElementById('gr-revisions-modal');
+    modal.classList.add('visible');
+    document.getElementById('gr-close-revisions').onclick = () => modal.classList.remove('visible');
+  }

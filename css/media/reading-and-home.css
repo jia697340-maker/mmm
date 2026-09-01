@@ -145,6 +145,47 @@
                padding-top: calc(100px + env(safe-area-inset-top)) !important;
            }
 
+           #reading-display-settings-btn {
+               background: none;
+               border: none;
+               color: var(--text-secondary);
+               padding: 4px 7px;
+               border-radius: 4px;
+               cursor: pointer;
+           }
+
+           #reading-content.reading-theme-paper { background:#f7f0df !important; color:#382f25 !important; }
+           #reading-content.reading-theme-white { background:#fff !important; color:#1c1c1e !important; }
+           #reading-content.reading-theme-dark { background:#171717 !important; color:#dedbd5 !important; }
+
+           .reading-chapter-heading {
+               margin: 8px 0 22px;
+               text-align: center;
+               font-size: 1.35em;
+               line-height: 1.4;
+               font-weight: 650;
+           }
+
+           .reading-structured-paragraph {
+               margin: 0 0 1.05em;
+               white-space: pre-wrap;
+               text-indent: 2em;
+               line-height: 1.8;
+           }
+
+           .reading-comment-button {
+               margin-left: 8px;
+               border: 0;
+               border-radius: 999px;
+               padding: 2px 7px;
+               background: rgba(46,125,50,.1);
+               color: #2e7d32;
+               font-size: .72em;
+               text-indent: 0;
+               cursor: pointer;
+               vertical-align: middle;
+           }
+
            /* --- iOS 风格通用化适配 (适配外观设置页) --- */
 
            /* 让两个页面都使用 iOS 背景色 */

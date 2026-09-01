@@ -17,7 +17,8 @@
   let grState = {
     activeStoryId: null,
     isGenerating: false,
-    currentReaderChapter: null
+    currentReaderChapter: null,
+    readingOnly: false
   };
 
   // 默认作者预设
@@ -52,17 +53,27 @@
   async function openGreenRiverScreen() {
     await initGreenRiverData();
     showScreen('green-river-screen');
+    const search = document.getElementById('gr-library-search');
+    if (search) {
+      search.value = '';
+      search.oninput = () => renderBookList(search.value);
+    }
     renderBookList();
   }
 
   // 3. 渲染书架
   // 找到 renderBookList 函数，替换整个函数
-  async function renderBookList() {
+  async function renderBookList(searchTerm = '') {
+    const escapeHtml = window.GreenRiverStoryEngine?.escapeHtml || (value => String(value));
     const listEl = document.getElementById('gr-book-list');
     listEl.innerHTML = '';
 
     const allStories = await db.grStories.toArray();
-    const stories = allStories.sort((a, b) => {
+    const stories = allStories.filter(story => {
+      const bible = Object.assign({}, window.GreenRiverStoryEngine?.DEFAULT_STORY_BIBLE || {}, story.storyBible || {});
+      const haystack = [story.title, bible.genre, ...(bible.tags || [])].join(' ').toLowerCase();
+      return !searchTerm || haystack.includes(String(searchTerm).trim().toLowerCase());
+    }).sort((a, b) => {
       const aTime = a.lastUpdated || 0;
       const bTime = b.lastUpdated || 0;
       return bTime - aTime;
@@ -75,7 +86,7 @@
     const linkedIds = new Set(existingBooks.map(b => b.linkedStoryId).filter(id => id));
 
     if (stories.length === 0) {
-      listEl.innerHTML = '<p style="grid-column:1/-1; text-align:center; color:var(--gr-text-sub); margin-top:50px;">书架是空的，点击右上角新建一部作品吧。</p>';
+      listEl.innerHTML = `<p style="grid-column:1/-1; text-align:center; color:var(--gr-text-sub); margin-top:50px;">${searchTerm ? '没有找到匹配的作品。' : '书架是空的，点击右上角新建一部作品吧。'}</p>`;
       return;
     }
 
@@ -85,6 +96,8 @@
       div.className = 'gr-book-card';
 
       const wordCount = story.chapters.reduce((acc, ch) => acc + (ch.content || '').length, 0);
+      const bible = Object.assign({}, window.GreenRiverStoryEngine?.DEFAULT_STORY_BIBLE || {}, story.storyBible || {});
+      const tags = (bible.tags || []).slice(0, 3);
 
       // 【核心逻辑修改】
       const isAdded = linkedIds.has(story.id);
@@ -95,11 +108,14 @@
 
       div.innerHTML = `
             <div>
-                <div class="gr-book-title">${story.title}</div>
+                <div class="gr-book-title">${escapeHtml(story.title)}</div>
+                ${bible.synopsis ? `<div class="gr-book-synopsis">${escapeHtml(bible.synopsis)}</div>` : ''}
                 <div class="gr-book-meta">
                     <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                    ${authorName}
+                    ${escapeHtml(authorName)}
+                    <span class="gr-book-status">${escapeHtml(bible.status || '连载中')}</span>
                 </div>
+                ${tags.length ? `<div class="gr-book-tags">${tags.map(tag => `<span>${escapeHtml(tag)}</span>`).join('')}</div>` : ''}
             </div>
             <div class="gr-book-meta" style="justify-content: space-between; margin-top:15px; align-items: flex-end;">
                 <div style="display:flex; flex-direction:column; gap:2px;">
@@ -134,6 +150,7 @@
 
   // 1. 打开作者管理列表 (渲染界面)
   async function openAuthorManager() {
+    const escapeHtml = window.GreenRiverStoryEngine?.escapeHtml || (value => String(value));
     showScreen('gr-author-screen');
     const listEl = document.getElementById('gr-author-list');
     listEl.innerHTML = '';
@@ -150,8 +167,8 @@
       div.className = 'gr-author-item';
       div.innerHTML = `
             <div class="gr-author-info" style="flex-grow: 1; padding-right: 10px; min-width: 0;">
-                <h3 style="margin: 0 0 5px 0; font-size: 16px; font-weight: 600; color: #1C1C1E;">${author.name}</h3>
-                <p style="margin: 0; font-size: 13px; color: #8E8E93; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.5;">${author.style}</p>
+                <h3 style="margin: 0 0 5px 0; font-size: 16px; font-weight: 600; color: #1C1C1E;">${escapeHtml(author.name)}</h3>
+                <p style="margin: 0; font-size: 13px; color: #8E8E93; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.5;">${escapeHtml(author.style)}</p>
             </div>
             <div class="gr-author-actions">
                 <button class="gr-icon-btn" onclick="openAuthorEditor(${author.id})" title="编辑">

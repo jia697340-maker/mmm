@@ -717,6 +717,245 @@
                align-items: center;
            }
 
+/* 绿江创作与阅读增强 */
+.gr-settings-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 10px;
+}
+
+.gr-settings-grid > div { min-width: 0; }
+
+.gr-library-search { margin: 0 0 14px; }
+
+.gr-reader-header-actions { display:flex;align-items:center;gap:4px; }
+.gr-mode-toggle-btn { border:1px solid var(--gr-border);border-radius:999px;background:var(--gr-surface);color:var(--gr-primary);padding:5px 9px;font-size:11px;cursor:pointer; }
+#gr-reader-screen.reading-only .top-summary,
+#gr-reader-screen.reading-only .gr-summary-card,
+#gr-reader-screen.reading-only #gr-creator-tools,
+#gr-reader-screen.reading-only #gr-writing-controls { display:none !important; }
+#gr-reader-screen.reading-only .gr-reader-content { padding-bottom:110px !important; }
+
+.gr-book-synopsis {
+    margin-top: 7px;
+    color: var(--gr-text-sub);
+    font-size: 12px;
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.gr-book-status {
+    margin-left: auto;
+    padding: 2px 6px;
+    border-radius: 999px;
+    background: rgba(27,79,62,.08);
+    color: var(--gr-primary);
+    font-size: 10px;
+}
+
+.gr-book-tags { display:flex;gap:5px;flex-wrap:wrap;margin-top:7px; }
+.gr-book-tags span { padding:2px 6px;border-radius:5px;background:rgba(0,0,0,.04);color:var(--gr-text-sub);font-size:10px; }
+
+.gr-creator-tools {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    overflow-x: auto;
+    padding: 2px 0 6px;
+    scrollbar-width: none;
+}
+
+.gr-creator-tools::-webkit-scrollbar { display: none; }
+
+.gr-tool-btn {
+    flex: 0 0 auto;
+    border: 1px solid var(--gr-border);
+    background: var(--gr-surface);
+    color: var(--gr-text-main);
+    border-radius: 999px;
+    padding: 7px 11px;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.gr-tool-btn:disabled { opacity: .55; cursor: not-allowed; }
+
+.gr-direction-group {
+    display: grid;
+    grid-template-columns: 112px minmax(0, 1fr);
+    gap: 7px;
+    align-items: stretch;
+}
+
+.gr-writing-mode {
+    height: 100%;
+    min-height: 44px;
+    padding: 8px;
+    font-size: 12px;
+}
+
+#gr-direction-input {
+    min-height: 44px;
+    max-height: 96px;
+    resize: vertical;
+    line-height: 1.4;
+}
+
+#gr-generate-btn.is-generating {
+    background: #b54d4d;
+}
+
+.gr-chapter-editor-modal-content {
+    height: 88%;
+    max-width: 760px;
+}
+
+.gr-chapter-editor-textarea {
+    min-height: 42vh;
+    resize: vertical;
+    line-height: 1.75;
+}
+
+.gr-form-hint {
+    color: var(--gr-text-sub);
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.gr-editor-ai-tools {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    overflow-x: auto;
+    padding: 2px 0 12px;
+    color: var(--gr-text-sub);
+    font-size: 12px;
+}
+
+.gr-editor-ai-tools span,
+.gr-editor-ai-tools button { flex: 0 0 auto; }
+
+.gr-editor-ai-tools button {
+    border: 1px solid var(--gr-border);
+    border-radius: 999px;
+    padding: 6px 10px;
+    background: var(--gr-surface);
+    color: var(--gr-text-main);
+    cursor: pointer;
+}
+
+.gr-editor-ai-tools button:disabled { opacity:.55; }
+
+.gr-revision-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--gr-border);
+}
+
+.gr-revision-item > div {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 0;
+}
+
+.gr-revision-item span,
+.gr-empty-state {
+    color: var(--gr-text-sub);
+    font-size: 12px;
+}
+
+.gr-diagnostic-stats {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 14px;
+}
+
+.gr-diagnostic-stats span {
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: rgba(27, 79, 62, .1);
+    color: var(--gr-primary);
+    font-size: 12px;
+}
+
+.gr-diagnostic-message { line-height: 1.75; }
+
+.gr-story-character-card {
+    display: grid;
+    gap: 9px;
+    padding: 12px;
+    margin-bottom: 10px;
+    border: 1px solid var(--gr-border);
+    border-radius: 12px;
+    background: var(--gr-surface);
+}
+
+.gr-story-character-card label {
+    display: grid;
+    gap: 5px;
+    color: var(--gr-text-sub);
+    font-size: 12px;
+}
+
+.gr-story-character-card textarea { resize: vertical; }
+
+.gr-story-timeline {
+    display: grid;
+    gap: 8px;
+}
+
+.gr-story-timeline > div:not(.gr-empty-state) {
+    padding: 9px 11px;
+    border-left: 3px solid var(--gr-primary);
+    border-radius: 0 8px 8px 0;
+    background: rgba(27, 79, 62, .06);
+    line-height: 1.5;
+    font-size: 13px;
+}
+
+.gr-chapter-order-actions {
+    display: inline-flex;
+    gap: 3px;
+    margin-left: auto;
+}
+
+.gr-sidebar-chapter-row > span:first-child {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.gr-chapter-order-actions button {
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: 1px solid var(--gr-border);
+    border-radius: 6px;
+    background: var(--gr-surface);
+    color: var(--gr-text-sub);
+    cursor: pointer;
+}
+
+.gr-chapter-order-actions button:disabled { opacity:.3;cursor:default; }
+
+@media (max-width: 520px) {
+    .gr-settings-grid { grid-template-columns: 1fr; }
+    .gr-direction-group { grid-template-columns: 1fr; }
+    #gr-writing-controls { align-items: flex-end !important; }
+    .gr-writing-mode { min-height: 38px; }
+    .gr-control-panel { padding-left: 10px; padding-right: 10px; }
+}
+
            /* 如果之前没有定义 gr-input，补充一下以防万一 */
            .gr-input {
                width: 100%;

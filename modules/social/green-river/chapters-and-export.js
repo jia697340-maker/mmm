@@ -12,6 +12,8 @@
     if (!grState.activeStoryId) return;
 
     db.grStories.get(grState.activeStoryId).then(story => {
+      if (!story) return;
+      if (window.GreenRiverStoryEngine) window.GreenRiverStoryEngine.normalizeStory(story);
       // 重置删除模式
       chapterDeleteState.isDeleteMode = false;
       chapterDeleteState.selectedChapters.clear();
@@ -24,6 +26,7 @@
   }
 
   function renderChapterList(story, listContainer, countEl) {
+    const escapeHtml = window.GreenRiverStoryEngine?.escapeHtml || (value => String(value));
     listContainer.innerHTML = '';
     countEl.textContent = `共 ${story.chapters.length} 章`;
 
@@ -123,6 +126,27 @@
         renderChapterList(story, listContainer, countEl);
       };
       
+      if (Array.isArray(story.deletedChapters) && story.deletedChapters.length) {
+        const restoreBtn = document.createElement('button');
+        restoreBtn.textContent = '恢复最近删除';
+        restoreBtn.style.cssText = 'padding: 6px 12px; background: #fff; color: var(--gr-primary); border: 1px solid var(--gr-primary); border-radius: 4px; cursor: pointer; font-size: 13px; margin-right:8px;';
+        restoreBtn.onclick = async () => {
+          const latest = await db.grStories.get(story.id);
+          const record = latest?.deletedChapters?.[latest.deletedChapters.length - 1];
+          if (!record) return;
+          const confirmed = await showCustomConfirm('恢复章节', `恢复《${record.chapter.title || '无题'}》到原来的章节位置？`, { confirmText: '恢复' });
+          if (!confirmed) return;
+          latest.deletedChapters.pop();
+          latest.chapters.splice(Math.min(record.originalIndex, latest.chapters.length), 0, record.chapter);
+          latest.chapters.forEach((chapter, index) => { chapter.prevSummary = index > 0 ? latest.chapters[index - 1].summary || '' : '这是故事的开始。'; });
+          if (window.GreenRiverStoryEngine) window.GreenRiverStoryEngine.refreshGlobalSummary(latest);
+          latest.lastUpdated = Date.now();
+          await db.grStories.put(latest);
+          renderChapterList(latest, listContainer, countEl);
+          openReader(latest.id, Math.min(record.originalIndex, latest.chapters.length - 1));
+        };
+        toolBar.appendChild(restoreBtn);
+      }
       toolBar.appendChild(deleteBtn);
       listContainer.appendChild(toolBar);
     }
@@ -165,22 +189,50 @@
         content.style.cssText = 'flex: 1;';
         content.innerHTML = `
           <div style="display:flex; justify-content:space-between;">
-            <span>${index + 1}. ${ch.title || '无题'}</span>
+            <span>${index + 1}. ${escapeHtml(ch.title || '无题')}</span>
             <span style="font-size:12px; color:#999;">${new Date(ch.timestamp).toLocaleTimeString()}</span>
           </div>
-          <div style="font-size:12px; color:#999; margin-top:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${(ch.summary || '').substring(0, 30)}...</div>
+          <div style="font-size:12px; color:#999; margin-top:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml((ch.summary || '').substring(0, 30))}...</div>
         `;
         
         div.appendChild(checkbox);
         div.appendChild(content);
       } else {
         div.innerHTML = `
-          <div style="display:flex; justify-content:space-between;">
-            <span>${index + 1}. ${ch.title || '无题'}</span>
-            <span style="font-size:12px; color:#999;">${new Date(ch.timestamp).toLocaleTimeString()}</span>
+          <div class="gr-sidebar-chapter-row" style="display:flex; justify-content:space-between;gap:8px;">
+            <span>${index + 1}. ${escapeHtml(ch.title || '无题')}</span>
+            <span style="font-size:12px; color:#999;white-space:nowrap;">${new Date(ch.timestamp).toLocaleTimeString()}</span>
           </div>
-          <div style="font-size:12px; color:#999; margin-left:10px; margin-top:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${(ch.summary || '').substring(0, 20)}...</div>
+          <div style="font-size:12px; color:#999; margin-left:10px; margin-top:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml((ch.summary || '').substring(0, 20))}...</div>
         `;
+
+        const actions = document.createElement('div');
+        actions.className = 'gr-chapter-order-actions';
+        [['↑', -1, '上移章节'], ['↓', 1, '下移章节']].forEach(([label, offset, title]) => {
+          const button = document.createElement('button');
+          button.textContent = label;
+          button.title = title;
+          button.disabled = index + offset < 0 || index + offset >= story.chapters.length;
+          button.onclick = async event => {
+            event.stopPropagation();
+            if (button.disabled) return;
+            const targetIndex = index + offset;
+            [story.chapters[index], story.chapters[targetIndex]] = [story.chapters[targetIndex], story.chapters[index]];
+            story.chapters.forEach((chapter, chapterPosition) => { chapter.prevSummary = chapterPosition > 0 ? story.chapters[chapterPosition - 1].summary || '' : '这是故事的开始。'; });
+            if (story.storyBible?.timeline) {
+              const order = new Map(story.chapters.map((chapter, chapterPosition) => [chapter.id, chapterPosition]));
+              story.storyBible.timeline.sort((a, b) => (order.get(a.chapterId) ?? Number.MAX_SAFE_INTEGER) - (order.get(b.chapterId) ?? Number.MAX_SAFE_INTEGER));
+            }
+            if (window.GreenRiverStoryEngine) window.GreenRiverStoryEngine.refreshGlobalSummary(story);
+            story.lastUpdated = Date.now();
+            await db.grStories.put(story);
+            grState.currentChapterIndex = targetIndex;
+            renderChapterList(story, listContainer, countEl);
+            await openReader(story.id, targetIndex);
+          };
+          actions.appendChild(button);
+        });
+        div.querySelector('.gr-sidebar-chapter-row').appendChild(actions);
 
         div.onclick = () => {
           openReader(story.id, index);
@@ -197,16 +249,30 @@
     
     const story = await db.grStories.get(grState.activeStoryId);
     if (!story) return;
+    if (window.GreenRiverStoryEngine) window.GreenRiverStoryEngine.normalizeStory(story);
     
     // 将选中的索引转为数组并排序（从大到小，避免删除时索引变化）
     const indicesToDelete = Array.from(chapterDeleteState.selectedChapters).sort((a, b) => b - a);
     
     console.log('[章节删除] 准备删除章节:', indicesToDelete);
     
-    // 删除章节
+    story.deletedChapters = Array.isArray(story.deletedChapters) ? story.deletedChapters : [];
+    const deletedChapterIds = new Set();
+    // 删除章节前保存可恢复副本
     indicesToDelete.forEach(index => {
+      const chapter = story.chapters[index];
+      if (!chapter) return;
+      deletedChapterIds.add(chapter.id);
+      story.deletedChapters.push({ chapter: window.GreenRiverStoryEngine ? window.GreenRiverStoryEngine.clone(chapter) : JSON.parse(JSON.stringify(chapter)), originalIndex: index, deletedAt: Date.now() });
       story.chapters.splice(index, 1);
     });
+    if (story.deletedChapters.length > 20) story.deletedChapters.splice(0, story.deletedChapters.length - 20);
+    story.chapters.forEach((chapter, index) => { chapter.prevSummary = index > 0 ? story.chapters[index - 1].summary || '' : '这是故事的开始。'; });
+    if (story.storyBible) {
+      story.storyBible.timeline = (story.storyBible.timeline || []).filter(item => !deletedChapterIds.has(item.chapterId));
+      story.storyBible.openThreads = (story.storyBible.openThreads || []).filter(item => !deletedChapterIds.has(item.chapterId));
+    }
+    if (window.GreenRiverStoryEngine) window.GreenRiverStoryEngine.refreshGlobalSummary(story);
     
     story.lastUpdated = Date.now();
     await db.grStories.put(story);
@@ -273,7 +339,7 @@
       div.style.cssText = 'display: flex; align-items: center; padding: 12px; border-bottom: 1px solid #eee;';
       div.innerHTML = `
         <input type="checkbox" class="gr-export-checkbox" value="${index}" checked style="width: 18px; height: 18px; margin-right: 12px; cursor: pointer;">
-        <span style="font-size: 14px; color: #333;">${index + 1}. ${ch.title || '无题'}</span>
+        <span style="font-size: 14px; color: #333;">${index + 1}. ${(window.GreenRiverStoryEngine?.escapeHtml || String)(ch.title || '无题')}</span>
       `;
       div.onclick = (e) => {
         if (e.target.tagName !== 'INPUT') {
@@ -329,6 +395,14 @@
       return;
     }
 
+    const format = document.getElementById('gr-export-format')?.value || 'txt';
+    const includeComments = document.getElementById('gr-export-include-comments')?.checked || false;
+    if (format === 'html') {
+      doExportGreenRiverHtml(story, selectedIndices, includeComments);
+      document.getElementById('gr-export-txt-modal').classList.remove('visible');
+      return;
+    }
+    if (window.GreenRiverStoryEngine) window.GreenRiverStoryEngine.normalizeStory(story);
     let txtContent = story.title + "\n\n";
     selectedIndices.sort((a, b) => a - b).forEach(index => {
       const ch = story.chapters[index];
@@ -336,6 +410,11 @@
       txtContent += (ch.title || `第 ${index + 1} 章`) + "\n";
       txtContent += "===============\n\n";
       txtContent += (ch.content || "") + "\n\n";
+      if (includeComments && Array.isArray(ch.readerComments) && ch.readerComments.length) {
+        txtContent += "【段评】\n";
+        ch.readerComments.forEach(group => (group.comments || []).forEach(comment => { txtContent += `${comment.name || '读者'}：${comment.content || ''}\n`; }));
+        txtContent += "\n";
+      }
     });
 
     const blob = new Blob([txtContent], { type: "text/plain;charset=utf-8" });
@@ -349,6 +428,30 @@
     URL.revokeObjectURL(url);
 
     document.getElementById('gr-export-txt-modal').classList.remove('visible');
+  }
+
+  function doExportGreenRiverHtml(story, selectedIndices, includeComments) {
+    const escapeHtml = window.GreenRiverStoryEngine?.escapeHtml || (value => String(value));
+    const chaptersHtml = selectedIndices.sort((a, b) => a - b).map(index => {
+      const chapter = story.chapters[index];
+      const commentsByParagraph = window.GreenRiverStoryEngine?.paragraphCommentMap(chapter) || new Map();
+      const paragraphs = (chapter.paragraphs || window.GreenRiverStoryEngine.splitParagraphs(chapter.content).map(text => ({ text }))).map(paragraph => {
+        const comments = includeComments ? (commentsByParagraph.get(paragraph.id) || []) : [];
+        const commentHtml = comments.length ? `<aside>${comments.map(comment => `<div><strong>${escapeHtml(comment.name || '读者')}</strong> ${escapeHtml(comment.content || '')}</div>`).join('')}</aside>` : '';
+        return `<p>${escapeHtml(paragraph.text)}</p>${commentHtml}`;
+      }).join('');
+      return `<article><h2>${escapeHtml(chapter.title || `第 ${index + 1} 章`)}</h2>${paragraphs}</article>`;
+    }).join('');
+    const html = `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(story.title)}</title><style>body{max-width:760px;margin:0 auto;padding:40px 24px;background:#faf9f5;color:#27251f;font:18px/1.9 system-ui,sans-serif}h1,h2{text-align:center}article{margin:60px 0}p{text-indent:2em;white-space:pre-wrap}aside{margin:-6px 0 20px 2em;padding:10px 14px;border-left:3px solid #2e7d32;background:#f1f7f3;font-size:14px;line-height:1.6}aside div+div{margin-top:6px}</style></head><body><h1>${escapeHtml(story.title)}</h1>${chaptersHtml}</body></html>`;
+    const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${story.title || '作品导出'}.html`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
   }
 
   // 暴露给全局
