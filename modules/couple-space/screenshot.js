@@ -77,11 +77,11 @@ ${msgList}
           if (geminiConfig.data && typeof geminiConfig.data === 'object' && !(geminiConfig.data instanceof FormData)) {
             geminiConfig.data.signal = controller.signal;
           }
-          response = await fetch(geminiConfig.url, geminiConfig.data);
+          response = await fetchCoupleSpaceWithTimeout(geminiConfig.url, geminiConfig.data);
         } else {
-          response = await fetch(`${proxyUrl}/v1/chat/completions`, {
+          response = await fetchCoupleSpaceWithTimeout(`${proxyUrl}/v1/chat/completions`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+            headers: getCoupleSpaceRequestHeaders(apiKey),
             body: JSON.stringify({
               model,
               messages: [{ role: 'system', content: prompt }, { role: 'user', content: '选一段对话截图吧' }],
@@ -332,7 +332,7 @@ async function triggerAutoScreenshot(charId) {
   const chat = state.chats[charId];
   if (!chat) return;
   const { proxyUrl, apiKey, model } = getCoupleSpaceApiConfig();
-  if (!proxyUrl || !apiKey || !model) return;
+  if (!proxyUrl || !model) return;
 
   const ctx = buildDiaryAiContext(chat);
 
@@ -348,11 +348,11 @@ ${ctx.shortTermMemory || '(无)'}
     let response;
     if (isGemini) {
       const geminiConfig = toGeminiRequestData(model, apiKey, prompt, [{ role: 'user', content: '想截图吗？' }]);
-      response = await fetch(geminiConfig.url, geminiConfig.data);
+      response = await fetchCoupleSpaceWithTimeout(geminiConfig.url, geminiConfig.data);
     } else {
-      response = await fetch(`${proxyUrl}/v1/chat/completions`, {
+      response = await fetchCoupleSpaceWithTimeout(`${proxyUrl}/v1/chat/completions`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+        headers: getCoupleSpaceRequestHeaders(apiKey),
         body: JSON.stringify({
           model,
           messages: [{ role: 'system', content: prompt }, { role: 'user', content: '想截图吗？' }],

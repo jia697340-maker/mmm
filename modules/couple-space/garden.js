@@ -4,33 +4,141 @@ function handleCoupleSpaceGardenChanged(data) {
 }
 
 function handleCoupleSpaceGardenSettingsChanged(data) {
-  localStorage.setItem('coupleGardenSettings_' + data.charId, JSON.stringify(data.settings || {}));
-  localStorage.removeItem('coupleGardenAutoLast_' + data.charId);
-  console.log(`[情侣空间] ⚙️ 已保存 浇水 设置并清除当天执行记录，重新初始化定时器`);
+  saveCoupleSpaceSettingsWithSchedule(data, 'coupleGardenSettings_', ['coupleGardenAutoLast_'], ['autoEnabled', 'autoTime']);
+  console.log(`[情侣空间] ⚙️ 已保存 浇水 设置并重新初始化定时器`);
   setupCoupleSpaceGardenAutoTimer();
 }
 
 async function handleCoupleSpaceGardenWaterReward(data) {
-  // data: { charId, author, amount, description }
-  const chat = state.chats[data.charId];
-  if (!chat) return;
-  try {
-    if (data.author === 'user') {
-      // User wallet: processTransaction
-      if (typeof processTransaction === 'function') {
-        await processTransaction(data.amount, 'income', data.description || '情侣树浇水奖励');
-      }
-    } else if (data.author === 'char') {
-      // Character wallet: simulatedTaobaoHistory.totalBalance
-      if (!chat.simulatedTaobaoHistory) chat.simulatedTaobaoHistory = { totalBalance: 0, purchases: [] };
-      chat.simulatedTaobaoHistory.totalBalance += data.amount;
-      if (typeof db !== 'undefined' && db.chats) {
-        await db.chats.put(chat);
-      }
-    }
-  } catch(e) {
-    console.error('Garden water reward error:', e);
+  const success = await applyCoupleSpaceGardenReward(data);
+  const iframe = document.getElementById('couple-space-iframe');
+  if (iframe && iframe.contentWindow && localStorage.getItem('coupleSpaceLastId') === data.charId) {
+    iframe.contentWindow.postMessage({
+      type: 'coupleSpaceGardenWaterRewardResult',
+      charId: data.charId,
+      transactionId: data.transactionId || '',
+      success
+    }, '*');
   }
+  return success;
+}
+
+let coupleSpaceGardenRewardQueue = Promise.resolve();
+
+function getCoupleSpaceGardenRewardLedger() {
+  try { return JSON.parse(localStorage.getItem('coupleGardenRewardLedger') || '{}'); }
+  catch(e) { return {}; }
+}
+
+function saveCoupleSpaceGardenRewardLedger(ledger) {
+  const entries = Object.entries(ledger);
+  if (entries.length > 500) {
+    entries.sort((a, b) => (b[1].completedAt || 0) - (a[1].completedAt || 0));
+    ledger = Object.fromEntries(entries.slice(0, 500));
+  }
+  localStorage.setItem('coupleGardenRewardLedger', JSON.stringify(ledger));
+}
+
+function applyCoupleSpaceGardenReward(data) {
+  const transactionId = data.transactionId || [
+    'garden', data.charId, data.author, Number(data.amount).toFixed(2), data.description || '', Date.now()
+  ].join('-');
+  const task = coupleSpaceGardenRewardQueue.then(async () => {
+    const amount = Number(data.amount);
+    if (!Number.isFinite(amount) || amount <= 0) return false;
+
+    const ledger = getCoupleSpaceGardenRewardLedger();
+    if (ledger[transactionId] && ledger[transactionId].state === 'completed') return true;
+
+    try {
+      if (data.author === 'user') {
+        if (typeof db === 'undefined' || !db.userWallet || !db.userTransactions) return false;
+        await db.transaction('rw', db.userWallet, db.userTransactions, async () => {
+          const existing = await db.userTransactions.filter(item => item.transactionId === transactionId).first();
+          if (existing) return;
+          let wallet = await db.userWallet.get('main');
+          if (!wallet) wallet = { id: 'main', balance: 0, kinshipCards: [] };
+          if (typeof wallet.balance !== 'number' || Number.isNaN(wallet.balance)) wallet.balance = 0;
+          wallet.balance += amount;
+          await db.userWallet.put(wallet);
+          await db.userTransactions.add({
+            timestamp: Date.now(),
+            type: 'income',
+            amount,
+            description: data.description || '情侣树浇水奖励',
+            transactionId
+          });
+          window.userBalance = wallet.balance;
+        });
+      } else if (data.author === 'char') {
+        const chat = state.chats[data.charId];
+        if (!chat || typeof db === 'undefined' || !db.chats) return false;
+        if (!chat.simulatedTaobaoHistory) chat.simulatedTaobaoHistory = { totalBalance: 0, purchases: [] };
+        if (!Array.isArray(chat.coupleGardenRewardTransactionIds)) chat.coupleGardenRewardTransactionIds = [];
+        if (chat.coupleGardenRewardTransactionIds.includes(transactionId)) return true;
+        const previousBalance = Number(chat.simulatedTaobaoHistory.totalBalance) || 0;
+        const previousTransactionIds = chat.coupleGardenRewardTransactionIds.slice();
+        chat.simulatedTaobaoHistory.totalBalance = previousBalance + amount;
+        chat.coupleGardenRewardTransactionIds.push(transactionId);
+        if (chat.coupleGardenRewardTransactionIds.length > 500) {
+          chat.coupleGardenRewardTransactionIds = chat.coupleGardenRewardTransactionIds.slice(-500);
+        }
+        try {
+          await db.chats.put(chat);
+        } catch (error) {
+          chat.simulatedTaobaoHistory.totalBalance = previousBalance;
+          chat.coupleGardenRewardTransactionIds = previousTransactionIds;
+          throw error;
+        }
+      } else {
+        return false;
+      }
+
+      ledger[transactionId] = {
+        state: 'completed',
+        completedAt: Date.now(),
+        charId: data.charId,
+        author: data.author,
+        amount
+      };
+      saveCoupleSpaceGardenRewardLedger(ledger);
+      return true;
+    } catch(e) {
+      console.error('Garden water reward error:', e);
+      return false;
+    }
+  });
+  coupleSpaceGardenRewardQueue = task.catch(() => false);
+  return task;
+}
+
+function calculateCoupleSpaceGardenReward(gardenData, now = new Date()) {
+  const mmdd = String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+  const defaultDates = {
+    '01-01': ['元旦', 100], '02-14': ['情人节', 520], '03-08': ['妇女节', 38],
+    '03-14': ['白色情人节', 314], '05-01': ['劳动节', 51], '05-20': ['520', 520],
+    '05-21': ['521', 521], '06-01': ['儿童节', 61], '07-07': ['七夕', 77.77],
+    '10-01': ['国庆节', 101], '11-11': ['光棍节', 111.10], '12-24': ['平安夜', 124],
+    '12-25': ['圣诞节', 125], '12-31': ['跨年', 131.40]
+  };
+  let special = defaultDates[mmdd] ? { name: defaultDates[mmdd][0], coins: defaultDates[mmdd][1] } : null;
+  if (!special) {
+    const custom = (gardenData.specialDates || []).find(item => item.date === mmdd);
+    if (custom) special = { name: custom.name, coins: Number(custom.coins) || 0 };
+  }
+  if (!special) {
+    try {
+      const anniversaries = JSON.parse(localStorage.getItem('coupleAnniv_' + gardenData.charId) || '[]');
+      const anniversary = anniversaries.find(item => item.date && item.date.slice(5) === mmdd);
+      if (anniversary) special = { name: anniversary.title, coins: 1314 };
+    } catch(e) {}
+  }
+  const amount = special && special.coins > 0 ? special.coins : 5.20;
+  return {
+    amount,
+    special: special ? { name: special.name, coins: amount } : null,
+    description: special ? `情侣树浇水-${special.name}` : '情侣树自动浇水奖励'
+  };
 }
 
 async function handleCoupleSpaceGardenAiRequest(data) {
@@ -82,7 +190,7 @@ async function handleCoupleSpaceGardenHeartRequest(data) {
   try {
     const ctx = buildDiaryAiContext(chat);
     const { proxyUrl, apiKey, model } = getCoupleSpaceApiConfig();
-    if (!proxyUrl || !apiKey || !model) return;
+    if (!proxyUrl || !model) return;
     const prompt = `你是"${ctx.charName}"。你的伴侣"${ctx.myNickname}"给你们的情侣树浇了水，写了："${data.waterContent || ''}"，并点了爱心。
 你会不会也想给这条浇水记录点爱心？考虑你的性格和你们的关系。
 请只回答 "yes" 或 "no"，不要其他内容。`;
@@ -90,11 +198,11 @@ async function handleCoupleSpaceGardenHeartRequest(data) {
     let response;
     if (isGemini) {
       const geminiConfig = toGeminiRequestData(model, apiKey, prompt, [{ role: 'user', content: '你要点爱心吗？' }]);
-      response = await fetch(geminiConfig.url, geminiConfig.data);
+      response = await fetchCoupleSpaceWithTimeout(geminiConfig.url, geminiConfig.data);
     } else {
-      response = await fetch(`${proxyUrl}/v1/chat/completions`, {
+      response = await fetchCoupleSpaceWithTimeout(`${proxyUrl}/v1/chat/completions`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+        headers: getCoupleSpaceRequestHeaders(apiKey),
         body: JSON.stringify({ model, messages: [{ role: 'system', content: prompt }, { role: 'user', content: '你要点爱心吗？' }], temperature: 0.7 })
       });
     }
@@ -113,7 +221,7 @@ async function handleCoupleSpaceGardenHeartRequest(data) {
 
 async function generateCoupleSpaceGardenAi(chat, data) {
   const { proxyUrl, apiKey, model } = getCoupleSpaceApiConfig();
-  if (!proxyUrl || !apiKey || !model) throw new Error('API未配置');
+  if (!proxyUrl || !model) throw new Error('API未配置');
   const ctx = buildDiaryAiContext(chat);
   const gardenSettings = data.gardenSettings || {};
   const maxCharVisible = gardenSettings.visibleCharWaters ?? 10;
@@ -205,23 +313,23 @@ ${ctx.currentTime}
   let response;
   if (isGemini) {
     const geminiConfig = toGeminiRequestData(model, apiKey, systemPrompt, messages);
-    response = await fetch(geminiConfig.url, geminiConfig.data);
+    response = await fetchCoupleSpaceWithTimeout(geminiConfig.url, geminiConfig.data);
   } else {
-    response = await fetch(`${proxyUrl}/v1/chat/completions`, {
+    response = await fetchCoupleSpaceWithTimeout(`${proxyUrl}/v1/chat/completions`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+      headers: getCoupleSpaceRequestHeaders(apiKey),
       body: JSON.stringify({ model, messages: [{ role: 'system', content: systemPrompt }, ...messages], temperature: state.globalSettings.apiTemperature || 0.8, top_p: state.globalSettings.apiTopP !== undefined ? state.globalSettings.apiTopP : 1.0, presence_penalty: state.globalSettings.apiPresencePenalty !== undefined ? state.globalSettings.apiPresencePenalty : 0.0, frequency_penalty: state.globalSettings.apiFrequencyPenalty !== undefined ? state.globalSettings.apiFrequencyPenalty : 0.0 })
     });
   }
   if (!response.ok) throw new Error('API请求失败: ' + response.status);
   const respData = await response.json();
   const raw = getGeminiResponseText(respData).replace(/^```json\s*/, '').replace(/```$/, '').trim();
-  return JSON.parse(raw);
+  return parseCoupleSpaceJson(raw);
 }
 
 async function generateCoupleSpaceGardenComment(chat, data) {
   const { proxyUrl, apiKey, model } = getCoupleSpaceApiConfig();
-  if (!proxyUrl || !apiKey || !model) throw new Error('API未配置');
+  if (!proxyUrl || !model) throw new Error('API未配置');
   const ctx = buildDiaryAiContext(chat);
   const systemPrompt = `# 你的任务
 你是"${ctx.charName}"。"${ctx.myNickname}"给你们的情侣树浇了水，写了一段话，请你评论。
@@ -252,11 +360,11 @@ ${ctx.currentTime}
   let response;
   if (isGemini) {
     const geminiConfig = toGeminiRequestData(model, apiKey, systemPrompt, messages);
-    response = await fetch(geminiConfig.url, geminiConfig.data);
+    response = await fetchCoupleSpaceWithTimeout(geminiConfig.url, geminiConfig.data);
   } else {
-    response = await fetch(`${proxyUrl}/v1/chat/completions`, {
+    response = await fetchCoupleSpaceWithTimeout(`${proxyUrl}/v1/chat/completions`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+      headers: getCoupleSpaceRequestHeaders(apiKey),
       body: JSON.stringify({ model, messages: [{ role: 'system', content: systemPrompt }, ...messages], temperature: state.globalSettings.apiTemperature || 0.8, top_p: state.globalSettings.apiTopP !== undefined ? state.globalSettings.apiTopP : 1.0, presence_penalty: state.globalSettings.apiPresencePenalty !== undefined ? state.globalSettings.apiPresencePenalty : 0.0, frequency_penalty: state.globalSettings.apiFrequencyPenalty !== undefined ? state.globalSettings.apiFrequencyPenalty : 0.0 })
     });
   }
@@ -279,7 +387,7 @@ function setupCoupleSpaceGardenAutoTimer() {
         console.log(`✅ [情侣空间] 已重置 浇水 的定时器，新的定时时间为：${settings.autoTime}`);
         checkAndRunMissed(settings.autoTime, 'coupleGardenAutoLast_' + space.charId, () => {
           console.log(`⏰ [情侣空间] 定时补执行时间已到！开始强制触发 浇水 的自动生成`);
-          triggerAutoGardenWater(space.charId, true);
+          return triggerAutoGardenWater(space.charId, true);
         });
         scheduleGardenAutoWater(space.charId, settings.autoTime);
       }
@@ -291,14 +399,14 @@ function scheduleGardenAutoWater(charId, timeStr) {
   coupleSpaceGardenTimers[charId] = setInterval(() => {
     checkAndRunMissed(timeStr, 'coupleGardenAutoLast_' + charId, () => {
       console.log(`⏰ [情侣空间] 定时时间已到！开始强制触发 浇水 的自动生成`);
-      triggerAutoGardenWater(charId, true);
+      return triggerAutoGardenWater(charId, true);
     });
   }, 60000);
 }
 
 async function triggerAutoGardenWater(charId, isTimer = false) {
   const chat = state.chats[charId];
-  if (!chat) return;
+  if (!chat) return false;
   const settings = JSON.parse(localStorage.getItem('coupleGardenSettings_' + charId) || '{}');
 
   console.log(`⏳ [情侣空间] 正在向 AI 请求生成 浇水记录...`);
@@ -311,31 +419,46 @@ async function triggerAutoGardenWater(charId, isTimer = false) {
       gardenSettings: settings,
       treeStatus: ''
     });
+    gardenData.charId = charId;
+    const reward = calculateCoupleSpaceGardenReward(gardenData);
     const newWater = {
-      id: 'water_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
+      id: 'water_auto_' + charId + '_' + getCoupleSpaceLocalDateKey(),
       content: result.content,
       author: 'char',
       createdAt: Date.now(),
-      coinsEarned: 0,
-      specialDate: null,
+      coinsEarned: reward.amount,
+      specialDate: reward.special,
+      rewardTransactionId: '',
+      rewardSettled: false,
       hearts: { char: true },
       comments: []
     };
+    newWater.rewardTransactionId = 'garden-water-' + newWater.id;
+    const rewardSaved = await applyCoupleSpaceGardenReward({
+      charId,
+      author: 'char',
+      amount: reward.amount,
+      description: reward.description,
+      transactionId: newWater.rewardTransactionId
+    });
+    if (!rewardSaved) throw new Error('自动浇水奖励入账失败');
+    newWater.rewardSettled = true;
+
+    gardenData.waterLogs = waterLogs;
+    gardenData.waterLogs.push(newWater);
+    gardenData.totalCoins = (Number(gardenData.totalCoins) || 0) + reward.amount;
+    localStorage.setItem('coupleGarden_' + charId, JSON.stringify(gardenData));
+
     const iframe = document.getElementById('couple-space-iframe');
-    const isIframeOpenForThisChar = iframe && iframe.src && iframe.src.includes('330--main/index.html') && localStorage.getItem('coupleSpaceLastId') === charId;
+    const isIframeOpenForThisChar = iframe && iframe.src && iframe.src.includes(COUPLE_SPACE_IFRAME_PATH) && localStorage.getItem('coupleSpaceLastId') === charId;
     
     if (isIframeOpenForThisChar && iframe.contentWindow) {
       iframe.contentWindow.postMessage({ type: 'coupleSpaceGardenAutoResult', item: newWater }, '*');
-    } else {
-      try {
-        const gardenData = JSON.parse(localStorage.getItem('coupleGarden_' + charId) || '{}');
-        if (!gardenData.waterLogs) gardenData.waterLogs = [];
-        gardenData.waterLogs.push(newWater);
-        localStorage.setItem('coupleGarden_' + charId, JSON.stringify(gardenData));
-      } catch(e) { console.error('Failed to save garden offline:', e); }
     }
+    return true;
   } catch(err) {
     console.error('Auto garden water failed:', err);
+    return false;
   }
 }
 

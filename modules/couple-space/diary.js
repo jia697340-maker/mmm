@@ -62,9 +62,8 @@ async function handleCoupleSpaceDiaryCommentRequest(data) {
 
 function handleCoupleSpaceDiarySettingsChanged(data) {
   // Store settings in parent for auto-trigger scheduling
-  localStorage.setItem('coupleDiarySettings_' + data.charId, JSON.stringify(data.settings));
-  localStorage.removeItem('coupleDiaryAutoLast_' + data.charId);
-  console.log(`[情侣空间] ⚙️ 已保存 日记 设置并清除当天执行记录，重新初始化定时器`);
+  saveCoupleSpaceSettingsWithSchedule(data, 'coupleDiarySettings_', ['coupleDiaryAutoLast_'], ['autoEnabled', 'autoTime']);
+  console.log(`[情侣空间] ⚙️ 已保存 日记 设置并重新初始化定时器`);
   setupCoupleSpaceDiaryAutoTimer();
 }
 
@@ -73,7 +72,7 @@ async function handleCoupleSpaceDiarySummaryRequest(data) {
   if (!iframe || !iframe.contentWindow) return;
   try {
     const { proxyUrl, apiKey, model } = getCoupleSpaceApiConfig();
-    if (!proxyUrl || !apiKey || !model) throw new Error('API未配置');
+    if (!proxyUrl || !model) throw new Error('API未配置');
 
     const authorName = data.diaryAuthor === 'char' ? data.charName : data.userName;
     let commentsText = '';
@@ -98,11 +97,11 @@ ${commentsText}`;
     let response;
     if (isGemini) {
       const geminiConfig = toGeminiRequestData(model, apiKey, prompt, messages);
-      response = await fetch(geminiConfig.url, geminiConfig.data);
+      response = await fetchCoupleSpaceWithTimeout(geminiConfig.url, geminiConfig.data);
     } else {
-      response = await fetch(`${proxyUrl}/v1/chat/completions`, {
+      response = await fetchCoupleSpaceWithTimeout(`${proxyUrl}/v1/chat/completions`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+        headers: getCoupleSpaceRequestHeaders(apiKey),
         body: JSON.stringify({ model, messages: [{ role: 'system', content: prompt }, ...messages], temperature: 0.5 })
       });
     }
@@ -453,7 +452,7 @@ function buildDiaryAiContext(chat) {
 
 async function generateCoupleSpaceDiaryAi(chat, data) {
   const { proxyUrl, apiKey, model } = getCoupleSpaceApiConfig();
-  if (!proxyUrl || !apiKey || !model) throw new Error('API未配置');
+  if (!proxyUrl || !model) throw new Error('API未配置');
 
   const ctx = buildDiaryAiContext(chat);
 
@@ -538,11 +537,11 @@ ${ctx.currentTime}
   let response;
   if (isGemini) {
     const geminiConfig = toGeminiRequestData(model, apiKey, systemPrompt, messages);
-    response = await fetch(geminiConfig.url, geminiConfig.data);
+    response = await fetchCoupleSpaceWithTimeout(geminiConfig.url, geminiConfig.data);
   } else {
-    response = await fetch(`${proxyUrl}/v1/chat/completions`, {
+    response = await fetchCoupleSpaceWithTimeout(`${proxyUrl}/v1/chat/completions`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+      headers: getCoupleSpaceRequestHeaders(apiKey),
       body: JSON.stringify({
         model,
         messages: [{ role: 'system', content: systemPrompt }, ...messages],
@@ -557,12 +556,12 @@ ${ctx.currentTime}
   if (!response.ok) throw new Error('API请求失败: ' + response.status);
   const respData = await response.json();
   const raw = getGeminiResponseText(respData).replace(/^```json\s*/, '').replace(/```$/, '').trim();
-  return JSON.parse(raw);
+  return parseCoupleSpaceJson(raw);
 }
 
 async function generateCoupleSpaceDiaryComment(chat, data) {
   const { proxyUrl, apiKey, model } = getCoupleSpaceApiConfig();
-  if (!proxyUrl || !apiKey || !model) throw new Error('API未配置');
+  if (!proxyUrl || !model) throw new Error('API未配置');
 
   const ctx = buildDiaryAiContext(chat);
 
@@ -603,11 +602,11 @@ ${ctx.memoryContext ? '# 你的记忆\n' + ctx.memoryContext : ''}
   let response;
   if (isGemini) {
     const geminiConfig = toGeminiRequestData(model, apiKey, systemPrompt, messages);
-    response = await fetch(geminiConfig.url, geminiConfig.data);
+    response = await fetchCoupleSpaceWithTimeout(geminiConfig.url, geminiConfig.data);
   } else {
-    response = await fetch(`${proxyUrl}/v1/chat/completions`, {
+    response = await fetchCoupleSpaceWithTimeout(`${proxyUrl}/v1/chat/completions`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+      headers: getCoupleSpaceRequestHeaders(apiKey),
       body: JSON.stringify({
         model,
         messages: [{ role: 'system', content: systemPrompt }, ...messages],
@@ -641,7 +640,7 @@ function setupCoupleSpaceDiaryAutoTimer() {
         // Check if missed today's execution on startup
         checkAndRunMissed(settings.autoTime, 'coupleDiaryAutoLast_' + sp.charId, () => {
           console.log(`⏰ [情侣空间] 定时补执行时间已到！开始强制触发 日记 的自动生成`);
-          triggerAutoDiaryWrite(sp.charId, true);
+          return triggerAutoDiaryWrite(sp.charId, true);
         });
         scheduleDiaryAutoWrite(sp.charId, settings.autoTime);
       }
@@ -653,14 +652,14 @@ function scheduleDiaryAutoWrite(charId, timeStr) {
   coupleSpaceDiaryTimers[charId] = setInterval(() => {
     checkAndRunMissed(timeStr, 'coupleDiaryAutoLast_' + charId, () => {
       console.log(`⏰ [情侣空间] 定时时间已到！开始强制触发 日记 的自动生成`);
-      triggerAutoDiaryWrite(charId, true);
+      return triggerAutoDiaryWrite(charId, true);
     });
   }, 60000);
 }
 
 async function triggerAutoDiaryWrite(charId, isTimer = false) {
   const chat = state.chats[charId];
-  if (!chat) return;
+  if (!chat) return false;
 
   const settings = JSON.parse(localStorage.getItem('coupleDiarySettings_' + charId) || '{}');
 
@@ -670,7 +669,7 @@ async function triggerAutoDiaryWrite(charId, isTimer = false) {
       const shouldWrite = await askAiIfShouldWriteDiary(chat);
       if (!shouldWrite) {
         console.log('AI decided not to write diary today for', chat.name);
-        return;
+        return true;
       }
     } catch(e) {
       console.error('AI decide failed, will write anyway:', e);
@@ -712,19 +711,21 @@ async function triggerAutoDiaryWrite(charId, isTimer = false) {
 
     console.log('Auto diary written for', chat.name, ':', result.title);
 
-    sendOrSaveCoupleSpaceData(charId, {
+    const saved = sendOrSaveCoupleSpaceData(charId, {
       type: 'coupleSpaceDiaryAutoWritten',
       charId: charId,
       diary: newDiary
     }, 'coupleDiaries_', newDiary);
+    return saved;
   } catch(err) {
     console.error('Auto diary write failed:', err);
+    return false;
   }
 }
 
 async function askAiIfShouldWriteDiary(chat) {
   const { proxyUrl, apiKey, model } = getCoupleSpaceApiConfig();
-  if (!proxyUrl || !apiKey || !model) return false;
+  if (!proxyUrl || !model) return false;
 
   const ctx = buildDiaryAiContext(chat);
 
@@ -742,11 +743,11 @@ ${ctx.summaryContext ? '对话总结:\n' + ctx.summaryContext : ''}
     let response;
     if (isGemini) {
       const geminiConfig = toGeminiRequestData(model, apiKey, prompt, [{ role: 'user', content: '今天要写日记吗？' }]);
-      response = await fetch(geminiConfig.url, geminiConfig.data);
+      response = await fetchCoupleSpaceWithTimeout(geminiConfig.url, geminiConfig.data);
     } else {
-      response = await fetch(`${proxyUrl}/v1/chat/completions`, {
+      response = await fetchCoupleSpaceWithTimeout(`${proxyUrl}/v1/chat/completions`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+        headers: getCoupleSpaceRequestHeaders(apiKey),
         body: JSON.stringify({
           model,
           messages: [{ role: 'system', content: prompt }, { role: 'user', content: '今天要写日记吗？' }],

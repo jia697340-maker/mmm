@@ -5,10 +5,8 @@ function handleCoupleSpaceSleepChanged(data) {
 }
 
 function handleCoupleSpaceSleepSettingsChanged(data) {
-  localStorage.setItem('coupleSleepSettings_' + data.charId, JSON.stringify(data.settings || {}));
-  localStorage.removeItem('coupleSleepAuto_sleep_' + data.charId);
-  localStorage.removeItem('coupleSleepAuto_wake_' + data.charId);
-  console.log(`[情侣空间] ⚙️ 已保存 睡眠 设置并清除当天执行记录，重新初始化定时器`);
+  saveCoupleSpaceSettingsWithSchedule(data, 'coupleSleepSettings_', ['coupleSleepAuto_sleep_', 'coupleSleepAuto_wake_'], ['autoEnabled', 'autoSleepTime', 'autoWakeTime']);
+  console.log(`[情侣空间] ⚙️ 已保存 睡眠 设置并重新初始化定时器`);
   setupCoupleSpaceSleepAutoTimer();
 }
 
@@ -62,7 +60,7 @@ async function handleCoupleSpaceSleepHeartRequest(data) {
   try {
     const ctx = buildDiaryAiContext(chat);
     const { proxyUrl, apiKey, model } = getCoupleSpaceApiConfig();
-    if (!proxyUrl || !apiKey || !model) return;
+    if (!proxyUrl || !model) return;
     const sleepDesc = data.sleepNote || data.wakeNote || '';
     const prompt = `你是"${ctx.charName}"。你的伴侣"${ctx.myNickname}"记录了一条睡眠动态"${sleepDesc}"并点了爱心。
 你会不会也想给这条睡眠动态点爱心？考虑你的性格和你们的关系。
@@ -71,11 +69,11 @@ async function handleCoupleSpaceSleepHeartRequest(data) {
     let response;
     if (isGemini) {
       const geminiConfig = toGeminiRequestData(model, apiKey, prompt, [{ role: 'user', content: '你要点爱心吗？' }]);
-      response = await fetch(geminiConfig.url, geminiConfig.data);
+      response = await fetchCoupleSpaceWithTimeout(geminiConfig.url, geminiConfig.data);
     } else {
-      response = await fetch(`${proxyUrl}/v1/chat/completions`, {
+      response = await fetchCoupleSpaceWithTimeout(`${proxyUrl}/v1/chat/completions`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+        headers: getCoupleSpaceRequestHeaders(apiKey),
         body: JSON.stringify({ model, messages: [{ role: 'system', content: prompt }, { role: 'user', content: '你要点爱心吗？' }], temperature: 0.7 })
       });
     }
@@ -94,7 +92,7 @@ async function handleCoupleSpaceSleepHeartRequest(data) {
 
 async function generateCoupleSpaceSleepAi(chat, data) {
   const { proxyUrl, apiKey, model } = getCoupleSpaceApiConfig();
-  if (!proxyUrl || !apiKey || !model) throw new Error('API未配置');
+  if (!proxyUrl || !model) throw new Error('API未配置');
   const ctx = buildDiaryAiContext(chat);
   const sleepSettings = data.sleepSettings || {};
   const phase = data.phase || 'sleep';
@@ -324,23 +322,23 @@ quality 可选值: good(睡得好) normal(一般) bad(没睡好) terrible(失眠
   let response;
   if (isGemini) {
     const geminiConfig = toGeminiRequestData(model, apiKey, systemPrompt, messages);
-    response = await fetch(geminiConfig.url, geminiConfig.data);
+    response = await fetchCoupleSpaceWithTimeout(geminiConfig.url, geminiConfig.data);
   } else {
-    response = await fetch(`${proxyUrl}/v1/chat/completions`, {
+    response = await fetchCoupleSpaceWithTimeout(`${proxyUrl}/v1/chat/completions`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+      headers: getCoupleSpaceRequestHeaders(apiKey),
       body: JSON.stringify({ model, messages: [{ role: 'system', content: systemPrompt }, ...messages], temperature: state.globalSettings.apiTemperature || 0.8, top_p: state.globalSettings.apiTopP !== undefined ? state.globalSettings.apiTopP : 1.0, presence_penalty: state.globalSettings.apiPresencePenalty !== undefined ? state.globalSettings.apiPresencePenalty : 0.0, frequency_penalty: state.globalSettings.apiFrequencyPenalty !== undefined ? state.globalSettings.apiFrequencyPenalty : 0.0 })
     });
   }
   if (!response.ok) throw new Error('API请求失败: ' + response.status);
   const respData = await response.json();
   const raw = getGeminiResponseText(respData).replace(/^```json\s*/, '').replace(/```$/, '').trim();
-  return JSON.parse(raw);
+  return parseCoupleSpaceJson(raw);
 }
 
 async function generateCoupleSpaceSleepComment(chat, data) {
   const { proxyUrl, apiKey, model } = getCoupleSpaceApiConfig();
-  if (!proxyUrl || !apiKey || !model) throw new Error('API未配置');
+  if (!proxyUrl || !model) throw new Error('API未配置');
   const ctx = buildDiaryAiContext(chat);
 
   const typeLabel = data.sleepStatus === 'completed' ? '已完成的睡眠' : '入睡';
@@ -382,11 +380,11 @@ ${ctx.currentTime}
   let response;
   if (isGemini) {
     const geminiConfig = toGeminiRequestData(model, apiKey, systemPrompt, messages);
-    response = await fetch(geminiConfig.url, geminiConfig.data);
+    response = await fetchCoupleSpaceWithTimeout(geminiConfig.url, geminiConfig.data);
   } else {
-    response = await fetch(`${proxyUrl}/v1/chat/completions`, {
+    response = await fetchCoupleSpaceWithTimeout(`${proxyUrl}/v1/chat/completions`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+      headers: getCoupleSpaceRequestHeaders(apiKey),
       body: JSON.stringify({ model, messages: [{ role: 'system', content: systemPrompt }, ...messages], temperature: state.globalSettings.apiTemperature || 0.8, top_p: state.globalSettings.apiTopP !== undefined ? state.globalSettings.apiTopP : 1.0, presence_penalty: state.globalSettings.apiPresencePenalty !== undefined ? state.globalSettings.apiPresencePenalty : 0.0, frequency_penalty: state.globalSettings.apiFrequencyPenalty !== undefined ? state.globalSettings.apiFrequencyPenalty : 0.0 })
     });
   }
@@ -410,7 +408,7 @@ function setupCoupleSpaceSleepAutoTimer() {
           console.log(`✅ [情侣空间] 已重置 睡眠(入睡) 的定时器，新的定时时间为：${settings.autoSleepTime}`);
           checkAndRunMissed(settings.autoSleepTime, 'coupleSleepAuto_sleep_' + space.charId, () => {
             console.log(`⏰ [情侣空间] 定时补执行时间已到！开始强制触发 睡眠(入睡) 的自动生成`);
-            triggerAutoSleepPost(space.charId, 'sleep', true);
+            return triggerAutoSleepPost(space.charId, 'sleep', true);
           });
           scheduleSleepAutoPost(space.charId, settings.autoSleepTime, 'sleep');
         }
@@ -418,7 +416,7 @@ function setupCoupleSpaceSleepAutoTimer() {
           console.log(`✅ [情侣空间] 已重置 睡眠(起床) 的定时器，新的定时时间为：${settings.autoWakeTime}`);
           checkAndRunMissed(settings.autoWakeTime, 'coupleSleepAuto_wake_' + space.charId, () => {
             console.log(`⏰ [情侣空间] 定时补执行时间已到！开始强制触发 睡眠(起床) 的自动生成`);
-            triggerAutoSleepPost(space.charId, 'wake', true);
+            return triggerAutoSleepPost(space.charId, 'wake', true);
           });
           scheduleSleepAutoPost(space.charId, settings.autoWakeTime, 'wake');
         }
@@ -432,14 +430,14 @@ function scheduleSleepAutoPost(charId, timeStr, phase) {
   coupleSpaceSleepTimers[timerKey] = setInterval(() => {
     checkAndRunMissed(timeStr, 'coupleSleepAuto_' + phase + '_' + charId, () => {
       console.log(`⏰ [情侣空间] 定时时间已到！开始强制触发 睡眠(${phase}) 的自动生成`);
-      triggerAutoSleepPost(charId, phase, true);
+      return triggerAutoSleepPost(charId, phase, true);
     });
   }, 60000);
 }
 
 async function triggerAutoSleepPost(charId, phase, isTimer = false) {
   const chat = state.chats[charId];
-  if (!chat) return;
+  if (!chat) return false;
   const settings = JSON.parse(localStorage.getItem('coupleSleepSettings_' + charId) || '{}');
 
   console.log(`⏳ [情侣空间] 正在向 AI 请求生成 睡眠(${phase})...`);
@@ -454,7 +452,7 @@ async function triggerAutoSleepPost(charId, phase, isTimer = false) {
       const newSleep = {
         id: 'sleep_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
         author: 'char',
-        sleepAt: new Date().toISOString().split('T')[0] + 'T' + (sleepResult.sleepTime || '23:00') + ':00',
+        sleepAt: getCoupleSpaceLocalDateKey() + 'T' + (sleepResult.sleepTime || '23:00') + ':00',
         wakeAt: null,
         duration: null,
         sleepNote: sleepResult.sleepNote,
@@ -469,15 +467,16 @@ async function triggerAutoSleepPost(charId, phase, isTimer = false) {
         hearts: { char: true },
         comments: []
       };
-      sendOrSaveCoupleSpaceData(charId, {
+      const saved = sendOrSaveCoupleSpaceData(charId, {
         type: 'coupleSpaceSleepAutoResult',
         phase: 'sleep',
         item: newSleep
       }, 'coupleSleep_', newSleep);
+      return saved;
     } else if (phase === 'wake') {
       // Find the latest sleeping record
       const sleepingIdx = existingSleeps.map((s, i) => ({ s, i })).reverse().find(x => x.s.author === 'char' && x.s.status === 'sleeping');
-      if (!sleepingIdx) return;
+      if (!sleepingIdx) return true;
       const currentSleep = existingSleeps[sleepingIdx.i];
 
       // Phase 2: Generate sleep events
@@ -504,7 +503,7 @@ async function triggerAutoSleepPost(charId, phase, isTimer = false) {
       const wakeResult = await generateCoupleSpaceSleepAi(chat, {
         charId, existingSleeps, sleepSettings: settings, phase: 'wake', currentSleep
       });
-      currentSleep.wakeAt = new Date().toISOString().split('T')[0] + 'T' + (wakeResult.wakeTime || '07:00') + ':00';
+      currentSleep.wakeAt = getCoupleSpaceLocalDateKey() + 'T' + (wakeResult.wakeTime || '07:00') + ':00';
       currentSleep.wakeNote = wakeResult.wakeNote;
       currentSleep.wakeMood = wakeResult.wakeMood;
       currentSleep.quality = wakeResult.quality;
@@ -519,7 +518,7 @@ async function triggerAutoSleepPost(charId, phase, isTimer = false) {
       } catch(e) {}
 
       const iframe = document.getElementById('couple-space-iframe');
-      const isIframeOpenForThisChar = iframe && iframe.src && iframe.src.includes('330--main/index.html') && localStorage.getItem('coupleSpaceLastId') === charId;
+      const isIframeOpenForThisChar = iframe && iframe.src && iframe.src.includes(COUPLE_SPACE_IFRAME_PATH) && localStorage.getItem('coupleSpaceLastId') === charId;
       
       if (isIframeOpenForThisChar && iframe.contentWindow) {
         iframe.contentWindow.postMessage({ type: 'coupleSpaceSleepAutoResult', phase: 'wake', item: currentSleep, sleepIndex: sleepingIdx.i }, '*');
@@ -529,9 +528,11 @@ async function triggerAutoSleepPost(charId, phase, isTimer = false) {
           localStorage.setItem('coupleSleep_' + charId, JSON.stringify(existingSleeps));
         } catch(e) { console.error('Failed to save sleep wake offline:', e); }
       }
+      return true;
     }
   } catch(err) {
     console.error('Auto sleep post failed:', err);
+    return false;
   }
 }
 

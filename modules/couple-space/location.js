@@ -7,9 +7,8 @@ function handleCoupleSpaceLocationChanged(data) {
 }
 
 function handleCoupleSpaceLocationSettingsChanged(data) {
-  localStorage.setItem('coupleLocSettings_' + data.charId, JSON.stringify(data.settings || {}));
-  localStorage.removeItem('coupleLocAutoLast_' + data.charId);
-  console.log(`[情侣空间] ⚙️ 已保存 定位 设置并清除当天执行记录，重新初始化定时器`);
+  saveCoupleSpaceSettingsWithSchedule(data, 'coupleLocSettings_', ['coupleLocAutoLast_'], ['autoEnabled', 'autoTime']);
+  console.log(`[情侣空间] ⚙️ 已保存 定位 设置并重新初始化定时器`);
   setupCoupleSpaceLocationAutoTimer();
 }
 
@@ -65,7 +64,7 @@ async function handleCoupleSpaceLocationHeartRequest(data) {
   try {
     const ctx = buildDiaryAiContext(chat);
     const { proxyUrl, apiKey, model } = getCoupleSpaceApiConfig();
-    if (!proxyUrl || !apiKey || !model) return;
+    if (!proxyUrl || !model) return;
     const prompt = `你是"${ctx.charName}"。伴侣"${ctx.myNickname}"给一条定位记录点了爱心。
 地点: "${data.locationName}"
 描述: "${data.locationDesc || ''}"
@@ -74,11 +73,11 @@ async function handleCoupleSpaceLocationHeartRequest(data) {
     let response;
     if (isGemini) {
       const geminiConfig = toGeminiRequestData(model, apiKey, prompt, [{ role: 'user', content: '回爱心吗？' }]);
-      response = await fetch(geminiConfig.url, geminiConfig.data);
+      response = await fetchCoupleSpaceWithTimeout(geminiConfig.url, geminiConfig.data);
     } else {
-      response = await fetch(`${proxyUrl}/v1/chat/completions`, {
+      response = await fetchCoupleSpaceWithTimeout(`${proxyUrl}/v1/chat/completions`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+        headers: getCoupleSpaceRequestHeaders(apiKey),
         body: JSON.stringify({ model, messages: [{ role: 'system', content: prompt }, { role: 'user', content: '回爱心吗？' }], temperature: 0.5 })
       });
     }
@@ -97,7 +96,7 @@ async function handleCoupleSpaceLocationHeartRequest(data) {
 
 async function generateCoupleSpaceLocationAi(chat, data) {
   const { proxyUrl, apiKey, model } = getCoupleSpaceApiConfig();
-  if (!proxyUrl || !apiKey || !model) throw new Error('API未配置');
+  if (!proxyUrl || !model) throw new Error('API未配置');
   const ctx = buildDiaryAiContext(chat);
   const locSettings = data.locationSettings || {};
   const maxCharVisible = locSettings.visibleCharLocations ?? 10;
@@ -186,23 +185,23 @@ ${ctx.currentTime}
   let response;
   if (isGemini) {
     const geminiConfig = toGeminiRequestData(model, apiKey, systemPrompt, messages);
-    response = await fetch(geminiConfig.url, geminiConfig.data);
+    response = await fetchCoupleSpaceWithTimeout(geminiConfig.url, geminiConfig.data);
   } else {
-    response = await fetch(`${proxyUrl}/v1/chat/completions`, {
+    response = await fetchCoupleSpaceWithTimeout(`${proxyUrl}/v1/chat/completions`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+      headers: getCoupleSpaceRequestHeaders(apiKey),
       body: JSON.stringify({ model, messages: [{ role: 'system', content: systemPrompt }, ...messages], temperature: state.globalSettings.apiTemperature || 0.8, top_p: state.globalSettings.apiTopP !== undefined ? state.globalSettings.apiTopP : 1.0, presence_penalty: state.globalSettings.apiPresencePenalty !== undefined ? state.globalSettings.apiPresencePenalty : 0.0, frequency_penalty: state.globalSettings.apiFrequencyPenalty !== undefined ? state.globalSettings.apiFrequencyPenalty : 0.0 })
     });
   }
   if (!response.ok) throw new Error('API请求失败: ' + response.status);
   const respData = await response.json();
   const raw = getGeminiResponseText(respData).replace(/^```json\s*/, '').replace(/```$/, '').trim();
-  return JSON.parse(raw);
+  return parseCoupleSpaceJson(raw);
 }
 
 async function generateCoupleSpaceLocationComment(chat, data) {
   const { proxyUrl, apiKey, model } = getCoupleSpaceApiConfig();
-  if (!proxyUrl || !apiKey || !model) throw new Error('API未配置');
+  if (!proxyUrl || !model) throw new Error('API未配置');
   const ctx = buildDiaryAiContext(chat);
   const systemPrompt = `# 你的任务
 你是"${ctx.charName}"。定位记录上有一条地点分享，请你写一条评论。
@@ -227,11 +226,11 @@ ${ctx.aiPersona}
   let response;
   if (isGemini) {
     const geminiConfig = toGeminiRequestData(model, apiKey, systemPrompt, messages);
-    response = await fetch(geminiConfig.url, geminiConfig.data);
+    response = await fetchCoupleSpaceWithTimeout(geminiConfig.url, geminiConfig.data);
   } else {
-    response = await fetch(`${proxyUrl}/v1/chat/completions`, {
+    response = await fetchCoupleSpaceWithTimeout(`${proxyUrl}/v1/chat/completions`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+      headers: getCoupleSpaceRequestHeaders(apiKey),
       body: JSON.stringify({ model, messages: [{ role: 'system', content: systemPrompt }, ...messages], temperature: state.globalSettings.apiTemperature || 0.8, top_p: state.globalSettings.apiTopP !== undefined ? state.globalSettings.apiTopP : 1.0, presence_penalty: state.globalSettings.apiPresencePenalty !== undefined ? state.globalSettings.apiPresencePenalty : 0.0, frequency_penalty: state.globalSettings.apiFrequencyPenalty !== undefined ? state.globalSettings.apiFrequencyPenalty : 0.0 })
     });
   }
@@ -251,7 +250,7 @@ function setupCoupleSpaceLocationAutoTimer() {
         console.log(`✅ [情侣空间] 已重置 定位 的定时器，新的定时时间为：${settings.autoTime}`);
         checkAndRunMissed(settings.autoTime, 'coupleLocAutoLast_' + space.charId, () => {
           console.log(`⏰ [情侣空间] 定时补执行时间已到！开始强制触发 定位 的自动生成`);
-          triggerAutoLocationPost(space.charId, true);
+          return triggerAutoLocationPost(space.charId, true);
         });
         scheduleLocationAutoPost(space.charId, settings.autoTime);
       }
@@ -263,14 +262,14 @@ function scheduleLocationAutoPost(charId, timeStr) {
   coupleSpaceLocationTimers[charId] = setInterval(() => {
     checkAndRunMissed(timeStr, 'coupleLocAutoLast_' + charId, () => {
       console.log(`⏰ [情侣空间] 定时时间已到！开始强制触发 定位 的自动生成`);
-      triggerAutoLocationPost(charId, true);
+      return triggerAutoLocationPost(charId, true);
     });
   }, 60000);
 }
 
 async function triggerAutoLocationPost(charId, isTimer = false) {
   const chat = state.chats[charId];
-  if (!chat) return;
+  if (!chat) return false;
   const settings = JSON.parse(localStorage.getItem('coupleLocSettings_' + charId) || '{}');
 
   console.log(`⏳ [情侣空间] 正在向 AI 请求生成 定位...`);
@@ -294,12 +293,14 @@ async function triggerAutoLocationPost(charId, isTimer = false) {
       hearts: { char: true },
       comments: []
     };
-    sendOrSaveCoupleSpaceData(charId, {
+    const saved = sendOrSaveCoupleSpaceData(charId, {
       type: 'coupleSpaceLocationAutoResult',
       item: newLoc
     }, 'coupleLocations_', newLoc);
+    return saved;
   } catch(err) {
     console.error('Auto location post failed:', err);
+    return false;
   }
 }
 

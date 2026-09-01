@@ -5,9 +5,8 @@ function handleCoupleSpaceMoodChanged(data) {
 }
 
 function handleCoupleSpaceMoodSettingsChanged(data) {
-  localStorage.setItem('coupleMoodSettings_' + data.charId, JSON.stringify(data.settings || {}));
-  localStorage.removeItem('coupleMoodAutoLast_' + data.charId);
-  console.log(`[情侣空间] ⚙️ 已保存 心情 设置并清除当天执行记录，重新初始化定时器`);
+  saveCoupleSpaceSettingsWithSchedule(data, 'coupleMoodSettings_', ['coupleMoodAutoLast_'], ['autoEnabled', 'autoTime']);
+  console.log(`[情侣空间] ⚙️ 已保存 心情 设置并重新初始化定时器`);
   setupCoupleSpaceMoodAutoTimer();
 }
 
@@ -61,7 +60,7 @@ async function handleCoupleSpaceMoodHeartRequest(data) {
   try {
     const ctx = buildDiaryAiContext(chat);
     const { proxyUrl, apiKey, model } = getCoupleSpaceApiConfig();
-    if (!proxyUrl || !apiKey || !model) return;
+    if (!proxyUrl || !model) return;
     const prompt = `你是"${ctx.charName}"。你的伴侣"${ctx.myNickname}"记录了一条心情"${data.moodType}: ${data.moodContent || ''}"并点了爱心。
 你会不会也想给这条心情点爱心？考虑你的性格和你们的关系。
 请只回答 "yes" 或 "no"，不要其他内容。`;
@@ -69,11 +68,11 @@ async function handleCoupleSpaceMoodHeartRequest(data) {
     let response;
     if (isGemini) {
       const geminiConfig = toGeminiRequestData(model, apiKey, prompt, [{ role: 'user', content: '你要点爱心吗？' }]);
-      response = await fetch(geminiConfig.url, geminiConfig.data);
+      response = await fetchCoupleSpaceWithTimeout(geminiConfig.url, geminiConfig.data);
     } else {
-      response = await fetch(`${proxyUrl}/v1/chat/completions`, {
+      response = await fetchCoupleSpaceWithTimeout(`${proxyUrl}/v1/chat/completions`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+        headers: getCoupleSpaceRequestHeaders(apiKey),
         body: JSON.stringify({ model, messages: [{ role: 'system', content: prompt }, { role: 'user', content: '你要点爱心吗？' }], temperature: 0.7 })
       });
     }
@@ -92,7 +91,7 @@ async function handleCoupleSpaceMoodHeartRequest(data) {
 
 async function generateCoupleSpaceMoodAi(chat, data) {
   const { proxyUrl, apiKey, model } = getCoupleSpaceApiConfig();
-  if (!proxyUrl || !apiKey || !model) throw new Error('API未配置');
+  if (!proxyUrl || !model) throw new Error('API未配置');
   const ctx = buildDiaryAiContext(chat);
   const moodSettings = data.moodSettings || {};
   const maxCharVisible = moodSettings.visibleCharMoods ?? 10;
@@ -181,23 +180,23 @@ moodType 可选值: happy(开心) sweet(甜蜜) calm(平静) miss(想你) excite
   let response;
   if (isGemini) {
     const geminiConfig = toGeminiRequestData(model, apiKey, systemPrompt, messages);
-    response = await fetch(geminiConfig.url, geminiConfig.data);
+    response = await fetchCoupleSpaceWithTimeout(geminiConfig.url, geminiConfig.data);
   } else {
-    response = await fetch(`${proxyUrl}/v1/chat/completions`, {
+    response = await fetchCoupleSpaceWithTimeout(`${proxyUrl}/v1/chat/completions`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+      headers: getCoupleSpaceRequestHeaders(apiKey),
       body: JSON.stringify({ model, messages: [{ role: 'system', content: systemPrompt }, ...messages], temperature: state.globalSettings.apiTemperature || 0.8, top_p: state.globalSettings.apiTopP !== undefined ? state.globalSettings.apiTopP : 1.0, presence_penalty: state.globalSettings.apiPresencePenalty !== undefined ? state.globalSettings.apiPresencePenalty : 0.0, frequency_penalty: state.globalSettings.apiFrequencyPenalty !== undefined ? state.globalSettings.apiFrequencyPenalty : 0.0 })
     });
   }
   if (!response.ok) throw new Error('API请求失败: ' + response.status);
   const respData = await response.json();
   const raw = getGeminiResponseText(respData).replace(/^```json\s*/, '').replace(/```$/, '').trim();
-  return JSON.parse(raw);
+  return parseCoupleSpaceJson(raw);
 }
 
 async function generateCoupleSpaceMoodComment(chat, data) {
   const { proxyUrl, apiKey, model } = getCoupleSpaceApiConfig();
-  if (!proxyUrl || !apiKey || !model) throw new Error('API未配置');
+  if (!proxyUrl || !model) throw new Error('API未配置');
   const ctx = buildDiaryAiContext(chat);
   const systemPrompt = `# 你的任务
 你是"${ctx.charName}"。"${ctx.myNickname}"在情侣空间记录了一条心情，请你评论。
@@ -229,11 +228,11 @@ ${ctx.currentTime}
   let response;
   if (isGemini) {
     const geminiConfig = toGeminiRequestData(model, apiKey, systemPrompt, messages);
-    response = await fetch(geminiConfig.url, geminiConfig.data);
+    response = await fetchCoupleSpaceWithTimeout(geminiConfig.url, geminiConfig.data);
   } else {
-    response = await fetch(`${proxyUrl}/v1/chat/completions`, {
+    response = await fetchCoupleSpaceWithTimeout(`${proxyUrl}/v1/chat/completions`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+      headers: getCoupleSpaceRequestHeaders(apiKey),
       body: JSON.stringify({ model, messages: [{ role: 'system', content: systemPrompt }, ...messages], temperature: state.globalSettings.apiTemperature || 0.8, top_p: state.globalSettings.apiTopP !== undefined ? state.globalSettings.apiTopP : 1.0, presence_penalty: state.globalSettings.apiPresencePenalty !== undefined ? state.globalSettings.apiPresencePenalty : 0.0, frequency_penalty: state.globalSettings.apiFrequencyPenalty !== undefined ? state.globalSettings.apiFrequencyPenalty : 0.0 })
     });
   }
@@ -256,7 +255,7 @@ function setupCoupleSpaceMoodAutoTimer() {
         console.log(`✅ [情侣空间] 已重置 心情 的定时器，新的定时时间为：${settings.autoTime}`);
         checkAndRunMissed(settings.autoTime, 'coupleMoodAutoLast_' + space.charId, () => {
           console.log(`⏰ [情侣空间] 定时补执行时间已到！开始强制触发 心情 的自动生成`);
-          triggerAutoMoodPost(space.charId, true);
+          return triggerAutoMoodPost(space.charId, true);
         });
         scheduleMoodAutoPost(space.charId, settings.autoTime);
       }
@@ -268,14 +267,14 @@ function scheduleMoodAutoPost(charId, timeStr) {
   coupleSpaceMoodTimers[charId] = setInterval(() => {
     checkAndRunMissed(timeStr, 'coupleMoodAutoLast_' + charId, () => {
       console.log(`⏰ [情侣空间] 定时时间已到！开始强制触发 心情 的自动生成`);
-      triggerAutoMoodPost(charId, true);
+      return triggerAutoMoodPost(charId, true);
     });
   }, 60000);
 }
 
 async function triggerAutoMoodPost(charId, isTimer = false) {
   const chat = state.chats[charId];
-  if (!chat) return;
+  if (!chat) return false;
   const settings = JSON.parse(localStorage.getItem('coupleMoodSettings_' + charId) || '{}');
 
   console.log(`⏳ [情侣空间] 正在向 AI 请求生成 心情...`);
@@ -295,12 +294,14 @@ async function triggerAutoMoodPost(charId, isTimer = false) {
       hearts: { char: true },
       comments: []
     };
-    sendOrSaveCoupleSpaceData(charId, {
+    const saved = sendOrSaveCoupleSpaceData(charId, {
       type: 'coupleSpaceMoodAutoResult',
       item: newMood
     }, 'coupleMoods_', newMood);
+    return saved;
   } catch(err) {
     console.error('Auto mood post failed:', err);
+    return false;
   }
 }
 

@@ -20,7 +20,7 @@ async function handleCoupleSpaceAnnivHeartRequest(data) {
   try {
     const ctx = buildDiaryAiContext(chat);
     const { proxyUrl, apiKey, model } = getCoupleSpaceApiConfig();
-    if (!proxyUrl || !apiKey || !model) return;
+    if (!proxyUrl || !model) return;
 
     const prompt = `你是"${ctx.charName}"。你的伴侣"${ctx.myNickname}"给纪念日"${data.annivTitle}"点了爱心。
 理由: ${data.annivReason || '(无)'}
@@ -32,11 +32,11 @@ async function handleCoupleSpaceAnnivHeartRequest(data) {
     let response;
     if (isGemini) {
       const geminiConfig = toGeminiRequestData(model, apiKey, prompt, [{ role: 'user', content: '你要点爱心吗？' }]);
-      response = await fetch(geminiConfig.url, geminiConfig.data);
+      response = await fetchCoupleSpaceWithTimeout(geminiConfig.url, geminiConfig.data);
     } else {
-      response = await fetch(`${proxyUrl}/v1/chat/completions`, {
+      response = await fetchCoupleSpaceWithTimeout(`${proxyUrl}/v1/chat/completions`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+        headers: getCoupleSpaceRequestHeaders(apiKey),
         body: JSON.stringify({
           model,
           messages: [{ role: 'system', content: prompt }, { role: 'user', content: '你要点爱心吗？' }],
@@ -71,7 +71,7 @@ async function handleCoupleSpaceAnnivCreateRequest(data) {
 
   try {
     const { proxyUrl, apiKey, model } = getCoupleSpaceApiConfig();
-    if (!proxyUrl || !apiKey || !model) {
+    if (!proxyUrl || !model) {
       iframe.contentWindow.postMessage({ type: 'coupleSpaceAnnivCreateResult', error: true, reason: 'noApi' }, '*');
       return;
     }
@@ -79,7 +79,7 @@ async function handleCoupleSpaceAnnivCreateRequest(data) {
     const ctx = buildDiaryAiContext(chat);
     const existingAnnivs = data.existingAnnivs || JSON.parse(localStorage.getItem('coupleAnniv_' + data.charId) || '[]');
     const existingList = existingAnnivs.map(a => `- "${a.title}" (${a.date})`).join('\n') || '(暂无)';
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = getCoupleSpaceLocalDateKey();
 
     const prompt = `你是"${ctx.charName}"。你的伴侣"${ctx.myNickname}"让你创建一个纪念日。根据你们的对话和关系，想一个有意义的纪念日。
 
@@ -117,11 +117,11 @@ ${existingList}
     let response;
     if (isGemini) {
       const geminiConfig = toGeminiRequestData(model, apiKey, prompt, [{ role: 'user', content: '帮我创建一个纪念日吧' }]);
-      response = await fetch(geminiConfig.url, geminiConfig.data);
+      response = await fetchCoupleSpaceWithTimeout(geminiConfig.url, geminiConfig.data);
     } else {
-      response = await fetch(`${proxyUrl}/v1/chat/completions`, {
+      response = await fetchCoupleSpaceWithTimeout(`${proxyUrl}/v1/chat/completions`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+        headers: getCoupleSpaceRequestHeaders(apiKey),
         body: JSON.stringify({
           model,
           messages: [{ role: 'system', content: prompt }, { role: 'user', content: '帮我创建一个纪念日吧' }],
@@ -195,14 +195,14 @@ async function triggerAnnivDiscovery(charId) {
   const chat = state.chats[charId];
   if (!chat) return;
   const { proxyUrl, apiKey, model } = getCoupleSpaceApiConfig();
-  if (!proxyUrl || !apiKey || !model) return;
+  if (!proxyUrl || !model) return;
 
   // Check settings
   const settings = JSON.parse(localStorage.getItem('coupleAnnivSettings_' + charId) || '{}');
   if (!settings.autoEnabled) return;
 
   const ctx = buildDiaryAiContext(chat);
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = getCoupleSpaceLocalDateKey();
 
   const existingAnnivs = JSON.parse(localStorage.getItem('coupleAnniv_' + charId) || '[]');
   const existingList = existingAnnivs.map(a => `- "${a.title}" (${a.date})`).join('\n') || '(暂无)';
@@ -250,11 +250,11 @@ ${existingList}
     let response;
     if (isGemini) {
       const geminiConfig = toGeminiRequestData(model, apiKey, prompt, [{ role: 'user', content: '有新的纪念日吗？' }]);
-      response = await fetch(geminiConfig.url, geminiConfig.data);
+      response = await fetchCoupleSpaceWithTimeout(geminiConfig.url, geminiConfig.data);
     } else {
-      response = await fetch(`${proxyUrl}/v1/chat/completions`, {
+      response = await fetchCoupleSpaceWithTimeout(`${proxyUrl}/v1/chat/completions`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+        headers: getCoupleSpaceRequestHeaders(apiKey),
         body: JSON.stringify({
           model,
           messages: [{ role: 'system', content: prompt }, { role: 'user', content: '有新的纪念日吗？' }],

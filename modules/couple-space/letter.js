@@ -5,9 +5,8 @@ function handleCoupleSpaceLetterChanged(data) {
 }
 
 function handleCoupleSpaceLetterSettingsChanged(data) {
-  localStorage.setItem('coupleLetterSettings_' + data.charId, JSON.stringify(data.settings || {}));
-  localStorage.removeItem('coupleLetterAutoLast_' + data.charId);
-  console.log(`[情侣空间] ⚙️ 已保存 信件 设置并清除当天执行记录，重新初始化定时器`);
+  saveCoupleSpaceSettingsWithSchedule(data, 'coupleLetterSettings_', ['coupleLetterAutoLast_'], ['autoEnabled', 'autoTime']);
+  console.log(`[情侣空间] ⚙️ 已保存 信件 设置并重新初始化定时器`);
   setupCoupleSpaceLetterAutoTimer();
 }
 
@@ -16,20 +15,27 @@ async function handleCoupleSpaceLetterAiRequest(data) {
   if (!iframe || !iframe.contentWindow) return;
   const chat = state.chats[data.charId];
   if (!chat) {
-    iframe.contentWindow.postMessage({ type: 'coupleSpaceLetterAiResult', error: true }, '*');
+    iframe.contentWindow.postMessage({ type: 'coupleSpaceLetterAiResult', charId: data.charId, error: true }, '*');
     return;
   }
   try {
     const result = await generateCoupleSpaceLetterAi(chat, data);
+    if (localStorage.getItem('coupleSpaceLastId') !== data.charId || !iframe.src.includes(COUPLE_SPACE_IFRAME_PATH)) {
+      const letters = JSON.parse(localStorage.getItem('coupleLetters_' + data.charId) || '[]');
+      letters.push(createCoupleSpaceLetterItem(result));
+      localStorage.setItem('coupleLetters_' + data.charId, JSON.stringify(letters));
+      return;
+    }
     iframe.contentWindow.postMessage({
       type: 'coupleSpaceLetterAiResult',
+      charId: data.charId,
       title: result.title,
       content: result.content,
       envelope: result.envelope || 'none'
     }, '*');
   } catch(err) {
     console.error('Letter AI error:', err);
-    iframe.contentWindow.postMessage({ type: 'coupleSpaceLetterAiResult', error: true }, '*');
+    iframe.contentWindow.postMessage({ type: 'coupleSpaceLetterAiResult', charId: data.charId, error: true }, '*');
   }
 }
 
@@ -38,13 +44,20 @@ async function handleCoupleSpaceLetterReplyRequest(data) {
   if (!iframe || !iframe.contentWindow) return;
   const chat = state.chats[data.charId];
   if (!chat) {
-    iframe.contentWindow.postMessage({ type: 'coupleSpaceLetterReplyResult', letterId: data.letterId, error: true }, '*');
+    iframe.contentWindow.postMessage({ type: 'coupleSpaceLetterReplyResult', charId: data.charId, letterId: data.letterId, error: true }, '*');
     return;
   }
   try {
     const result = await generateCoupleSpaceLetterReply(chat, data);
+    if (localStorage.getItem('coupleSpaceLastId') !== data.charId || !iframe.src.includes(COUPLE_SPACE_IFRAME_PATH)) {
+      const letters = JSON.parse(localStorage.getItem('coupleLetters_' + data.charId) || '[]');
+      letters.push(createCoupleSpaceLetterItem(result, data.letterId || null));
+      localStorage.setItem('coupleLetters_' + data.charId, JSON.stringify(letters));
+      return;
+    }
     iframe.contentWindow.postMessage({
       type: 'coupleSpaceLetterReplyResult',
+      charId: data.charId,
       letterId: data.letterId,
       title: result.title,
       content: result.content,
@@ -52,7 +65,7 @@ async function handleCoupleSpaceLetterReplyRequest(data) {
     }, '*');
   } catch(err) {
     console.error('Letter reply AI error:', err);
-    iframe.contentWindow.postMessage({ type: 'coupleSpaceLetterReplyResult', letterId: data.letterId, error: true }, '*');
+    iframe.contentWindow.postMessage({ type: 'coupleSpaceLetterReplyResult', charId: data.charId, letterId: data.letterId, error: true }, '*');
   }
 }
 
@@ -61,19 +74,20 @@ async function handleCoupleSpaceLetterCommentRequest(data) {
   if (!iframe || !iframe.contentWindow) return;
   const chat = state.chats[data.charId];
   if (!chat) {
-    iframe.contentWindow.postMessage({ type: 'coupleSpaceLetterCommentResult', letterId: data.letterId, error: true }, '*');
+    iframe.contentWindow.postMessage({ type: 'coupleSpaceLetterCommentResult', charId: data.charId, letterId: data.letterId, error: true }, '*');
     return;
   }
   try {
     const comment = await generateCoupleSpaceLetterComment(chat, data);
     iframe.contentWindow.postMessage({
       type: 'coupleSpaceLetterCommentResult',
+      charId: data.charId,
       letterId: data.letterId,
       comment: comment
     }, '*');
   } catch(err) {
     console.error('Letter comment AI error:', err);
-    iframe.contentWindow.postMessage({ type: 'coupleSpaceLetterCommentResult', letterId: data.letterId, error: true }, '*');
+    iframe.contentWindow.postMessage({ type: 'coupleSpaceLetterCommentResult', charId: data.charId, letterId: data.letterId, error: true }, '*');
   }
 }
 
@@ -85,7 +99,7 @@ async function handleCoupleSpaceLetterHeartRequest(data) {
   try {
     const ctx = buildDiaryAiContext(chat);
     const { proxyUrl, apiKey, model } = getCoupleSpaceApiConfig();
-    if (!proxyUrl || !apiKey || !model) return;
+    if (!proxyUrl || !model) return;
     const prompt = `你是"${ctx.charName}"。你的伴侣"${ctx.myNickname}"写了一封信"${data.letterTitle}"并点了爱心。
 你会不会也想给这封信点爱心？考虑你的性格和你们的关系。
 请只回答 "yes" 或 "no"，不要其他内容。`;
@@ -93,11 +107,11 @@ async function handleCoupleSpaceLetterHeartRequest(data) {
     let response;
     if (isGemini) {
       const geminiConfig = toGeminiRequestData(model, apiKey, prompt, [{ role: 'user', content: '你要点爱心吗？' }]);
-      response = await fetch(geminiConfig.url, geminiConfig.data);
+      response = await fetchCoupleSpaceWithTimeout(geminiConfig.url, geminiConfig.data);
     } else {
-      response = await fetch(`${proxyUrl}/v1/chat/completions`, {
+      response = await fetchCoupleSpaceWithTimeout(`${proxyUrl}/v1/chat/completions`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+        headers: getCoupleSpaceRequestHeaders(apiKey),
         body: JSON.stringify({ model, messages: [{ role: 'system', content: prompt }, { role: 'user', content: '你要点爱心吗？' }], temperature: 0.7 })
       });
     }
@@ -106,6 +120,7 @@ async function handleCoupleSpaceLetterHeartRequest(data) {
     const answer = getGeminiResponseText(respData).trim().toLowerCase();
     iframe.contentWindow.postMessage({
       type: 'coupleSpaceLetterHeartResult',
+      charId: data.charId,
       letterId: data.letterId,
       liked: answer.includes('yes')
     }, '*');
@@ -116,7 +131,7 @@ async function handleCoupleSpaceLetterHeartRequest(data) {
 
 async function generateCoupleSpaceLetterAi(chat, data) {
   const { proxyUrl, apiKey, model } = getCoupleSpaceApiConfig();
-  if (!proxyUrl || !apiKey || !model) throw new Error('API未配置');
+  if (!proxyUrl || !model) throw new Error('API未配置');
   const ctx = buildDiaryAiContext(chat);
   const letterSettings = data.letterSettings || {};
   const maxCharVisible = letterSettings.visibleCharLetters ?? 5;
@@ -207,23 +222,22 @@ envelope 可选值: none(普通) love(情书) classic(经典) seasonal(时令) h
   let response;
   if (isGemini) {
     const geminiConfig = toGeminiRequestData(model, apiKey, systemPrompt, messages);
-    response = await fetch(geminiConfig.url, geminiConfig.data);
+    response = await fetchCoupleSpaceWithTimeout(geminiConfig.url, geminiConfig.data);
   } else {
-    response = await fetch(`${proxyUrl}/v1/chat/completions`, {
+    response = await fetchCoupleSpaceWithTimeout(`${proxyUrl}/v1/chat/completions`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+      headers: getCoupleSpaceRequestHeaders(apiKey),
       body: JSON.stringify({ model, messages: [{ role: 'system', content: systemPrompt }, ...messages], temperature: state.globalSettings.apiTemperature || 0.8, top_p: state.globalSettings.apiTopP !== undefined ? state.globalSettings.apiTopP : 1.0, presence_penalty: state.globalSettings.apiPresencePenalty !== undefined ? state.globalSettings.apiPresencePenalty : 0.0, frequency_penalty: state.globalSettings.apiFrequencyPenalty !== undefined ? state.globalSettings.apiFrequencyPenalty : 0.0 })
     });
   }
   if (!response.ok) throw new Error('API请求失败: ' + response.status);
   const respData = await response.json();
-  const raw = getGeminiResponseText(respData).replace(/^```json\s*/, '').replace(/```$/, '').trim();
-  return JSON.parse(raw);
+  return validateCoupleSpaceLetterResult(parseCoupleSpaceJson(getGeminiResponseText(respData)));
 }
 
 async function generateCoupleSpaceLetterReply(chat, data) {
   const { proxyUrl, apiKey, model } = getCoupleSpaceApiConfig();
-  if (!proxyUrl || !apiKey || !model) throw new Error('API未配置');
+  if (!proxyUrl || !model) throw new Error('API未配置');
   const ctx = buildDiaryAiContext(chat);
 
   const systemPrompt = `# 你的任务
@@ -266,23 +280,22 @@ envelope 可选值: none(普通) love(情书) classic(经典) seasonal(时令) h
   let response;
   if (isGemini) {
     const geminiConfig = toGeminiRequestData(model, apiKey, systemPrompt, messages);
-    response = await fetch(geminiConfig.url, geminiConfig.data);
+    response = await fetchCoupleSpaceWithTimeout(geminiConfig.url, geminiConfig.data);
   } else {
-    response = await fetch(`${proxyUrl}/v1/chat/completions`, {
+    response = await fetchCoupleSpaceWithTimeout(`${proxyUrl}/v1/chat/completions`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+      headers: getCoupleSpaceRequestHeaders(apiKey),
       body: JSON.stringify({ model, messages: [{ role: 'system', content: systemPrompt }, ...messages], temperature: state.globalSettings.apiTemperature || 0.8, top_p: state.globalSettings.apiTopP !== undefined ? state.globalSettings.apiTopP : 1.0, presence_penalty: state.globalSettings.apiPresencePenalty !== undefined ? state.globalSettings.apiPresencePenalty : 0.0, frequency_penalty: state.globalSettings.apiFrequencyPenalty !== undefined ? state.globalSettings.apiFrequencyPenalty : 0.0 })
     });
   }
   if (!response.ok) throw new Error('API请求失败: ' + response.status);
   const respData = await response.json();
-  const raw = getGeminiResponseText(respData).replace(/^```json\s*/, '').replace(/```$/, '').trim();
-  return JSON.parse(raw);
+  return validateCoupleSpaceLetterResult(parseCoupleSpaceJson(getGeminiResponseText(respData)));
 }
 
 async function generateCoupleSpaceLetterComment(chat, data) {
   const { proxyUrl, apiKey, model } = getCoupleSpaceApiConfig();
-  if (!proxyUrl || !apiKey || !model) throw new Error('API未配置');
+  if (!proxyUrl || !model) throw new Error('API未配置');
   const ctx = buildDiaryAiContext(chat);
 
   const systemPrompt = `# 你的任务
@@ -318,11 +331,11 @@ ${ctx.currentTime}
   let response;
   if (isGemini) {
     const geminiConfig = toGeminiRequestData(model, apiKey, systemPrompt, messages);
-    response = await fetch(geminiConfig.url, geminiConfig.data);
+    response = await fetchCoupleSpaceWithTimeout(geminiConfig.url, geminiConfig.data);
   } else {
-    response = await fetch(`${proxyUrl}/v1/chat/completions`, {
+    response = await fetchCoupleSpaceWithTimeout(`${proxyUrl}/v1/chat/completions`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+      headers: getCoupleSpaceRequestHeaders(apiKey),
       body: JSON.stringify({ model, messages: [{ role: 'system', content: systemPrompt }, ...messages], temperature: state.globalSettings.apiTemperature || 0.8, top_p: state.globalSettings.apiTopP !== undefined ? state.globalSettings.apiTopP : 1.0, presence_penalty: state.globalSettings.apiPresencePenalty !== undefined ? state.globalSettings.apiPresencePenalty : 0.0, frequency_penalty: state.globalSettings.apiFrequencyPenalty !== undefined ? state.globalSettings.apiFrequencyPenalty : 0.0 })
     });
   }
@@ -345,7 +358,7 @@ function setupCoupleSpaceLetterAutoTimer() {
         console.log(`✅ [情侣空间] 已重置 信件 的定时器，新的定时时间为：${settings.autoTime}`);
         checkAndRunMissed(settings.autoTime, 'coupleLetterAutoLast_' + space.charId, () => {
           console.log(`⏰ [情侣空间] 定时补执行时间已到！开始强制触发 信件 的自动生成`);
-          triggerAutoLetterPost(space.charId, true);
+          return triggerAutoLetterPost(space.charId, true);
         });
         scheduleLetterAutoPost(space.charId, settings.autoTime);
       }
@@ -357,14 +370,14 @@ function scheduleLetterAutoPost(charId, timeStr) {
   coupleSpaceLetterTimers[charId] = setInterval(() => {
     checkAndRunMissed(timeStr, 'coupleLetterAutoLast_' + charId, () => {
       console.log(`⏰ [情侣空间] 定时时间已到！开始强制触发 信件 的自动生成`);
-      triggerAutoLetterPost(charId, true);
+      return triggerAutoLetterPost(charId, true);
     });
   }, 60000);
 }
 
 async function triggerAutoLetterPost(charId, isTimer = false) {
   const chat = state.chats[charId];
-  if (!chat) return;
+  if (!chat) return false;
   const settings = JSON.parse(localStorage.getItem('coupleLetterSettings_' + charId) || '{}');
 
   console.log(`⏳ [情侣空间] 正在向 AI 请求生成 信件...`);
@@ -388,13 +401,44 @@ async function triggerAutoLetterPost(charId, isTimer = false) {
       hearts: { char: true },
       comments: []
     };
-    sendOrSaveCoupleSpaceData(charId, {
+    const saved = sendOrSaveCoupleSpaceData(charId, {
       type: 'coupleSpaceLetterAutoResult',
       item: newLetter
     }, 'coupleLetters_', newLetter);
+    return saved;
   } catch(err) {
     console.error('Auto letter post failed:', err);
+    return false;
   }
+}
+
+function createCoupleSpaceLetterItem(result, replyTo = null) {
+  return {
+    id: 'letter_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
+    title: result.title,
+    content: result.content,
+    envelope: result.envelope || 'none',
+    author: 'char',
+    replyTo,
+    read: false,
+    readAt: null,
+    createdAt: Date.now(),
+    hearts: { char: true },
+    comments: []
+  };
+}
+
+function validateCoupleSpaceLetterResult(result) {
+  if (!result || typeof result !== 'object') throw new Error('信件生成结果不是有效对象');
+  const title = String(result.title || '').trim();
+  const content = String(result.content || '').trim();
+  if (!title || !content) throw new Error('信件生成结果缺少标题或正文');
+  const allowedEnvelopes = ['none', 'love', 'classic', 'seasonal', 'handwrite'];
+  return {
+    title,
+    content,
+    envelope: allowedEnvelopes.includes(result.envelope) ? result.envelope : 'none'
+  };
 }
 
 // Initialize letter timers

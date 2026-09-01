@@ -5,9 +5,8 @@ function handleCoupleSpaceFinanceChanged(data) {
 }
 
 function handleCoupleSpaceFinanceSettingsChanged(data) {
-  localStorage.setItem('coupleFinanceSettings_' + data.charId, JSON.stringify(data.settings || {}));
-  localStorage.removeItem('coupleFinanceAutoLast_' + data.charId);
-  console.log(`[情侣空间] ⚙️ 已保存 记账 设置并清除当天执行记录，重新初始化定时器`);
+  saveCoupleSpaceSettingsWithSchedule(data, 'coupleFinanceSettings_', ['coupleFinanceAutoLast_'], ['autoEnabled', 'autoTime']);
+  console.log(`[情侣空间] ⚙️ 已保存 记账 设置并重新初始化定时器`);
   setupCoupleSpaceFinanceAutoTimer();
 }
 
@@ -21,7 +20,7 @@ async function handleCoupleSpaceFinanceAiRequest(data) {
   }
   try {
     const { proxyUrl, apiKey, model } = getCoupleSpaceApiConfig();
-    if (!proxyUrl || !apiKey || !model) {
+    if (!proxyUrl || !model) {
       iframe.contentWindow.postMessage({ type: 'coupleSpaceFinanceAiResult', error: true }, '*');
       return;
     }
@@ -69,7 +68,7 @@ async function handleCoupleSpaceFinanceHeartRequest(data) {
   try {
     const ctx = buildDiaryAiContext(chat);
     const { proxyUrl, apiKey, model } = getCoupleSpaceApiConfig();
-    if (!proxyUrl || !apiKey || !model) return;
+    if (!proxyUrl || !model) return;
     const typeLabel = data.itemType === 'income' ? '收入' : '支出';
     const prompt = `你是"${ctx.charName}"。你的伴侣"${ctx.myNickname}"记了一笔${typeLabel}："${data.itemTitle}"，金额¥${data.itemAmount}，并点了爱心。
 你会不会也想给这条记录点爱心？考虑你的性格和你们的关系。
@@ -78,11 +77,11 @@ async function handleCoupleSpaceFinanceHeartRequest(data) {
     let response;
     if (isGemini) {
       const geminiConfig = toGeminiRequestData(model, apiKey, prompt, [{ role: 'user', content: '你要点爱心吗？' }]);
-      response = await fetch(geminiConfig.url, geminiConfig.data);
+      response = await fetchCoupleSpaceWithTimeout(geminiConfig.url, geminiConfig.data);
     } else {
-      response = await fetch(`${proxyUrl}/v1/chat/completions`, {
+      response = await fetchCoupleSpaceWithTimeout(`${proxyUrl}/v1/chat/completions`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+        headers: getCoupleSpaceRequestHeaders(apiKey),
         body: JSON.stringify({ model, messages: [{ role: 'system', content: prompt }, { role: 'user', content: '你要点爱心吗？' }], temperature: 0.7 })
       });
     }
@@ -101,7 +100,7 @@ async function handleCoupleSpaceFinanceHeartRequest(data) {
 
 async function generateCoupleSpaceFinanceAi(chat, data) {
   const { proxyUrl, apiKey, model } = getCoupleSpaceApiConfig();
-  if (!proxyUrl || !apiKey || !model) throw new Error('API未配置');
+  if (!proxyUrl || !model) throw new Error('API未配置');
   const ctx = buildDiaryAiContext(chat);
   const finSettings = data.financeSettings || {};
   const maxCharVisible = finSettings.visibleCharItems ?? 10;
@@ -203,7 +202,7 @@ ${ctx.currentTime}
   let response;
   if (isGemini) {
     const geminiConfig = toGeminiRequestData(model, apiKey, systemPrompt, messages);
-    response = await fetch(geminiConfig.url, geminiConfig.data);
+    response = await fetchCoupleSpaceWithTimeout(geminiConfig.url, geminiConfig.data);
   } else {
     const requestBody = JSON.stringify({
       model,
@@ -213,9 +212,9 @@ ${ctx.currentTime}
               presence_penalty: state.globalSettings.apiPresencePenalty !== undefined ? state.globalSettings.apiPresencePenalty : 0.0,
               frequency_penalty: state.globalSettings.apiFrequencyPenalty !== undefined ? state.globalSettings.apiFrequencyPenalty : 0.0
     });
-    response = await fetch(`${proxyUrl}/v1/chat/completions`, {
+    response = await fetchCoupleSpaceWithTimeout(`${proxyUrl}/v1/chat/completions`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+      headers: getCoupleSpaceRequestHeaders(apiKey),
       body: requestBody
     });
   }
@@ -223,12 +222,12 @@ ${ctx.currentTime}
   if (!response.ok) throw new Error('API请求失败: ' + response.status);
   const respData = await response.json();
   const raw = getGeminiResponseText(respData).replace(/^```json\s*/, '').replace(/```$/, '').trim();
-  return JSON.parse(raw);
+  return parseCoupleSpaceJson(raw);
 }
 
 async function generateCoupleSpaceFinanceComment(chat, data) {
   const { proxyUrl, apiKey, model } = getCoupleSpaceApiConfig();
-  if (!proxyUrl || !apiKey || !model) throw new Error('API未配置');
+  if (!proxyUrl || !model) throw new Error('API未配置');
   const ctx = buildDiaryAiContext(chat);
   const typeLabel = data.itemType === 'income' ? '收入' : '支出';
   const catLabel = data.itemCategory || '未分类';
@@ -269,11 +268,11 @@ ${ctx.currentTime}
   let response;
   if (isGemini) {
     const geminiConfig = toGeminiRequestData(model, apiKey, systemPrompt, messages);
-    response = await fetch(geminiConfig.url, geminiConfig.data);
+    response = await fetchCoupleSpaceWithTimeout(geminiConfig.url, geminiConfig.data);
   } else {
-    response = await fetch(`${proxyUrl}/v1/chat/completions`, {
+    response = await fetchCoupleSpaceWithTimeout(`${proxyUrl}/v1/chat/completions`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+      headers: getCoupleSpaceRequestHeaders(apiKey),
       body: JSON.stringify({
         model,
         messages: [{ role: 'system', content: systemPrompt }, ...messages],
@@ -304,7 +303,7 @@ function setupCoupleSpaceFinanceAutoTimer() {
         console.log(`✅ [情侣空间] 已重置 记账 的定时器，新的定时时间为：${settings.autoTime}`);
         checkAndRunMissed(settings.autoTime, 'coupleFinanceAutoLast_' + space.charId, () => {
           console.log(`⏰ [情侣空间] 定时补执行时间已到！开始强制触发 记账 的自动生成`);
-          triggerAutoFinancePost(space.charId, true);
+          return triggerAutoFinancePost(space.charId, true);
         });
         scheduleFinanceAutoPost(space.charId, settings.autoTime);
       }
@@ -316,14 +315,14 @@ function scheduleFinanceAutoPost(charId, timeStr) {
   coupleSpaceFinanceTimers[charId] = setInterval(() => {
     checkAndRunMissed(timeStr, 'coupleFinanceAutoLast_' + charId, () => {
       console.log(`⏰ [情侣空间] 定时时间已到！开始强制触发 记账 的自动生成`);
-      triggerAutoFinancePost(charId, true);
+      return triggerAutoFinancePost(charId, true);
     });
   }, 60000);
 }
 
 async function triggerAutoFinancePost(charId, isTimer = false) {
   const chat = state.chats[charId];
-  if (!chat) return;
+  if (!chat) return false;
   const settings = JSON.parse(localStorage.getItem('coupleFinanceSettings_' + charId) || '{}');
 
   console.log(`⏳ [情侣空间] 正在向 AI 请求生成 记账...`);
@@ -343,18 +342,20 @@ async function triggerAutoFinancePost(charId, isTimer = false) {
       category: result.category || '',
       title: result.title || '',
       note: result.note || '',
-      date: new Date().toISOString().split('T')[0],
+      date: getCoupleSpaceLocalDateKey(),
       author: 'char',
       createdAt: Date.now(),
       hearts: { char: true },
       comments: []
     };
-    sendOrSaveCoupleSpaceData(charId, {
+    const saved = sendOrSaveCoupleSpaceData(charId, {
       type: 'coupleSpaceFinanceAutoResult',
       item: newItem
     }, 'coupleFinance_', newItem);
+    return saved;
   } catch(err) {
     console.error('Auto finance post failed:', err);
+    return false;
   }
 }
 

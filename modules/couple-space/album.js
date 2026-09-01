@@ -61,9 +61,8 @@ async function handleCoupleSpaceAlbumAiRequest(data) {
 }
 
 function handleCoupleSpaceAlbumSettingsChanged(data) {
-  localStorage.setItem('coupleAlbumSettings_' + data.charId, JSON.stringify(data.settings));
-  localStorage.removeItem('coupleAlbumAutoLast_' + data.charId);
-  console.log(`[情侣空间] ⚙️ 已保存 相册 设置并清除当天执行记录，重新初始化定时器`);
+  saveCoupleSpaceSettingsWithSchedule(data, 'coupleAlbumSettings_', ['coupleAlbumAutoLast_'], ['autoEnabled', 'autoTime']);
+  console.log(`[情侣空间] ⚙️ 已保存 相册 设置并重新初始化定时器`);
   setupCoupleSpaceAlbumAutoTimer();
 }
 
@@ -95,7 +94,7 @@ async function handleCoupleSpaceAlbumCommentRequest(data) {
 
 async function generateCoupleSpaceAlbumComment(chat, data) {
   const { proxyUrl, apiKey, model } = getCoupleSpaceApiConfig();
-  if (!proxyUrl || !apiKey || !model) throw new Error('API未配置');
+  if (!proxyUrl || !model) throw new Error('API未配置');
 
   const ctx = buildDiaryAiContext(chat);
 
@@ -137,11 +136,11 @@ ${ctx.memoryContext ? '# 你的记忆\n' + ctx.memoryContext : ''}
   let response;
   if (isGemini) {
     const geminiConfig = toGeminiRequestData(model, apiKey, systemPrompt, messages);
-    response = await fetch(geminiConfig.url, geminiConfig.data);
+    response = await fetchCoupleSpaceWithTimeout(geminiConfig.url, geminiConfig.data);
   } else {
-    response = await fetch(`${proxyUrl}/v1/chat/completions`, {
+    response = await fetchCoupleSpaceWithTimeout(`${proxyUrl}/v1/chat/completions`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+      headers: getCoupleSpaceRequestHeaders(apiKey),
       body: JSON.stringify({
         model,
         messages: [{ role: 'system', content: systemPrompt }, ...messages],
@@ -160,7 +159,7 @@ ${ctx.memoryContext ? '# 你的记忆\n' + ctx.memoryContext : ''}
 
 async function generateCoupleSpaceAlbumAi(chat, data) {
   const { proxyUrl, apiKey, model } = getCoupleSpaceApiConfig();
-  if (!proxyUrl || !apiKey || !model) throw new Error('API未配置');
+  if (!proxyUrl || !model) throw new Error('API未配置');
 
   const ctx = buildDiaryAiContext(chat);
 
@@ -221,11 +220,11 @@ ${ctx.currentTime}
   let response;
   if (isGemini) {
     const geminiConfig = toGeminiRequestData(model, apiKey, systemPrompt, messages);
-    response = await fetch(geminiConfig.url, geminiConfig.data);
+    response = await fetchCoupleSpaceWithTimeout(geminiConfig.url, geminiConfig.data);
   } else {
-    response = await fetch(`${proxyUrl}/v1/chat/completions`, {
+    response = await fetchCoupleSpaceWithTimeout(`${proxyUrl}/v1/chat/completions`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+      headers: getCoupleSpaceRequestHeaders(apiKey),
       body: JSON.stringify({
         model,
         messages: [{ role: 'system', content: systemPrompt }, ...messages],
@@ -240,7 +239,7 @@ ${ctx.currentTime}
   if (!response.ok) throw new Error('API请求失败: ' + response.status);
   const respData = await response.json();
   const raw = getGeminiResponseText(respData).replace(/^```json\s*/, '').replace(/```$/, '').trim();
-  return JSON.parse(raw);
+  return parseCoupleSpaceJson(raw);
 }
 
 // ========== Auto Album Scheduler ==========
@@ -258,7 +257,7 @@ function setupCoupleSpaceAlbumAutoTimer() {
         console.log(`✅ [情侣空间] 已重置 相册 的定时器，新的定时时间为：${settings.autoTime}`);
         checkAndRunMissed(settings.autoTime, 'coupleAlbumAutoLast_' + space.charId, () => {
           console.log(`⏰ [情侣空间] 定时补执行时间已到！开始强制触发 相册 的自动生成`);
-          triggerAutoAlbumPost(space.charId, true);
+          return triggerAutoAlbumPost(space.charId, true);
         });
         scheduleAlbumAutoPost(space.charId, settings.autoTime);
       }
@@ -270,26 +269,27 @@ function scheduleAlbumAutoPost(charId, timeStr) {
   coupleSpaceAlbumTimers[charId] = setInterval(() => {
     checkAndRunMissed(timeStr, 'coupleAlbumAutoLast_' + charId, () => {
       console.log(`⏰ [情侣空间] 定时时间已到！开始强制触发 相册 的自动生成`);
-      triggerAutoAlbumPost(charId, true);
+      return triggerAutoAlbumPost(charId, true);
     });
   }, 60000);
 }
 
 async function triggerAutoAlbumPost(charId, isTimer = false) {
   const chat = state.chats[charId];
-  if (!chat) return;
+  if (!chat) return false;
 
   const albumSettings = JSON.parse(localStorage.getItem('coupleAlbumSettings_' + charId) || '{}');
 
   if (albumSettings.aiDecide && !isTimer) {
     try {
       const shouldPost = await askAiIfShouldPostPhoto(chat);
-      if (!shouldPost) return;
+      if (!shouldPost) return true;
     } catch(e) {}
   }
 
   console.log(`⏳ [情侣空间] 正在向 AI 请求生成 相册照片...`);
   const postCount = Math.min(Math.max(albumSettings.autoCount || 1, 1), 10);
+  let successCount = 0;
 
   for (let i = 0; i < postCount; i++) {
     try {
@@ -337,19 +337,21 @@ async function triggerAutoAlbumPost(charId, isTimer = false) {
       imagePrompt: result.imagePrompt || ''
     };
 
-    sendOrSaveCoupleSpaceData(charId, {
+    const saved = sendOrSaveCoupleSpaceData(charId, {
       type: 'coupleSpaceAlbumAutoResult',
       photo: newPhoto
     }, 'coupleAlbum_', newPhoto);
+    if (saved) successCount++;
   } catch(err) {
     console.error('Auto album post failed:', err);
   }
   } // end for loop
+  return successCount > 0;
 }
 
 async function askAiIfShouldPostPhoto(chat) {
   const { proxyUrl, apiKey, model } = getCoupleSpaceApiConfig();
-  if (!proxyUrl || !apiKey || !model) return false;
+  if (!proxyUrl || !model) return false;
 
   const ctx = buildDiaryAiContext(chat);
 
@@ -368,11 +370,11 @@ ${ctx.summaryContext ? '对话总结:\n' + ctx.summaryContext : ''}
     let response;
     if (isGemini) {
       const geminiConfig = toGeminiRequestData(model, apiKey, prompt, [{ role: 'user', content: '想发照片吗？' }]);
-      response = await fetch(geminiConfig.url, geminiConfig.data);
+      response = await fetchCoupleSpaceWithTimeout(geminiConfig.url, geminiConfig.data);
     } else {
-      response = await fetch(`${proxyUrl}/v1/chat/completions`, {
+      response = await fetchCoupleSpaceWithTimeout(`${proxyUrl}/v1/chat/completions`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+        headers: getCoupleSpaceRequestHeaders(apiKey),
         body: JSON.stringify({
           model,
           messages: [{ role: 'system', content: prompt }, { role: 'user', content: '想发照片吗？' }],

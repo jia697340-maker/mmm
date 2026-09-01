@@ -46,6 +46,10 @@ const fragmentScriptPaths = fragmentScripts.map(
   fragment => `generated/html-fragments/${fragment.outputName}`
 );
 
+const embeddedAssets = [
+  'archive/330--main/index.html'
+];
+
 const generatedFragmentScripts = fragmentScripts.map(fragment => ({
   ...fragment,
   contents: `window.__EPHONE_HTML_PARTS.push(${JSON.stringify(fragment.source)
@@ -92,6 +96,7 @@ const generatedAssetManifest = `${JSON.stringify(
     'modules/bootstrap/html-fragment-manifest.js',
     'modules/bootstrap/document-loader.js',
     ...fragmentScriptPaths,
+    ...embeddedAssets,
     ...localAssets
   ])),
   null,

@@ -1,10 +1,11 @@
 // ========== 情侣空间 ==========
 const COUPLE_SPACE_STORAGE_KEY = 'coupleSpaces';
+const COUPLE_SPACE_IFRAME_PATH = 'archive/330--main/index.html';
+const coupleSpaceRunsInFlight = new Set();
 
 // 获取情侣空间API配置（优先使用情侣空间专用API，否则回退到主API）
 function getCoupleSpaceApiConfig() {
-  const useCoupleSpaceApi = state.apiConfig.couplespaceProxyUrl && 
-                            state.apiConfig.couplespaceApiKey && 
+  const useCoupleSpaceApi = state.apiConfig.couplespaceProxyUrl &&
                             state.apiConfig.couplespaceModel;
   
   if (useCoupleSpaceApi) {
@@ -22,17 +23,123 @@ function getCoupleSpaceApiConfig() {
   }
 }
 
+function getCoupleSpaceLocalDateKey(date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function getCoupleSpaceRequestHeaders(apiKey) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (apiKey) headers.Authorization = `Bearer ${apiKey}`;
+  return headers;
+}
+
+async function fetchCoupleSpaceWithTimeout(url, options, timeoutMs = 45000) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } catch (error) {
+    if (error && error.name === 'AbortError') throw new Error('情侣空间 API 请求超时');
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+function parseCoupleSpaceJson(rawText) {
+  const text = String(rawText || '')
+    .trim()
+    .replace(/^```(?:json)?\s*/i, '')
+    .replace(/\s*```$/i, '')
+    .trim();
+  try {
+    return JSON.parse(text);
+  } catch (originalError) {
+    const objectStart = text.indexOf('{');
+    const arrayStart = text.indexOf('[');
+    const starts = [objectStart, arrayStart].filter(index => index >= 0);
+    if (starts.length === 0) throw originalError;
+    const start = Math.min(...starts);
+    const endToken = text[start] === '[' ? ']' : '}';
+    const end = text.lastIndexOf(endToken);
+    if (end <= start) throw originalError;
+    return JSON.parse(text.slice(start, end + 1));
+  }
+}
+
+function saveCoupleSpaceSettingsWithSchedule(data, settingsPrefix, lastKeys, scheduleFields) {
+  const storageKey = settingsPrefix + data.charId;
+  let previous = {};
+  try { previous = JSON.parse(localStorage.getItem(storageKey) || '{}'); } catch(e) {}
+  const next = data.settings || {};
+  const scheduleChanged = scheduleFields.some(field => previous[field] !== next[field]);
+  localStorage.setItem(storageKey, JSON.stringify(next));
+  if (scheduleChanged) {
+    lastKeys.forEach(key => {
+      localStorage.removeItem(key + data.charId);
+      localStorage.removeItem(key + data.charId + '_status');
+    });
+  }
+  return scheduleChanged;
+}
+
+function runCoupleSpaceOncePerDay(lastKey, callback) {
+  const todayStr = getCoupleSpaceLocalDateKey();
+  if (localStorage.getItem(lastKey) === todayStr || coupleSpaceRunsInFlight.has(lastKey)) {
+    return Promise.resolve(false);
+  }
+
+  let previousStatus = {};
+  try { previousStatus = JSON.parse(localStorage.getItem(lastKey + '_status') || '{}'); } catch(e) {}
+  if (previousStatus.state === 'failed' && previousStatus.attemptedAt) {
+    const retryCount = Math.max(1, Number(previousStatus.retryCount) || 1);
+    const retryDelay = Math.min(60 * 60 * 1000, 5 * 60 * 1000 * Math.pow(2, retryCount - 1));
+    if (Date.now() - previousStatus.attemptedAt < retryDelay) return Promise.resolve(false);
+  }
+
+  coupleSpaceRunsInFlight.add(lastKey);
+  const retryCount = previousStatus.state === 'failed' ? (Number(previousStatus.retryCount) || 1) + 1 : 0;
+  localStorage.setItem(lastKey + '_status', JSON.stringify({ state: 'running', attemptedAt: Date.now(), retryCount }));
+
+  return Promise.resolve()
+    .then(callback)
+    .then(success => {
+      if (success === false) {
+        localStorage.setItem(lastKey + '_status', JSON.stringify({ state: 'failed', attemptedAt: Date.now(), retryCount: Math.max(1, retryCount) }));
+        return false;
+      }
+      localStorage.setItem(lastKey, todayStr);
+      localStorage.setItem(lastKey + '_status', JSON.stringify({ state: 'success', completedAt: Date.now() }));
+      return true;
+    })
+    .catch(error => {
+      console.error(`[情侣空间] 自动任务执行失败 (${lastKey})`, error);
+      localStorage.setItem(lastKey + '_status', JSON.stringify({
+        state: 'failed',
+        attemptedAt: Date.now(),
+        retryCount: Math.max(1, retryCount),
+        message: error && error.message ? error.message : String(error)
+      }));
+      return false;
+    })
+    .finally(() => coupleSpaceRunsInFlight.delete(lastKey));
+}
+
 // 通用定时补执行工具：检查今天是否已过设定时间但还没执行过，如果是则立即补执行
 // 通用情侣空间离线保存/推送工具
 function sendOrSaveCoupleSpaceData(charId, msgObj, storageKey, itemToSave) {
   const iframe = document.getElementById('couple-space-iframe');
-  const isIframeOpenForThisChar = iframe && iframe.src && iframe.src.includes('330--main/index.html') && localStorage.getItem('coupleSpaceLastId') === charId;
+  const isIframeOpenForThisChar = iframe && iframe.src && iframe.src.includes(COUPLE_SPACE_IFRAME_PATH) && localStorage.getItem('coupleSpaceLastId') === charId;
   
   if (isIframeOpenForThisChar && iframe.contentWindow) {
     try {
       iframe.contentWindow.postMessage(msgObj, '*');
       console.log(`[情侣空间] 📥 已将数据 (${msgObj.type}) 推送到打开的页面`);
-    } catch(e) { console.error('Failed to notify iframe:', e); }
+      return true;
+    } catch(e) { console.error('Failed to notify iframe:', e); return false; }
   } else if (storageKey && itemToSave) {
     try {
       const items = JSON.parse(localStorage.getItem(storageKey + charId) || '[]');
@@ -70,8 +177,10 @@ function sendOrSaveCoupleSpaceData(charId, msgObj, storageKey, itemToSave) {
           console.log(`[情侣空间提醒] ${notificationText}`);
         }
       }
-    } catch(e) { console.error('Failed to save offline or notify:', e); }
+      return true;
+    } catch(e) { console.error('Failed to save offline or notify:', e); return false; }
   }
+  return false;
 }
 
 // 通用定时补执行工具：检查今天是否已过设定时间但还没执行过，如果是则立即补执行
@@ -79,15 +188,16 @@ function checkAndRunMissed(timeStr, lastKey, callback) {
   try {
     const now = new Date();
     const [h, m] = timeStr.split(':').map(Number);
-    const todayStr = now.toISOString().split('T')[0];
+    if (!Number.isInteger(h) || !Number.isInteger(m)) return Promise.resolve(false);
+    const todayStr = getCoupleSpaceLocalDateKey(now);
     const lastDate = localStorage.getItem(lastKey);
-    if (lastDate === todayStr) return; // 今天已经执行过
+    if (lastDate === todayStr) return Promise.resolve(false); // 今天已经执行过
     // 当前时间已经过了设定时间，说明错过了，立即补执行
     if (now.getHours() > h || (now.getHours() === h && now.getMinutes() >= m)) {
-      localStorage.setItem(lastKey, todayStr);
-      callback();
+      return runCoupleSpaceOncePerDay(lastKey, callback);
     }
   } catch(e) { console.error('checkAndRunMissed error:', e); }
+  return Promise.resolve(false);
 }
 
 // ========== AI 自主决定模式 - 事件驱动触发 ==========
@@ -110,7 +220,7 @@ function triggerCoupleSpaceAiDecide(charId, source) {
     { settingsKey: 'coupleFinanceSettings_', lastKey: 'coupleFinanceAutoLast_', chatProb: 'aiDecideChatProb', bgProb: 'aiDecideBgProb', trigger: triggerAutoFinancePost },
   ];
 
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = getCoupleSpaceLocalDateKey();
 
   featureConfigs.forEach(cfg => {
     try {
@@ -128,9 +238,8 @@ function triggerCoupleSpaceAiDecide(charId, source) {
         : (settings[cfg.bgProb] ?? 5) / 100;
 
       if (Math.random() < prob) {
-        localStorage.setItem(randomLastKey, todayStr);
         console.log(`[情侣空间] 🎲 随机模式：AI决定触发 ${cfg.settingsKey} (${source}, 概率${(prob*100).toFixed(0)}%)`);
-        cfg.trigger(charId);
+        runCoupleSpaceOncePerDay(randomLastKey, () => cfg.trigger(charId));
       }
     } catch(e) { console.error('aiDecide trigger error:', e); }
   });
@@ -148,9 +257,8 @@ function triggerCoupleSpaceAiDecide(charId, source) {
         const lastDate = localStorage.getItem(lastKey);
         if (lastDate === todayStr) return;
         if (Math.random() < prob) {
-          localStorage.setItem(lastKey, todayStr);
           console.log(`[情侣空间] 🎲 随机模式：AI决定触发 sleep-${phase} (${source})`);
-          triggerAutoSleepPost(charId, phase);
+          runCoupleSpaceOncePerDay(lastKey, () => triggerAutoSleepPost(charId, phase));
         }
       });
     }
@@ -288,6 +396,20 @@ function confirmCoupleSpace(charId) {
     createdAt: Date.now()
   });
   saveCoupleSpaces(spaces);
+  setupAllCoupleSpaceAutoTimers();
+}
+
+function setupAllCoupleSpaceAutoTimers() {
+  [
+    'setupCoupleSpaceDiaryAutoTimer', 'setupCoupleSpaceAlbumAutoTimer',
+    'setupCoupleSpaceChecklistAutoTimer', 'setupCoupleSpaceMessageAutoTimer',
+    'setupCoupleSpaceMoodAutoTimer', 'setupCoupleSpaceTimelineAutoTimer',
+    'setupCoupleSpaceLetterAutoTimer', 'setupCoupleSpaceGardenAutoTimer',
+    'setupCoupleSpaceLocationAutoTimer', 'setupCoupleSpaceSleepAutoTimer',
+    'setupCoupleSpaceFinanceAutoTimer'
+  ].forEach(name => {
+    if (typeof window[name] === 'function') window[name]();
+  });
 }
 
 async function unbindCoupleSpace(charId) {
@@ -312,6 +434,21 @@ async function unbindCoupleSpace(charId) {
       'coupleFinance_' + charId, 'coupleFinanceSettings_' + charId, 'coupleFinanceAutoLast_' + charId, 'coupleCustomFinCats_' + charId
     ];
     keysToRemove.forEach(k => localStorage.removeItem(k));
+    const relatedKeys = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('couple') && (key.endsWith(charId) || key.endsWith(charId + '_status'))) {
+        relatedKeys.push(key);
+      }
+    }
+    relatedKeys.forEach(key => localStorage.removeItem(key));
+    try {
+      const ledger = JSON.parse(localStorage.getItem('coupleGardenRewardLedger') || '{}');
+      Object.keys(ledger).forEach(transactionId => {
+        if (ledger[transactionId] && ledger[transactionId].charId === charId) delete ledger[transactionId];
+      });
+      localStorage.setItem('coupleGardenRewardLedger', JSON.stringify(ledger));
+    } catch(e) {}
   }
   
   const spaces = getCoupleSpaces();
@@ -350,8 +487,10 @@ function enterCoupleSpace(charId) {
   const charAvatar = chat ? (chat.settings.aiAvatar || defaultAvatar) : '';
   const userNickname = chat ? (chat.settings.myNickname || '我') : '我';
   const userAvatar = chat ? (chat.settings.myAvatar || state.qzoneSettings.avatar || defaultAvatar) : defaultAvatar;
-  const iframe = document.getElementById('couple-space-iframe');
-  iframe.src = '330--main/index.html';
+  const previousIframe = document.getElementById('couple-space-iframe');
+  const iframe = previousIframe.cloneNode(false);
+  previousIframe.replaceWith(iframe);
+  iframe.src = COUPLE_SPACE_IFRAME_PATH;
   iframe.onload = function() {
     const spaces = getCoupleSpaces();
     const space = spaces.find(s => s.charId === charId);
@@ -384,6 +523,11 @@ function closeCoupleSpace() {
 }
 
 window.addEventListener('message', function(e) {
+  const coupleIframe = document.getElementById('couple-space-iframe');
+  const isCoupleFrame = coupleIframe && e.source === coupleIframe.contentWindow;
+  const isCoupleMessage = e.data === 'closeCoupleSpace' || e.data === 'coupleSpaceSwitchPartner' ||
+    (e.data && typeof e.data.type === 'string' && e.data.type.startsWith('coupleSpace'));
+  if (isCoupleMessage && !isCoupleFrame) return;
   if (e.data === 'closeCoupleSpace') closeCoupleSpace();
   if (e.data === 'coupleSpaceSwitchPartner') showCoupleSpaceSelect('list');
 

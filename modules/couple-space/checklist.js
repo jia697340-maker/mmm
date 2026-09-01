@@ -4,9 +4,8 @@ function handleCoupleSpaceChecklistChanged(data) {
 }
 
 function handleCoupleSpaceChecklistSettingsChanged(data) {
-  localStorage.setItem('coupleChecklistSettings_' + data.charId, JSON.stringify(data.settings || {}));
-  localStorage.removeItem('coupleChecklistAutoLast_' + data.charId);
-  console.log(`[情侣空间] ⚙️ 已保存 清单 设置并清除当天执行记录，重新初始化定时器`);
+  saveCoupleSpaceSettingsWithSchedule(data, 'coupleChecklistSettings_', ['coupleChecklistAutoLast_'], ['autoEnabled', 'autoTime']);
+  console.log(`[情侣空间] ⚙️ 已保存 清单 设置并重新初始化定时器`);
   setupCoupleSpaceChecklistAutoTimer();
 }
 
@@ -63,7 +62,7 @@ async function handleCoupleSpaceChecklistHeartRequest(data) {
   try {
     const ctx = buildDiaryAiContext(chat);
     const { proxyUrl, apiKey, model } = getCoupleSpaceApiConfig();
-    if (!proxyUrl || !apiKey || !model) return;
+    if (!proxyUrl || !model) return;
 
     const prompt = `你是"${ctx.charName}"。你的伴侣"${ctx.myNickname}"给清单项"${data.itemTitle}"点了爱心。
 备注: ${data.itemNote || '(无)'}
@@ -75,11 +74,11 @@ async function handleCoupleSpaceChecklistHeartRequest(data) {
     let response;
     if (isGemini) {
       const geminiConfig = toGeminiRequestData(model, apiKey, prompt, [{ role: 'user', content: '你要点爱心吗？' }]);
-      response = await fetch(geminiConfig.url, geminiConfig.data);
+      response = await fetchCoupleSpaceWithTimeout(geminiConfig.url, geminiConfig.data);
     } else {
-      response = await fetch(`${proxyUrl}/v1/chat/completions`, {
+      response = await fetchCoupleSpaceWithTimeout(`${proxyUrl}/v1/chat/completions`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+        headers: getCoupleSpaceRequestHeaders(apiKey),
         body: JSON.stringify({
           model,
           messages: [{ role: 'system', content: prompt }, { role: 'user', content: '你要点爱心吗？' }],
@@ -104,7 +103,7 @@ async function handleCoupleSpaceChecklistHeartRequest(data) {
 
 async function generateCoupleSpaceChecklistAi(chat, data) {
   const { proxyUrl, apiKey, model } = getCoupleSpaceApiConfig();
-  if (!proxyUrl || !apiKey || !model) throw new Error('API未配置');
+  if (!proxyUrl || !model) throw new Error('API未配置');
 
   const ctx = buildDiaryAiContext(chat);
 
@@ -200,11 +199,11 @@ ${ctx.currentTime}
   let response;
   if (isGemini) {
     const geminiConfig = toGeminiRequestData(model, apiKey, systemPrompt, messages);
-    response = await fetch(geminiConfig.url, geminiConfig.data);
+    response = await fetchCoupleSpaceWithTimeout(geminiConfig.url, geminiConfig.data);
   } else {
-    response = await fetch(`${proxyUrl}/v1/chat/completions`, {
+    response = await fetchCoupleSpaceWithTimeout(`${proxyUrl}/v1/chat/completions`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+      headers: getCoupleSpaceRequestHeaders(apiKey),
       body: JSON.stringify({
         model,
         messages: [{ role: 'system', content: systemPrompt }, ...messages],
@@ -219,12 +218,12 @@ ${ctx.currentTime}
   if (!response.ok) throw new Error('API请求失败: ' + response.status);
   const respData = await response.json();
   const raw = getGeminiResponseText(respData).replace(/^```json\s*/, '').replace(/```$/, '').trim();
-  return JSON.parse(raw);
+  return parseCoupleSpaceJson(raw);
 }
 
 async function generateCoupleSpaceChecklistComment(chat, data) {
   const { proxyUrl, apiKey, model } = getCoupleSpaceApiConfig();
-  if (!proxyUrl || !apiKey || !model) throw new Error('API未配置');
+  if (!proxyUrl || !model) throw new Error('API未配置');
 
   const ctx = buildDiaryAiContext(chat);
 
@@ -264,11 +263,11 @@ ${ctx.currentTime}
   let response;
   if (isGemini) {
     const geminiConfig = toGeminiRequestData(model, apiKey, systemPrompt, messages);
-    response = await fetch(geminiConfig.url, geminiConfig.data);
+    response = await fetchCoupleSpaceWithTimeout(geminiConfig.url, geminiConfig.data);
   } else {
-    response = await fetch(`${proxyUrl}/v1/chat/completions`, {
+    response = await fetchCoupleSpaceWithTimeout(`${proxyUrl}/v1/chat/completions`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+      headers: getCoupleSpaceRequestHeaders(apiKey),
       body: JSON.stringify({
         model,
         messages: [{ role: 'system', content: systemPrompt }, ...messages],
@@ -300,7 +299,7 @@ function setupCoupleSpaceChecklistAutoTimer() {
         console.log(`✅ [情侣空间] 已重置 清单 的定时器，新的定时时间为：${settings.autoTime}`);
         checkAndRunMissed(settings.autoTime, 'coupleChecklistAutoLast_' + space.charId, () => {
           console.log(`⏰ [情侣空间] 定时补执行时间已到！开始强制触发 清单 的自动生成`);
-          triggerAutoChecklistRecommend(space.charId, true);
+          return triggerAutoChecklistRecommend(space.charId, true);
         });
         scheduleChecklistAutoRecommend(space.charId, settings.autoTime);
       }
@@ -312,14 +311,14 @@ function scheduleChecklistAutoRecommend(charId, timeStr) {
   coupleSpaceChecklistTimers[charId] = setInterval(() => {
     checkAndRunMissed(timeStr, 'coupleChecklistAutoLast_' + charId, () => {
       console.log(`⏰ [情侣空间] 定时时间已到！开始强制触发 清单 的自动生成`);
-      triggerAutoChecklistRecommend(charId, true);
+      return triggerAutoChecklistRecommend(charId, true);
     });
   }, 60000);
 }
 
 async function triggerAutoChecklistRecommend(charId, isTimer = false) {
   const chat = state.chats[charId];
-  if (!chat) return;
+  if (!chat) return false;
 
   const settings = JSON.parse(localStorage.getItem('coupleChecklistSettings_' + charId) || '{}');
 
@@ -348,12 +347,14 @@ async function triggerAutoChecklistRecommend(charId, isTimer = false) {
       comments: []
     };
 
-    sendOrSaveCoupleSpaceData(charId, {
+    const saved = sendOrSaveCoupleSpaceData(charId, {
       type: 'coupleSpaceChecklistAutoResult',
       item: newItem
     }, 'coupleChecklist_', newItem);
+    return saved;
   } catch(err) {
     console.error('Auto checklist recommend failed:', err);
+    return false;
   }
 }
 
