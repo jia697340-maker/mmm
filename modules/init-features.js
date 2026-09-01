@@ -145,19 +145,13 @@ window.initFeatures = function(state, db) {
 
 
     document.getElementById('add-song-search-btn').addEventListener('click', addSongFromSearch);
+    document.getElementById('music-account-btn').addEventListener('click', openMusicAccountCenter);
+    document.getElementById('close-music-account-btn').addEventListener('click', closeMusicAccountCenter);
+    document.getElementById('netease-login-btn').addEventListener('click', startNeteaseQrLogin);
+    document.getElementById('netease-logout-btn').addEventListener('click', logoutNeteaseMusic);
     document.getElementById('cancel-music-search-btn').addEventListener('click', () => {
       document.getElementById('music-search-results-modal').classList.remove('visible');
     });
-
-    document.getElementById('search-results-list').addEventListener('click', (e) => {
-      const item = e.target.closest('.search-result-item');
-      if (item && item.dataset.songJson) {
-        const songData = JSON.parse(item.dataset.songJson);
-        handleSearchResultClick(songData);
-      }
-    });
-
-
 
     document.getElementById('cleanup-songs-btn').addEventListener('click', cleanupInvalidSongs);
     document.getElementById('playlist-manager-btn').addEventListener('click', openPlaylistManager);

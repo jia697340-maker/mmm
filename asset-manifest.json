@@ -110,6 +110,7 @@
   "modules/ai/response-actions.js",
   "modules/ai/inactive-character-actions.js",
   "modules/ai/group-actions.js",
+  "modules/music-online-services.js",
   "modules/music-player.js",
   "modules/qzone.js",
   "modules/sticker-manager.js",

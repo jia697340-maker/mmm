@@ -3485,8 +3485,13 @@ window.initEventBindingsB = function(state, db) {
         const errorMsg = errorMessages[audioPlayer.error.code] || '未知错误';
         console.error(`[音频错误] ${errorMsg}`, audioPlayer.src);
 
-        // 如果是网络错误或源不支持，尝试重新加载
+        // 在线曲目先刷新临时地址并自动寻找同曲备用来源。
         if (audioPlayer.error.code === 2 || audioPlayer.error.code === 4) {
+          const currentTrack = musicState.playlist[musicState.currentIndex];
+          if (currentTrack?.onlineSource && typeof retryOnlineTrackPlayback === 'function') {
+            retryOnlineTrackPlayback();
+            return;
+          }
           console.log('[音频播放] 尝试重新加载音频...');
           setTimeout(() => {
             if (musicState.isActive && musicState.currentIndex >= 0) {

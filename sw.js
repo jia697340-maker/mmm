@@ -2,7 +2,7 @@
 // 【智能缓存策略】- 根据资源类型使用不同的缓存策略，优化加载速度
 
 // 缓存版本号（智能缓存策略）
-const CACHE_VERSION = 'v0.0.36-mcp-channel';
+const CACHE_VERSION = 'v0.0.36-public-music';
 const CACHE_NAME = `ephone-cache-${CACHE_VERSION}`;
 
 const CORE_URLS_TO_CACHE = ['./index.html', './manifest.json', './asset-manifest.json'];
@@ -66,6 +66,11 @@ self.addEventListener('fetch', event => {
                        url.includes('/v1/chat/completions') ||
                        url.includes('gemini.beijixingxing.com') ||
                        url.includes('api.imgbb.com') ||
+                       url.includes('api.kfjie.me') ||
+                       url.includes('meting.mikus.ink') ||
+                       url.includes('api.vkeys.cn') ||
+                       url.includes('ncm-api.vercel.app') ||
+                       event.request.destination === 'audio' ||
                        url.includes(':generateContent');
   
   if (isApiRequest) {

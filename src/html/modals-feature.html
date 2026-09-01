@@ -88,6 +88,45 @@
       <div class="modal-footer"> <button class="cancel" id="cancel-music-search-btn"data-lang-key="cancel">取消</button> <button class="save" id="add-selected-music-btn"data-lang-key="add">添加选中</button> </div>
     </div>
   </div>
+  <div id="music-account-modal" class="modal">
+    <div class="modal-content music-account-content">
+      <div class="modal-header">
+        <span>音乐账号</span>
+        <button id="close-music-account-btn" class="music-account-close" type="button" aria-label="关闭">×</button>
+      </div>
+      <div class="modal-body music-account-body">
+        <section class="music-account-card">
+          <div class="music-account-platform-row">
+            <div>
+              <div class="music-account-platform-name">网易云音乐</div>
+              <div id="netease-account-status" class="music-account-status">正在检查登录状态…</div>
+            </div>
+            <button id="netease-login-btn" class="music-account-primary-btn" type="button">扫码登录</button>
+            <button id="netease-logout-btn" class="music-account-secondary-btn" type="button" hidden>退出</button>
+          </div>
+          <div id="netease-profile" class="music-account-profile" hidden>
+            <img id="netease-profile-avatar" alt="网易云头像">
+            <span id="netease-profile-name"></span>
+          </div>
+          <div id="netease-qr-area" class="music-account-qr-area" hidden>
+            <img id="netease-qr-image" alt="网易云扫码登录二维码">
+            <div id="netease-qr-message">请使用网易云音乐 App 扫码并确认</div>
+            <a id="netease-qr-link" target="_blank" rel="noopener noreferrer">在网易云音乐中打开</a>
+          </div>
+          <p class="music-account-safety">扫码会话由当前公共节点处理。该节点能够接触你的登录会话；本页不会要求账号、密码或短信验证码，也不会把登录会话发送给搜索节点。</p>
+        </section>
+        <section id="netease-playlists-section" class="music-account-card" hidden>
+          <div class="music-account-section-title">我的网易云歌单</div>
+          <div id="netease-playlists-loading" class="music-account-status">正在读取歌单…</div>
+          <div id="netease-playlists-list" class="music-account-playlists"></div>
+        </section>
+        <section class="music-account-card music-account-availability">
+          <div class="music-account-section-title">无需登录也能听</div>
+          <p>网易云、QQ 音乐和酷狗均可直接搜索播放。其他平台只有在公共登录服务真实可用时才会显示登录入口。</p>
+        </section>
+      </div>
+    </div>
+  </div>
   <div id="cleaned-songs-modal" class="modal">
     <div class="modal-content" style="height: 70%;">
       <div class="modal-header"> <span>被清理的歌曲</span> <label style="font-size: 14px; font-weight: normal; display: flex; align-items: center; gap: 5px;"> <input type="checkbox" id="select-all-cleaned-songs"> 全选 </label> </div>
