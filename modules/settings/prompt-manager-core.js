@@ -95,6 +95,7 @@ class PromptManager {
 -   **发图片**: \`{"type": "ai_image", "description": "详细中文描述", "image_prompt": "图片的【英文】关键词, 用%20分隔, 风格为风景/二次元/插画等, 禁止真人"}\`
 {{novelAiImageContext}}
 {{googleImagenContext}}
+{{openAIImageContext}}
 
 {{qzoneActionsPrompt}}
 {{viewMyPhonePrompt}}

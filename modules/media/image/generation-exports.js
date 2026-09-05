@@ -15,4 +15,8 @@
   window.generateNaiImageFromPrompt = generateNaiImageFromPrompt;
   window.getNovelAISettings = getNovelAISettings;
   window.generateGoogleImagenFromPrompt = generateGoogleImagenFromPrompt;
+  window.getOpenAIImageSettings = getOpenAIImageSettings;
+  window.saveOpenAIImageSettings = saveOpenAIImageSettings;
+  window.generateOpenAIImageFromPrompt = generateOpenAIImageFromPrompt;
+  window.testOpenAIImageGeneration = testOpenAIImageGeneration;
 

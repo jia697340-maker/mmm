@@ -886,22 +886,30 @@
 
            .douban-post-actions {
                display: flex;
-               gap: 20px;
+               gap: 16px;
+               align-items: center;
            }
 
-           .douban-post-actions span {
-               display: flex;
+           .douban-post-actions > span {
+               display: inline-flex;
                align-items: center;
-               gap: 6px;
-               color: var(--text-secondary);
+               gap: 5px;
+               color: #8e8e93;
+               font-size: 13px;
+               font-weight: 500;
+               transition: color 0.2s ease;
+           }
+
+           #phone-screen.dark-mode .douban-post-actions > span {
+               color: #98989d;
            }
 
            .douban-post-actions svg {
-               width: 18px;
-               height: 18px;
-               fill: currentColor;
-               position: relative;
-               top: -1px;
+               width: 15px;
+               height: 15px;
+               stroke: currentColor;
+               display: block;
+               flex-shrink: 0;
            }
 
            .douban-feather-btn {

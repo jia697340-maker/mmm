@@ -244,6 +244,27 @@
 
           case 'naiimag':
 
+            if (typeof generateNaiImageFromPrompt === 'function') {
+              try {
+                const aiPrompt = msgData.prompt || 'a beautiful scene';
+                const generatedData = await generateNaiImageFromPrompt(aiPrompt, chat.id);
+                aiMessage = {
+                  ...baseMessage,
+                  type: 'naiimag',
+                  imageUrl: generatedData.imageUrl,
+                  prompt: aiPrompt,
+                  fullPrompt: generatedData.fullPrompt
+                };
+              } catch (error) {
+                console.error('❌ NAI图片生成失败:', error);
+                aiMessage = {
+                  ...baseMessage,
+                  content: `[图片生成失败: ${error.message}]`
+                };
+              }
+              break;
+            }
+
             try {
               console.log('📸 NovelAI图片生成开始，AI提供的prompt:', msgData.prompt);
 
@@ -588,6 +609,29 @@
             }
             break;
 
+          case 'openaiimag':
+            try {
+              const openAIPrompt = msgData.prompt || msgData.image_prompt || msgData.description || 'A beautiful scene';
+              const openAIResult = await generateOpenAIImageFromPrompt(openAIPrompt);
+              aiMessage = {
+                ...baseMessage,
+                type: 'openaiimag',
+                imageUrl: openAIResult.imageUrl,
+                prompt: openAIPrompt,
+                fullPrompt: openAIResult.fullPrompt,
+                model: openAIResult.model,
+                mimeType: openAIResult.mimeType,
+                requestId: openAIResult.requestId
+              };
+            } catch (error) {
+              console.error('❌ GPT 图片生成失败:', error);
+              aiMessage = {
+                ...baseMessage,
+                content: `[GPT 图片生成失败: ${error.message}]`
+              };
+            }
+            break;
+
           default:
             console.warn("收到了未知的AI指令类型:", msgData.type);
             break;
@@ -608,7 +652,9 @@
                 notificationText = `[收到一个外卖代付请求]`;
                 break;
               case 'ai_image':
+              case 'naiimag':
               case 'googleimag':
+              case 'openaiimag':
                 notificationText = `[图片]`;
                 break;
               case 'voice_message':
@@ -640,7 +686,9 @@
                 notificationText = `[收到一个外卖代付请求]`;
                 break;
               case 'ai_image':
+              case 'naiimag':
               case 'googleimag':
+              case 'openaiimag':
                 notificationText = `[图片]`;
                 break;
               case 'voice_message':

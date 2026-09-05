@@ -645,6 +645,12 @@
                   const aiPrompt = prompts[i];
                   console.log(`生成第${i + 1}张图片，prompt:`, aiPrompt);
 
+                  if (typeof generateNaiImageFromPrompt === 'function') {
+                    const generatedData = await generateNaiImageFromPrompt(aiPrompt, chat.id);
+                    generatedImageUrls.push(generatedData.imageUrl);
+                    continue;
+                  }
+
 
                   const naiPrompts = getCharacterNAIPrompts(chat.id);
 

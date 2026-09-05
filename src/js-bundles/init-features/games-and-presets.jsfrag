@@ -963,7 +963,7 @@ ${finalInstruction}
         await showCustomAlert(`${actionText}成功`, `亲属卡${actionText}已发送给对方。`);
       });
     }
-    document.getElementById('char-wallet-content').addEventListener('click', async (e) => {
+    document.getElementById('char-wallet-content')?.addEventListener('click', async (e) => {
       if (e.target.classList.contains('unbind-kinship-btn')) {
         e.stopPropagation();
         const chatId = e.target.dataset.chatId;

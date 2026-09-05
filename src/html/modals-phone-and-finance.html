@@ -278,7 +278,8 @@
 </div>
             <div class="gr-form-group">
                 <label>指定作者 (文风)</label>
-                <select id="gr-author-select" class="gr-select"></select>
+                <button type="button" id="gr-author-select-trigger" class="gr-select gr-author-select-trigger" aria-haspopup="dialog" aria-expanded="false">请选择作者</button>
+                <select id="gr-author-select" aria-hidden="true" tabindex="-1" hidden></select>
             </div>
 
             <div class="gr-form-group">
@@ -334,6 +335,13 @@
             <button class="save" id="gr-save-story-btn" style="background: #1B4F3E; border: none;">开始创作</button>
         </div>
     </div>
+</div>
+
+<div id="gr-author-select-modal" class="gr-writing-mode-modal" aria-hidden="true">
+  <div class="gr-writing-mode-dialog" role="dialog" aria-modal="true" aria-labelledby="gr-author-select-title">
+    <div class="gr-writing-mode-dialog-header"><span id="gr-author-select-title">选择作者风格</span><button type="button" id="gr-author-select-close" class="gr-writing-mode-close" aria-label="关闭">×</button></div>
+    <div id="gr-author-select-options" class="gr-writing-mode-options"></div>
+  </div>
 </div>
 
 <div id="gr-chapter-editor-modal" class="modal" style="z-index:10003;">

@@ -20,7 +20,7 @@ window.initFeatures = function(state, db) {
 
 
 
-    document.getElementById('test-sound-btn').addEventListener('click', () => {
+    document.getElementById('test-sound-btn')?.addEventListener('click', () => {
       const player = document.getElementById('notification-sound-player');
       const url = document.getElementById('notification-sound-url-input').value.trim() || DEFAULT_NOTIFICATION_SOUND;
       player.src = url;
@@ -29,12 +29,12 @@ window.initFeatures = function(state, db) {
       player.play().catch(e => alert('播放失败，请检查URL是否正确或浏览器是否支持该格式。'));
     });
 
-    document.getElementById('reset-sound-btn').addEventListener('click', () => {
+    document.getElementById('reset-sound-btn')?.addEventListener('click', () => {
       document.getElementById('notification-sound-url-input').value = '';
       alert('已重置为默认提示音，点击“保存所有外观设置”后生效。');
     });
 
-    document.getElementById('home-screen').addEventListener('click', (e) => {
+    document.getElementById('home-screen')?.addEventListener('click', (e) => {
       const target = e.target;
 
       if (target.classList.contains('editable-text')) {
@@ -47,19 +47,19 @@ window.initFeatures = function(state, db) {
     });
 
     // 提示音预设相关事件监听器
-    document.getElementById('sound-preset-select').addEventListener('change', handleSoundPresetSelectionChange);
-    document.getElementById('save-sound-preset-btn').addEventListener('click', saveSoundPreset);
-    document.getElementById('delete-sound-preset-btn').addEventListener('click', deleteSoundPreset);
+    document.getElementById('sound-preset-select')?.addEventListener('change', handleSoundPresetSelectionChange);
+    document.getElementById('save-sound-preset-btn')?.addEventListener('click', saveSoundPreset);
+    document.getElementById('delete-sound-preset-btn')?.addEventListener('click', deleteSoundPreset);
 
     // 当用户手动修改提示音 URL 时，更新下拉框为"当前配置"
-    document.getElementById('notification-sound-url-input').addEventListener('input', async () => {
+    document.getElementById('notification-sound-url-input')?.addEventListener('input', async () => {
       if (typeof loadSoundPresetsDropdown === 'function') {
         await loadSoundPresetsDropdown();
       }
     });
 
     // 音量滑动条事件监听器
-    document.getElementById('notification-volume-slider').addEventListener('input', (e) => {
+    document.getElementById('notification-volume-slider')?.addEventListener('input', (e) => {
       const volumePercent = parseInt(e.target.value);
       document.getElementById('notification-volume-label').textContent = volumePercent + '%';
       // 实时保存音量设置
@@ -67,14 +67,14 @@ window.initFeatures = function(state, db) {
       db.globalSettings.put(state.globalSettings);
     });
 
-    document.getElementById('select-all-music-search').addEventListener('change', function (e) {
+    document.getElementById('select-all-music-search')?.addEventListener('change', function (e) {
       document.querySelectorAll('#search-results-list .music-search-checkbox').forEach(cb => {
         cb.checked = e.target.checked;
       });
     });
 
 
-    document.getElementById('search-results-list').addEventListener('click', (e) => {
+    document.getElementById('search-results-list')?.addEventListener('click', (e) => {
       const item = e.target.closest('.search-result-item');
       if (item) {
         const checkbox = item.querySelector('.music-search-checkbox');
@@ -88,7 +88,7 @@ window.initFeatures = function(state, db) {
     });
 
 
-    document.getElementById('add-selected-music-btn').addEventListener('click', async () => {
+    document.getElementById('add-selected-music-btn')?.addEventListener('click', async () => {
       const selectedItems = document.querySelectorAll('.music-search-checkbox:checked');
       if (selectedItems.length === 0) {
         alert("请先选择要添加的歌曲。");
@@ -138,62 +138,62 @@ window.initFeatures = function(state, db) {
 
 
 
-    document.getElementById('music-visual-container').addEventListener('click', () => {
+    document.getElementById('music-visual-container')?.addEventListener('click', () => {
       document.getElementById('music-visual-container').classList.toggle('lyrics-active');
     });
 
 
 
-    document.getElementById('add-song-search-btn').addEventListener('click', addSongFromSearch);
-    document.getElementById('music-account-btn').addEventListener('click', openMusicAccountCenter);
-    document.getElementById('close-music-account-btn').addEventListener('click', closeMusicAccountCenter);
-    document.getElementById('netease-login-btn').addEventListener('click', startNeteaseQrLogin);
-    document.getElementById('netease-logout-btn').addEventListener('click', logoutNeteaseMusic);
-    document.getElementById('cancel-music-search-btn').addEventListener('click', () => {
+    document.getElementById('add-song-search-btn')?.addEventListener('click', addSongFromSearch);
+    document.getElementById('music-account-btn')?.addEventListener('click', openMusicAccountCenter);
+    document.getElementById('close-music-account-btn')?.addEventListener('click', closeMusicAccountCenter);
+    document.getElementById('netease-login-btn')?.addEventListener('click', startNeteaseQrLogin);
+    document.getElementById('netease-logout-btn')?.addEventListener('click', logoutNeteaseMusic);
+    document.getElementById('cancel-music-search-btn')?.addEventListener('click', () => {
       document.getElementById('music-search-results-modal').classList.remove('visible');
     });
 
-    document.getElementById('cleanup-songs-btn').addEventListener('click', cleanupInvalidSongs);
-    document.getElementById('playlist-manager-btn').addEventListener('click', openPlaylistManager);
-    document.getElementById('move-to-playlist-btn').addEventListener('click', executeMoveToPlaylist);
-    document.getElementById('toggle-blur-btn').addEventListener('click', toggleBackgroundBlur);
-    document.getElementById('toggle-fullscreen-btn').addEventListener('click', togglePlayerFullscreen);
-    document.getElementById('show-avatars-btn').addEventListener('click', toggleMusicPlayerAvatars);
+    document.getElementById('cleanup-songs-btn')?.addEventListener('click', cleanupInvalidSongs);
+    document.getElementById('playlist-manager-btn')?.addEventListener('click', openPlaylistManager);
+    document.getElementById('move-to-playlist-btn')?.addEventListener('click', executeMoveToPlaylist);
+    document.getElementById('toggle-blur-btn')?.addEventListener('click', toggleBackgroundBlur);
+    document.getElementById('toggle-fullscreen-btn')?.addEventListener('click', togglePlayerFullscreen);
+    document.getElementById('show-avatars-btn')?.addEventListener('click', toggleMusicPlayerAvatars);
 
     // 被清理歌曲模态框事件
-    document.getElementById('select-all-cleaned-songs').addEventListener('change', (e) => {
+    document.getElementById('select-all-cleaned-songs')?.addEventListener('change', (e) => {
       const checkboxes = document.querySelectorAll('.cleaned-song-checkbox');
       checkboxes.forEach(cb => cb.checked = e.target.checked);
     });
-    document.getElementById('close-cleaned-songs-btn').addEventListener('click', () => {
+    document.getElementById('close-cleaned-songs-btn')?.addEventListener('click', () => {
       document.getElementById('cleaned-songs-modal').classList.remove('visible');
     });
-    document.getElementById('research-selected-songs-btn').addEventListener('click', handleResearchSelectedSongs);
+    document.getElementById('research-selected-songs-btn')?.addEventListener('click', handleResearchSelectedSongs);
 
 
-    document.getElementById('status-bar-toggle-switch').addEventListener('change', () => {
+    document.getElementById('status-bar-toggle-switch')?.addEventListener('change', () => {
 
       state.globalSettings.showStatusBar = document.getElementById('status-bar-toggle-switch').checked;
       applyStatusBarVisibility();
     });
 
-    document.getElementById('qzone-more-actions-btn').addEventListener('click', openClearPostsSelectorModal);
+    document.getElementById('qzone-more-actions-btn')?.addEventListener('click', openClearPostsSelectorModal);
 
 
-    document.getElementById('cancel-clear-posts-btn').addEventListener('click', () => {
+    document.getElementById('cancel-clear-posts-btn')?.addEventListener('click', () => {
       document.getElementById('clear-posts-modal').classList.remove('visible');
     });
-    document.getElementById('confirm-clear-posts-btn').addEventListener('click', handleConfirmClearPosts);
+    document.getElementById('confirm-clear-posts-btn')?.addEventListener('click', handleConfirmClearPosts);
 
 
-    document.getElementById('clear-posts-list').addEventListener('click', (e) => {
+    document.getElementById('clear-posts-list')?.addEventListener('click', (e) => {
       const item = e.target.closest('.clear-posts-item');
       if (item) {
         item.classList.toggle('selected');
       }
     });
 
-    document.getElementById('global-bg-input').addEventListener('change', async (event) => {
+    document.getElementById('global-bg-input')?.addEventListener('change', async (event) => {
       const file = event.target.files[0];
       if (file) {
         const dataUrl = await new Promise(resolve => {
@@ -221,7 +221,7 @@ window.initFeatures = function(state, db) {
     });
 
     // 重置全局聊天背景
-    document.getElementById('reset-global-bg-btn').addEventListener('click', async () => {
+    document.getElementById('reset-global-bg-btn')?.addEventListener('click', async () => {
       const confirmed = await showCustomConfirm("重置确认", "确定要重置聊天背景为默认吗？");
       if (confirmed) {
         state.globalSettings.globalChatBackground = '';
@@ -231,7 +231,7 @@ window.initFeatures = function(state, db) {
     });
 
 
-    document.getElementById('upload-global-bg-url-btn').addEventListener('click', async () => {
+    document.getElementById('upload-global-bg-url-btn')?.addEventListener('click', async () => {
 
       const url = await showCustomPrompt("网络图片", "请输入背景图片的URL", "", "url");
 
@@ -248,7 +248,7 @@ window.initFeatures = function(state, db) {
       }
     });
 
-    document.getElementById('upload-ephone-bg-url-btn').addEventListener('click', async () => {
+    document.getElementById('upload-ephone-bg-url-btn')?.addEventListener('click', async () => {
       const url = await showCustomPrompt("网络图片 (EPhone)", "请输入EPhone主屏幕的背景图片URL", "", "url");
       if (url && url.trim()) {
 
@@ -261,7 +261,7 @@ window.initFeatures = function(state, db) {
     });
 
 
-    document.getElementById('upload-cphone-bg-url-btn').addEventListener('click', async () => {
+    document.getElementById('upload-cphone-bg-url-btn')?.addEventListener('click', async () => {
       const url = await showCustomPrompt("网络图片 (CPhone)", "请输入CPhone的背景图片URL", "", "url");
       if (url && url.trim()) {
 
@@ -274,7 +274,7 @@ window.initFeatures = function(state, db) {
     });
 
 
-    document.getElementById('upload-myphone-bg-url-btn').addEventListener('click', async () => {
+    document.getElementById('upload-myphone-bg-url-btn')?.addEventListener('click', async () => {
       const url = await showCustomPrompt("网络图片 (MYphone)", "请输入MYphone的背景图片URL", "", "url");
       if (url && url.trim()) {
 
@@ -290,7 +290,7 @@ window.initFeatures = function(state, db) {
 
 
     // 重置主屏幕壁纸
-    document.getElementById('reset-ephone-bg-btn').addEventListener('click', async () => {
+    document.getElementById('reset-ephone-bg-btn')?.addEventListener('click', async () => {
       const confirmed = await showCustomConfirm("重置确认", "确定要重置主屏幕壁纸为默认吗？");
       if (confirmed) {
         newWallpaperBase64 = null;
@@ -301,7 +301,7 @@ window.initFeatures = function(state, db) {
     });
 
     // 重置CPhone壁纸
-    document.getElementById('reset-cphone-bg-btn').addEventListener('click', async () => {
+    document.getElementById('reset-cphone-bg-btn')?.addEventListener('click', async () => {
       const confirmed = await showCustomConfirm("重置确认", "确定要重置CPhone壁纸为默认吗？");
       if (confirmed) {
         state.globalSettings.cphoneWallpaper = '';
@@ -311,7 +311,7 @@ window.initFeatures = function(state, db) {
     });
 
     // 重置MYphone壁纸
-    document.getElementById('reset-myphone-bg-btn').addEventListener('click', async () => {
+    document.getElementById('reset-myphone-bg-btn')?.addEventListener('click', async () => {
       const confirmed = await showCustomConfirm("重置确认", "确定要重置MYphone壁纸为默认吗？");
       if (confirmed) {
         state.globalSettings.myphoneWallpaper = '';
@@ -322,36 +322,36 @@ window.initFeatures = function(state, db) {
     });
 
 
-    document.getElementById('css-preset-select').addEventListener('change', handleCssPresetSelectionChange);
-    document.getElementById('save-css-preset-btn').addEventListener('click', saveCssPreset);
-    document.getElementById('delete-css-preset-btn').addEventListener('click', deleteCssPreset);
+    document.getElementById('css-preset-select')?.addEventListener('change', handleCssPresetSelectionChange);
+    document.getElementById('save-css-preset-btn')?.addEventListener('click', saveCssPreset);
+    document.getElementById('delete-css-preset-btn')?.addEventListener('click', deleteCssPreset);
 
 
-    document.getElementById('font-preset-select').addEventListener('change', handleFontPresetSelectionChange);
-    document.getElementById('save-font-preset-btn').addEventListener('click', saveFontPreset);
-    document.getElementById('delete-font-preset-btn').addEventListener('click', deleteFontPreset);
+    document.getElementById('font-preset-select')?.addEventListener('change', handleFontPresetSelectionChange);
+    document.getElementById('save-font-preset-btn')?.addEventListener('click', saveFontPreset);
+    document.getElementById('delete-font-preset-btn')?.addEventListener('click', deleteFontPreset);
 
 
-    document.getElementById('theme-preset-select').addEventListener('change', handleThemePresetSelectionChange);
-    document.getElementById('save-theme-preset-btn').addEventListener('click', saveThemePreset);
-    document.getElementById('delete-theme-preset-btn').addEventListener('click', deleteThemePreset);
+    document.getElementById('theme-preset-select')?.addEventListener('change', handleThemePresetSelectionChange);
+    document.getElementById('save-theme-preset-btn')?.addEventListener('click', saveThemePreset);
+    document.getElementById('delete-theme-preset-btn')?.addEventListener('click', deleteThemePreset);
 
 
 
 
-    document.getElementById('manage-sticker-categories-btn').addEventListener('click', openStickerCategoryManager);
+    document.getElementById('manage-sticker-categories-btn')?.addEventListener('click', openStickerCategoryManager);
 
 
-    document.getElementById('close-sticker-category-manager-btn').addEventListener('click', () => {
+    document.getElementById('close-sticker-category-manager-btn')?.addEventListener('click', () => {
       document.getElementById('sticker-category-manager-modal').classList.remove('visible');
       renderStickerPanel();
     });
 
 
-    document.getElementById('add-new-sticker-category-btn').addEventListener('click', addNewStickerCategory);
+    document.getElementById('add-new-sticker-category-btn')?.addEventListener('click', addNewStickerCategory);
 
 
-    document.getElementById('existing-sticker-categories-list').addEventListener('click', (e) => {
+    document.getElementById('existing-sticker-categories-list')?.addEventListener('click', (e) => {
       if (e.target.classList.contains('delete-group-btn')) {
         const categoryId = parseInt(e.target.dataset.id);
         deleteStickerCategory(categoryId);
@@ -359,7 +359,7 @@ window.initFeatures = function(state, db) {
     });
 
 
-    document.getElementById('sticker-category-tabs').addEventListener('click', (e) => {
+    document.getElementById('sticker-category-tabs')?.addEventListener('click', (e) => {
       if (e.target.classList.contains('sticker-category-tab')) {
         const categoryId = e.target.dataset.categoryId;
 
@@ -369,17 +369,17 @@ window.initFeatures = function(state, db) {
     });
 
 
-    document.getElementById('select-all-stickers-checkbox').addEventListener('change', handleSelectAllStickers);
+    document.getElementById('select-all-stickers-checkbox')?.addEventListener('change', handleSelectAllStickers);
 
-    document.getElementById('export-single-chat-btn').addEventListener('click', exportSingleChat);
+    document.getElementById('export-single-chat-btn')?.addEventListener('click', exportSingleChat);
 
-    document.getElementById('export-character-full-btn').addEventListener('click', exportCharacterFull);
+    document.getElementById('export-character-full-btn')?.addEventListener('click', exportCharacterFull);
 
-    document.getElementById('import-single-chat-btn').addEventListener('click', () => {
+    document.getElementById('import-single-chat-btn')?.addEventListener('click', () => {
       document.getElementById('import-single-chat-input').click();
     });
 
-    document.getElementById('import-single-chat-input').addEventListener('change', (e) => {
+    document.getElementById('import-single-chat-input')?.addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (file) {
         importSingleChat(file);
@@ -388,29 +388,29 @@ window.initFeatures = function(state, db) {
     });
 
 
-    document.getElementById('add-char-memo-btn').addEventListener('click', () => openMemoEditor());
-    document.getElementById('add-char-diary-btn').addEventListener('click', () => openDiaryEditor());
-    document.getElementById('favorite-diary-btn').addEventListener('click', toggleDiaryFavorite);
-    document.getElementById('favorite-article-btn').addEventListener('click', toggleBrowserArticleFavorite);
-    document.getElementById('favorite-memo-btn').addEventListener('click', toggleMemoFavorite);
-    document.getElementById('copy-diary-content-btn').addEventListener('click', () => {
+    document.getElementById('add-char-memo-btn')?.addEventListener('click', () => openMemoEditor());
+    document.getElementById('add-char-diary-btn')?.addEventListener('click', () => openDiaryEditor());
+    document.getElementById('favorite-diary-btn')?.addEventListener('click', toggleDiaryFavorite);
+    document.getElementById('favorite-article-btn')?.addEventListener('click', toggleBrowserArticleFavorite);
+    document.getElementById('favorite-memo-btn')?.addEventListener('click', toggleMemoFavorite);
+    document.getElementById('copy-diary-content-btn')?.addEventListener('click', () => {
       const content = document.getElementById('char-diary-detail-content').innerText; // Use innerText to get formatted text
       copyTextToClipboard(content, '日记内容已复制！');
     });
-    document.getElementById('edit-diary-btn').addEventListener('click', editDiary);
+    document.getElementById('edit-diary-btn')?.addEventListener('click', editDiary);
 
-    document.getElementById('copy-memo-content-btn').addEventListener('click', () => {
+    document.getElementById('copy-memo-content-btn')?.addEventListener('click', () => {
       const content = document.getElementById('char-memo-detail-content').value; // It's a textarea
       copyTextToClipboard(content, '备忘录内容已复制！');
     });
 
-    document.getElementById('copy-article-content-btn').addEventListener('click', () => {
+    document.getElementById('copy-article-content-btn')?.addEventListener('click', () => {
       const content = document.getElementById('char-article-content').innerText;
       copyTextToClipboard(content, '文章内容已复制！');
     });
 
 
-    document.getElementById('regenerate-char-qq-btn').addEventListener('click', async () => {
+    document.getElementById('regenerate-char-qq-btn')?.addEventListener('click', async () => {
 
       showCustomAlert("正在执行...", "正在生成新的模拟聊天记录，并同时让角色思考如何与你继续对话...");
 
@@ -430,7 +430,7 @@ window.initFeatures = function(state, db) {
     });
 
 
-    document.getElementById('char-chat-list').addEventListener('click', (e) => {
+    document.getElementById('char-chat-list')?.addEventListener('click', (e) => {
       const item = e.target.closest('.chat-list-item');
       if (item && item.dataset.conversationIndex) {
         const index = parseInt(item.dataset.conversationIndex);
@@ -443,7 +443,7 @@ window.initFeatures = function(state, db) {
 
 
 
-    document.getElementById('back-to-char-qq-list-btn').addEventListener('click', () => {
+    document.getElementById('back-to-char-qq-list-btn')?.addEventListener('click', () => {
       switchToCharScreen('char-qq-screen');
     });
 
@@ -474,16 +474,16 @@ window.initFeatures = function(state, db) {
 
 
 
-    document.getElementById('char-simulated-send-btn').addEventListener('click', () => {
+    document.getElementById('char-simulated-send-btn')?.addEventListener('click', () => {
       alert("这是模拟对话，无法发送消息哦~");
     });
 
 
 
-    document.getElementById('regenerate-char-album-btn').addEventListener('click', handleGenerateSimulatedAlbum);
+    document.getElementById('regenerate-char-album-btn')?.addEventListener('click', handleGenerateSimulatedAlbum);
 
 
-    document.getElementById('char-album-grid').addEventListener('click', (e) => {
+    document.getElementById('char-album-grid')?.addEventListener('click', (e) => {
 
       const photoItem = e.target.closest('.char-photo-item');
 
@@ -495,13 +495,13 @@ window.initFeatures = function(state, db) {
         showCustomAlert("照片详情", description.replace(/\n/g, '<br>'));
       }
     });
-    document.getElementById('regenerate-char-browser-btn').addEventListener('click', handleGenerateBrowserHistory);
+    document.getElementById('regenerate-char-browser-btn')?.addEventListener('click', handleGenerateBrowserHistory);
 
-    document.getElementById('regenerate-char-taobao-btn').addEventListener('click', handleGenerateTaobaoHistory);
+    document.getElementById('regenerate-char-taobao-btn')?.addEventListener('click', handleGenerateTaobaoHistory);
 
 
 
-    document.getElementById('char-product-grid').addEventListener('click', (e) => {
+    document.getElementById('char-product-grid')?.addEventListener('click', (e) => {
       const item = e.target.closest('.char-product-item');
       if (item && item.dataset.reason) {
         const reason = item.dataset.reason;
@@ -511,16 +511,16 @@ window.initFeatures = function(state, db) {
 
 
     window.openCharWallet = openCharWallet;
-    document.getElementById('regenerate-char-memo-btn').addEventListener('click', handleGenerateSimulatedMemos);
-    document.getElementById('char-memo-detail-back-btn').addEventListener('click', () => switchToCharScreen('char-memo-screen'));
+    document.getElementById('regenerate-char-memo-btn')?.addEventListener('click', handleGenerateSimulatedMemos);
+    document.getElementById('char-memo-detail-back-btn')?.addEventListener('click', () => switchToCharScreen('char-memo-screen'));
 
-    document.getElementById('regenerate-char-diary-btn').addEventListener('click', handleGenerateSimulatedDiaries);
-    document.getElementById('add-char-diary-btn').addEventListener('click', handleWriteNewDiaryEntry);
-    document.getElementById('char-diary-detail-back-btn').addEventListener('click', () => switchToCharScreen('char-diary-screen'));
-    document.getElementById('regenerate-char-amap-btn').addEventListener('click', handleGenerateAmapHistory);
-    document.getElementById('regenerate-char-usage-btn').addEventListener('click', handleGenerateAppUsage);
-    document.getElementById('regenerate-char-music-btn').addEventListener('click', handleGenerateSimulatedMusic);
-    document.getElementById('close-char-music-player-btn').addEventListener('click', closeCharMusicPlayer);
+    document.getElementById('regenerate-char-diary-btn')?.addEventListener('click', handleGenerateSimulatedDiaries);
+    document.getElementById('add-char-diary-btn')?.addEventListener('click', handleWriteNewDiaryEntry);
+    document.getElementById('char-diary-detail-back-btn')?.addEventListener('click', () => switchToCharScreen('char-diary-screen'));
+    document.getElementById('regenerate-char-amap-btn')?.addEventListener('click', handleGenerateAmapHistory);
+    document.getElementById('regenerate-char-usage-btn')?.addEventListener('click', handleGenerateAppUsage);
+    document.getElementById('regenerate-char-music-btn')?.addEventListener('click', handleGenerateSimulatedMusic);
+    document.getElementById('close-char-music-player-btn')?.addEventListener('click', closeCharMusicPlayer);
     const doubanMoreActionsBtn = document.getElementById('douban-more-actions-btn');
     const doubanDropdownMenu = document.getElementById('douban-dropdown-menu');
     
@@ -984,7 +984,7 @@ window.initFeatures = function(state, db) {
     const doubanWaitReplyBtn = document.getElementById('douban-wait-reply-btn');
     if (doubanWaitReplyBtn) doubanWaitReplyBtn.addEventListener('click', handleDoubanWaitReply);
 
-    document.getElementById('cphone-wallpaper-upload-input').addEventListener('change', async (event) => {
+    document.getElementById('cphone-wallpaper-upload-input')?.addEventListener('change', async (event) => {
       const file = event.target.files[0];
       if (file) {
         const dataUrl = await new Promise((res) => {
@@ -1011,7 +1011,7 @@ window.initFeatures = function(state, db) {
       event.target.value = null; // 清空 input
     });
 
-    document.getElementById('myphone-wallpaper-upload-input').addEventListener('change', async (event) => {
+    document.getElementById('myphone-wallpaper-upload-input')?.addEventListener('change', async (event) => {
       const file = event.target.files[0];
       if (file) {
         const dataUrl = await new Promise((res) => {
@@ -1041,7 +1041,7 @@ window.initFeatures = function(state, db) {
 
 
 
-    document.getElementById('cphone-icon-settings-grid').addEventListener('click', (e) => {
+    document.getElementById('cphone-icon-settings-grid')?.addEventListener('click', (e) => {
       if (e.target.classList.contains('change-icon-btn')) {
         const item = e.target.closest('.icon-setting-item');
         const iconId = item.dataset.iconId;
@@ -1051,7 +1051,7 @@ window.initFeatures = function(state, db) {
       }
     });
 
-    document.getElementById('myphone-icon-settings-grid').addEventListener('click', (e) => {
+    document.getElementById('myphone-icon-settings-grid')?.addEventListener('click', (e) => {
       if (e.target.classList.contains('change-icon-btn')) {
         const item = e.target.closest('.icon-setting-item');
         const iconId = item.dataset.iconId;
@@ -1060,17 +1060,18 @@ window.initFeatures = function(state, db) {
         }
       }
     });
-    document.getElementById('import-appearance-btn').addEventListener('click', () => {
+    document.getElementById('import-appearance-btn')?.addEventListener('click', () => {
       document.getElementById('import-appearance-input').click();
     });
 
-    document.getElementById('import-appearance-input').addEventListener('change', (e) => {
+    document.getElementById('import-appearance-input')?.addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (file) {
         importAppearanceSettings(file);
       }
       e.target.value = null;
     });
+
 
 
 
@@ -1083,18 +1084,18 @@ window.initFeatures = function(state, db) {
       }
     });
 
-    document.getElementById('export-world-book-btn').addEventListener('click', exportWorldBooks);
-    document.getElementById('import-world-book-btn').addEventListener('click', () => {
+    document.getElementById('export-world-book-btn')?.addEventListener('click', exportWorldBooks);
+    document.getElementById('import-world-book-btn')?.addEventListener('click', () => {
       document.getElementById('import-world-book-input').click();
     });
-    document.getElementById('import-world-book-input').addEventListener('change', async (e) => {
+    document.getElementById('import-world-book-input')?.addEventListener('change', async (e) => {
       const files = Array.from(e.target.files);
       if (files.length > 0) {
         await handleWorldBookImport(files);
       }
       e.target.value = null;
     });
-    document.getElementById('enable-ai-drawing-switch').addEventListener('change', async (e) => {
+    document.getElementById('enable-ai-drawing-switch')?.addEventListener('change', async (e) => {
       const isEnabled = e.target.checked;
       state.globalSettings.enableAiDrawing = isEnabled;
       await db.globalSettings.put(state.globalSettings);
@@ -1171,8 +1172,8 @@ window.initFeatures = function(state, db) {
       localStorage.setItem('pollinations-model', e.target.value);
     });
 
-    document.getElementById('search-history-btn').addEventListener('click', openSearchHistoryScreen);
-    document.getElementById('search-history-back-btn').addEventListener('click', () => {
+    document.getElementById('search-history-btn')?.addEventListener('click', openSearchHistoryScreen);
+    document.getElementById('search-history-back-btn')?.addEventListener('click', () => {
       if (state.globalSettings.cleanChatDetail) {
         showScreen('chat-settings-screen');
         setTimeout(() => { if (typeof openCleanChatDetail === 'function') openCleanChatDetail(); }, 50);
@@ -1180,14 +1181,14 @@ window.initFeatures = function(state, db) {
         showScreen('chat-settings-screen');
       }
     });
-    document.getElementById('execute-search-btn').addEventListener('click', handleSearchHistory);
-    document.getElementById('clear-search-btn').addEventListener('click', clearSearchFilters);
+    document.getElementById('execute-search-btn')?.addEventListener('click', handleSearchHistory);
+    document.getElementById('clear-search-btn')?.addEventListener('click', clearSearchFilters);
 
 
 
 
-    document.getElementById('upload-custom-frame-btn').addEventListener('click', handleUploadFrame);
-    document.getElementById('batch-import-frames-btn').addEventListener('click', handleBatchUploadFrames);
+    document.getElementById('upload-custom-frame-btn')?.addEventListener('click', handleUploadFrame);
+    document.getElementById('batch-import-frames-btn')?.addEventListener('click', handleBatchUploadFrames);
 
 
     document.querySelector('#avatar-frame-modal .modal-body').addEventListener('click', (e) => {
@@ -1210,7 +1211,7 @@ window.initFeatures = function(state, db) {
     window.openPresetScreen = openPresetScreen;
 
 
-    document.getElementById('add-preset-btn').addEventListener('click', async () => {
+    document.getElementById('add-preset-btn')?.addEventListener('click', async () => {
       const name = await showCustomPrompt('创建新预设', '请输入预设名称');
       if (name && name.trim()) {
         const newPreset = {
@@ -1224,9 +1225,9 @@ window.initFeatures = function(state, db) {
       }
     });
 
-    document.getElementById('manage-preset-categories-btn').addEventListener('click', openPresetCategoryManager);
+    document.getElementById('manage-preset-categories-btn')?.addEventListener('click', openPresetCategoryManager);
 
-    document.getElementById('add-preset-entry-btn').addEventListener('click', () => {
+    document.getElementById('add-preset-entry-btn')?.addEventListener('click', () => {
       const container = document.getElementById('preset-entries-container');
       if (container.querySelector('p')) {
         container.innerHTML = '';
@@ -1237,7 +1238,7 @@ window.initFeatures = function(state, db) {
     });
 
 
-    document.getElementById('save-preset-btn').addEventListener('click', async () => {
+    document.getElementById('save-preset-btn')?.addEventListener('click', async () => {
       if (!editingPresetId) return;
       const preset = await db.presets.get(editingPresetId);
       if (!preset) return;
@@ -1282,7 +1283,7 @@ window.initFeatures = function(state, db) {
 
 
 
-    document.getElementById('import-preset-btn').addEventListener('click', async () => {
+    document.getElementById('import-preset-btn')?.addEventListener('click', async () => {
 
 
 
@@ -1300,27 +1301,27 @@ window.initFeatures = function(state, db) {
 
     });
 
-    document.getElementById('import-preset-input').addEventListener('change', handlePresetImport);
+    document.getElementById('import-preset-input')?.addEventListener('change', handlePresetImport);
 
-    document.getElementById('reset-button-order-btn').addEventListener('click', resetButtonOrder);
+    document.getElementById('reset-button-order-btn')?.addEventListener('click', resetButtonOrder);
 
-    document.getElementById('clear-specific-data-btn').addEventListener('click', openDataClearWizard);
+    document.getElementById('clear-specific-data-btn')?.addEventListener('click', openDataClearWizard);
 
 
-    document.getElementById('cancel-clear-wizard-btn-step1').addEventListener('click', () => {
+    document.getElementById('cancel-clear-wizard-btn-step1')?.addEventListener('click', () => {
       document.getElementById('data-clear-wizard-modal').classList.remove('visible');
     });
-    document.getElementById('go-to-clear-step2-btn').addEventListener('click', handleDataClearNext);
+    document.getElementById('go-to-clear-step2-btn')?.addEventListener('click', handleDataClearNext);
 
 
-    document.getElementById('back-to-clear-step1-btn').addEventListener('click', handleDataClearBack);
-    document.getElementById('cancel-clear-wizard-btn-step2').addEventListener('click', () => {
+    document.getElementById('back-to-clear-step1-btn')?.addEventListener('click', handleDataClearBack);
+    document.getElementById('cancel-clear-wizard-btn-step2')?.addEventListener('click', () => {
       document.getElementById('data-clear-wizard-modal').classList.remove('visible');
     });
-    document.getElementById('confirm-final-clear-btn').addEventListener('click', handleConfirmDataClear);
+    document.getElementById('confirm-final-clear-btn')?.addEventListener('click', handleConfirmDataClear);
 
 
-    document.getElementById('data-clear-wizard-modal').addEventListener('click', (e) => {
+    document.getElementById('data-clear-wizard-modal')?.addEventListener('click', (e) => {
       const item = e.target.closest('.clear-posts-item');
       if (item) {
 
@@ -1328,7 +1329,7 @@ window.initFeatures = function(state, db) {
         item.classList.toggle('selected');
       }
     });
-    document.getElementById('data-clear-wizard-modal').addEventListener('change', (e) => {
+    document.getElementById('data-clear-wizard-modal')?.addEventListener('change', (e) => {
 
       if (e.target.id === 'select-all-chars-for-clear') {
         const isChecked = e.target.checked;
@@ -1343,16 +1344,16 @@ window.initFeatures = function(state, db) {
       }
     });
 
-    document.getElementById('compress-images-btn').addEventListener('click', compressAllLocalImages);
+    document.getElementById('compress-images-btn')?.addEventListener('click', compressAllLocalImages);
 
     // 清空聊天中的表情包消息相关事件监听
-    document.getElementById('clear-stickers-btn').addEventListener('click', openClearStickersModal);
-    document.getElementById('cancel-clear-stickers-btn').addEventListener('click', () => {
+    document.getElementById('clear-stickers-btn')?.addEventListener('click', openClearStickersModal);
+    document.getElementById('cancel-clear-stickers-btn')?.addEventListener('click', () => {
       document.getElementById('clear-stickers-modal').classList.remove('visible');
     });
-    document.getElementById('confirm-clear-stickers-btn').addEventListener('click', handleConfirmClearStickers);
+    document.getElementById('confirm-clear-stickers-btn')?.addEventListener('click', handleConfirmClearStickers);
 
-    document.getElementById('clear-stickers-modal').addEventListener('click', (e) => {
+    document.getElementById('clear-stickers-modal')?.addEventListener('click', (e) => {
       const item = e.target.closest('.clear-posts-item');
       if (item && item.dataset.chatId) {
         e.stopPropagation();
@@ -1376,7 +1377,7 @@ window.initFeatures = function(state, db) {
       }
     });
 
-    document.getElementById('select-all-categories-checkbox').addEventListener('change', (e) => {
+    document.getElementById('select-all-categories-checkbox')?.addEventListener('change', (e) => {
       const isChecked = e.target.checked;
       const items = document.querySelectorAll('#clear-stickers-category-list .clear-posts-item');
       
@@ -1389,19 +1390,19 @@ window.initFeatures = function(state, db) {
       });
     });
 
-    document.getElementById('clear-chat-images-btn').addEventListener('click', openClearChatImagesModal);
-    document.getElementById('cancel-clear-images-btn').addEventListener('click', () => {
+    document.getElementById('clear-chat-images-btn')?.addEventListener('click', openClearChatImagesModal);
+    document.getElementById('cancel-clear-images-btn')?.addEventListener('click', () => {
       document.getElementById('clear-chat-images-modal').classList.remove('visible');
     });
-    document.getElementById('confirm-clear-images-btn').addEventListener('click', handleConfirmClearChatImages);
+    document.getElementById('confirm-clear-images-btn')?.addEventListener('click', handleConfirmClearChatImages);
 
     // 清空聊天HTML
-    document.getElementById('clear-chat-html-btn').addEventListener('click', openClearChatHtmlModal);
-    document.getElementById('cancel-clear-html-btn').addEventListener('click', () => {
+    document.getElementById('clear-chat-html-btn')?.addEventListener('click', openClearChatHtmlModal);
+    document.getElementById('cancel-clear-html-btn')?.addEventListener('click', () => {
       document.getElementById('clear-chat-html-modal').classList.remove('visible');
     });
-    document.getElementById('confirm-clear-html-btn').addEventListener('click', handleConfirmClearChatHtml);
-    document.getElementById('select-all-chats-for-html-clear').addEventListener('change', (e) => {
+    document.getElementById('confirm-clear-html-btn')?.addEventListener('click', handleConfirmClearChatHtml);
+    document.getElementById('select-all-chats-for-html-clear')?.addEventListener('change', (e) => {
       const isChecked = e.target.checked;
       const items = document.querySelectorAll('#clear-chat-html-list .clear-posts-item');
       items.forEach(item => {
@@ -1410,7 +1411,7 @@ window.initFeatures = function(state, db) {
     });
 
     // 清空所有API历史记录
-    document.getElementById('clear-api-history-btn').addEventListener('click', async () => {
+    document.getElementById('clear-api-history-btn')?.addEventListener('click', async () => {
       const confirmed = await showCustomConfirm(
         '清空所有API历史记录',
         '此操作将清空所有角色的API调用历史记录。<br><br>这不会影响聊天记录，只是清理调试数据。<br><br><strong>此操作不可撤销，确定继续吗？</strong>',
@@ -1460,7 +1461,7 @@ window.initFeatures = function(state, db) {
       }
     });
 
-    document.getElementById('clear-chat-images-modal').addEventListener('click', (e) => {
+    document.getElementById('clear-chat-images-modal')?.addEventListener('click', (e) => {
       const item = e.target.closest('.clear-posts-item');
       if (item) {
         e.stopPropagation();
@@ -1468,52 +1469,52 @@ window.initFeatures = function(state, db) {
       }
     });
 
-    document.getElementById('select-all-chars-for-image-clear').addEventListener('change', (e) => {
+    document.getElementById('select-all-chars-for-image-clear')?.addEventListener('change', (e) => {
       const isChecked = e.target.checked;
       document.querySelectorAll('#clear-chat-images-list .clear-posts-item').forEach(item => {
         item.classList.toggle('selected', isChecked);
       });
     });
 
-    document.getElementById('copy-message-btn').addEventListener('click', copyMessageContent);
+    document.getElementById('copy-message-btn')?.addEventListener('click', copyMessageContent);
 
 
-    document.getElementById('copy-timestamp-btn').addEventListener('click', copyMessageTimestamp);
+    document.getElementById('copy-timestamp-btn')?.addEventListener('click', copyMessageTimestamp);
 
-    document.getElementById('npc-list-back-btn').addEventListener('click', () => {
+    document.getElementById('npc-list-back-btn')?.addEventListener('click', () => {
 
       switchToChatListView('messages-view');
     });
 
 
-    document.getElementById('add-npc-btn').addEventListener('click', () => openNpcEditor(null));
+    document.getElementById('add-npc-btn')?.addEventListener('click', () => openNpcEditor(null));
 
 
-    document.getElementById('save-npc-btn').addEventListener('click', saveNpc);
-    document.getElementById('npc-editor-modal').addEventListener('click', (e) => {
+    document.getElementById('save-npc-btn')?.addEventListener('click', saveNpc);
+    document.getElementById('npc-editor-modal')?.addEventListener('click', (e) => {
       if (e.target.id === 'manage-npc-groups-btn') {
         openNpcGroupManager();
       }
     });
-    document.getElementById('close-npc-group-manager-btn').addEventListener('click', () => {
+    document.getElementById('close-npc-group-manager-btn')?.addEventListener('click', () => {
       document.getElementById('npc-group-manager-modal').classList.remove('visible');
       // 重新填充NPC编辑器里的下拉菜单
       if (document.getElementById('npc-editor-modal').classList.contains('visible')) {
         openNpcEditor(editingNpcId);
       }
     });
-    document.getElementById('add-new-npc-group-btn').addEventListener('click', addNewNpcGroup);
-    document.getElementById('existing-npc-groups-list').addEventListener('click', (e) => {
+    document.getElementById('add-new-npc-group-btn')?.addEventListener('click', addNewNpcGroup);
+    document.getElementById('existing-npc-groups-list')?.addEventListener('click', (e) => {
       if (e.target.classList.contains('delete-group-btn')) {
         deleteNpcGroup(parseInt(e.target.dataset.id));
       }
     });
-    document.getElementById('cancel-npc-editor-btn').addEventListener('click', () => {
+    document.getElementById('cancel-npc-editor-btn')?.addEventListener('click', () => {
       document.getElementById('npc-editor-modal').classList.remove('visible');
     });
 
 
-    document.getElementById('npc-avatar-input').addEventListener('change', (event) => {
+    document.getElementById('npc-avatar-input')?.addEventListener('change', (event) => {
       const file = event.target.files[0];
       if (file) {
         const reader = new FileReader();
@@ -1523,7 +1524,7 @@ window.initFeatures = function(state, db) {
         reader.readAsDataURL(file);
       }
     });
-    document.getElementById('chat-lock-overlay').addEventListener('click', (e) => {
+    document.getElementById('chat-lock-overlay')?.addEventListener('click', (e) => {
 
       if (e.target.id === 'spectator-reroll-btn') {
         handleSpectatorReroll();
@@ -1619,6 +1620,7 @@ window.initFeatures = function(state, db) {
     if (cancelDeleteDoubanPostsBtn) cancelDeleteDoubanPostsBtn.addEventListener('click', () => {
       const modal = document.getElementById('delete-douban-posts-modal');
       if (modal) modal.classList.remove('visible');
+      document.getElementById('douban-settings-modal')?.classList.add('visible');
     });
     
     const confirmDeleteDoubanPostsBtn = document.getElementById('confirm-delete-douban-posts-btn');
@@ -1646,7 +1648,7 @@ window.initFeatures = function(state, db) {
       });
     });
 
-    document.getElementById('time-zone-search-input').addEventListener('input', (e) => {
+    document.getElementById('time-zone-search-input')?.addEventListener('input', (e) => {
       const searchTerm = e.target.value.toLowerCase();
       const selectEl = document.getElementById('time-zone-select');
 
@@ -1671,21 +1673,21 @@ window.initFeatures = function(state, db) {
     window.openWerewolfLobby = openWerewolfLobby;
 
 
-    document.getElementById('werewolf-game-btn').addEventListener('click', () => openWerewolfLobby('group'));
+    document.getElementById('werewolf-game-btn')?.addEventListener('click', () => openWerewolfLobby('group'));
 
 
-    document.getElementById('cancel-werewolf-lobby-btn').addEventListener('click', () => {
+    document.getElementById('cancel-werewolf-lobby-btn')?.addEventListener('click', () => {
       document.getElementById('werewolf-lobby-modal').classList.remove('visible');
     });
-    document.getElementById('start-werewolf-game-btn').addEventListener('click', initializeWerewolfGame);
+    document.getElementById('start-werewolf-game-btn')?.addEventListener('click', initializeWerewolfGame);
 
 
-    document.getElementById('werewolf-role-confirm-btn').addEventListener('click', () => {
+    document.getElementById('werewolf-role-confirm-btn')?.addEventListener('click', () => {
       document.getElementById('werewolf-role-modal').classList.remove('visible');
       executeNightPhase();
     });
 
-    document.getElementById('exit-werewolf-game-btn').addEventListener('click', async () => {
+    document.getElementById('exit-werewolf-game-btn')?.addEventListener('click', async () => {
       const confirmed = await showCustomConfirm('退出游戏', '确定要退出当前这局狼人杀吗？游戏进度将不会被保存。', {
         confirmButtonClass: 'btn-danger'
       });
@@ -1696,26 +1698,26 @@ window.initFeatures = function(state, db) {
       }
     });
 
-    document.getElementById('werewolf-game-over-close-btn').addEventListener('click', () => {
+    document.getElementById('werewolf-game-over-close-btn')?.addEventListener('click', () => {
       document.getElementById('werewolf-game-over-modal').classList.remove('visible');
       showScreen(werewolfGameState.chatId ? 'chat-list-screen' : 'home-screen');
     });
 
 
 
-    document.getElementById('cancel-wolf-kill-btn').addEventListener('click', () => {
+    document.getElementById('cancel-wolf-kill-btn')?.addEventListener('click', () => {
       document.getElementById('werewolf-kill-modal').classList.remove('visible');
     });
 
 
 
-    document.getElementById('cancel-werewolf-lobby-btn').addEventListener('click', () => {
+    document.getElementById('cancel-werewolf-lobby-btn')?.addEventListener('click', () => {
       document.getElementById('werewolf-lobby-modal').classList.remove('visible');
     });
 
-    document.getElementById('werewolf-retry-btn').addEventListener('click', handleWerewolfRetry);
-    document.getElementById('manual-werewolf-summary-btn').addEventListener('click', handleManualWerewolfSummary);
-    document.getElementById('check-and-fix-data-btn').addEventListener('click', checkAndFixData);
+    document.getElementById('werewolf-retry-btn')?.addEventListener('click', handleWerewolfRetry);
+    document.getElementById('manual-werewolf-summary-btn')?.addEventListener('click', handleManualWerewolfSummary);
+    document.getElementById('check-and-fix-data-btn')?.addEventListener('click', checkAndFixData);
     const emergencyResetBtn = document.getElementById('emergency-reset-appearance-btn');
     if (emergencyResetBtn) {
       emergencyResetBtn.addEventListener('click', handleEmergencyAppearanceReset);
@@ -1728,7 +1730,7 @@ window.initFeatures = function(state, db) {
     if (factoryResetBtn) {
       factoryResetBtn.addEventListener('click', handleFactoryReset);
     }
-    document.getElementById('dynamic-island-music-toggle-switch').addEventListener('change', (e) => {
+    document.getElementById('dynamic-island-music-toggle-switch')?.addEventListener('change', (e) => {
       const isEnabled = e.target.checked;
       state.globalSettings.alwaysShowMusicIsland = isEnabled; // 更新内存中的状态
 
@@ -1753,15 +1755,15 @@ window.initFeatures = function(state, db) {
         }
       }
     });
-    document.getElementById('delete-world-books-btn').addEventListener('click', openWorldBookDeletionModal);
+    document.getElementById('delete-world-books-btn')?.addEventListener('click', openWorldBookDeletionModal);
 
 
-    document.getElementById('cancel-delete-world-books-btn').addEventListener('click', () => {
+    document.getElementById('cancel-delete-world-books-btn')?.addEventListener('click', () => {
       document.getElementById('delete-world-books-modal').classList.remove('visible');
     });
-    document.getElementById('confirm-delete-world-books-btn').addEventListener('click', handleConfirmWorldBookDeletion);
+    document.getElementById('confirm-delete-world-books-btn')?.addEventListener('click', handleConfirmWorldBookDeletion);
 
-    document.getElementById('delete-world-books-modal').addEventListener('click', (e) => {
+    document.getElementById('delete-world-books-modal')?.addEventListener('click', (e) => {
 
       const item = e.target.closest('.clear-posts-item');
       if (item) {
@@ -1777,13 +1779,13 @@ window.initFeatures = function(state, db) {
     });
 
 
-    document.getElementById('sticker-search-input').addEventListener('input', () => {
+    document.getElementById('sticker-search-input')?.addEventListener('input', () => {
 
       renderStickerPanel(false);
     });
 
 
-    document.getElementById('sticker-category-tabs').addEventListener('click', (e) => {
+    document.getElementById('sticker-category-tabs')?.addEventListener('click', (e) => {
       if (e.target.classList.contains('sticker-category-tab')) {
         const categoryId = e.target.dataset.categoryId;
         const finalId = (categoryId !== 'all' && categoryId !== 'uncategorized') ? parseInt(categoryId) : categoryId;
@@ -1877,34 +1879,34 @@ window.initFeatures = function(state, db) {
     }
 
 
-    document.getElementById('read-together-btn').addEventListener('click', openReadingRoom);
+    document.getElementById('read-together-btn')?.addEventListener('click', openReadingRoom);
     const restoreBtn = document.getElementById('reading-restore-btn');
 
     makeDraggable(restoreBtn, restoreBtn);
-    document.getElementById('close-reading-btn').addEventListener('click', closeReadingRoom);
-    document.getElementById('open-reading-library-btn').addEventListener('click', openBookLibrary);
-    document.getElementById('next-page-btn').addEventListener('click', showNextPage);
-    document.getElementById('prev-page-btn').addEventListener('click', showPrevPage);
-    document.getElementById('book-upload-input').addEventListener('change', handleBookFileUpload);
+    document.getElementById('close-reading-btn')?.addEventListener('click', closeReadingRoom);
+    document.getElementById('open-reading-library-btn')?.addEventListener('click', openBookLibrary);
+    document.getElementById('next-page-btn')?.addEventListener('click', showNextPage);
+    document.getElementById('prev-page-btn')?.addEventListener('click', showPrevPage);
+    document.getElementById('book-upload-input')?.addEventListener('change', handleBookFileUpload);
 
 
-    document.getElementById('minimize-reading-btn').addEventListener('click', minimizeReadingRoom);
-    document.getElementById('reading-restore-btn').addEventListener('click', restoreReadingRoom);
+    document.getElementById('minimize-reading-btn')?.addEventListener('click', minimizeReadingRoom);
+    document.getElementById('reading-restore-btn')?.addEventListener('click', restoreReadingRoom);
 
 
     makeDraggable(document.getElementById('reading-window'), document.querySelector('#reading-window .reading-header'));
 
 
-    document.getElementById('open-reading-library-btn').addEventListener('click', openBookLibrary);
+    document.getElementById('open-reading-library-btn')?.addEventListener('click', openBookLibrary);
 
-    document.getElementById('close-reading-library-btn-header').addEventListener('click', () => {
+    document.getElementById('close-reading-library-btn-header')?.addEventListener('click', () => {
       document.getElementById('reading-library-modal').classList.remove('visible');
     });
-    document.getElementById('import-new-book-btn-header').addEventListener('click', importBook);
+    document.getElementById('import-new-book-btn-header')?.addEventListener('click', importBook);
 
 
 
-    document.getElementById('reading-library-list').addEventListener('click', (e) => {
+    document.getElementById('reading-library-list')?.addEventListener('click', (e) => {
       const target = e.target;
       if (target.classList.contains('group-name')) {
         const bookId = parseInt(target.dataset.bookId);
@@ -1915,15 +1917,15 @@ window.initFeatures = function(state, db) {
       }
     });
 
-    document.getElementById('page-indicator').addEventListener('click', handlePageJump);
-    document.getElementById('reading-library-search-input').addEventListener('input', (e) => {
+    document.getElementById('page-indicator')?.addEventListener('click', handlePageJump);
+    document.getElementById('reading-library-search-input')?.addEventListener('input', (e) => {
 
       renderBookLibrary(e.target.value);
     });
     const debouncedUpdateReadingContext = debounce(updateReadingContextOnScroll, 300);
 
 
-    document.getElementById('reading-content').addEventListener('scroll', debouncedUpdateReadingContext);
+    document.getElementById('reading-content')?.addEventListener('scroll', debouncedUpdateReadingContext);
     const tempSlider = document.getElementById('api-temperature-slider');
     const tempInput = document.getElementById('api-temperature-input');
     const topPSlider = document.getElementById('api-top-p-slider');
@@ -1989,23 +1991,23 @@ window.initFeatures = function(state, db) {
 
 
     // 重置按钮逻辑
-    document.getElementById('reset-api-temperature-btn').addEventListener('click', () => {
+    document.getElementById('reset-api-temperature-btn')?.addEventListener('click', () => {
       tempSlider.value = 0.8;
       tempInput.value = 0.8;
     });
-    document.getElementById('reset-api-top-p-btn').addEventListener('click', () => {
+    document.getElementById('reset-api-top-p-btn')?.addEventListener('click', () => {
       topPSlider.value = 1.0;
       topPInput.value = 1.0;
     });
-    document.getElementById('reset-api-max-tokens-btn').addEventListener('click', () => {
+    document.getElementById('reset-api-max-tokens-btn')?.addEventListener('click', () => {
       maxTokensSlider.value = 0;
       maxTokensInput.value = 0;
     });
-    document.getElementById('reset-api-presence-penalty-btn').addEventListener('click', () => {
+    document.getElementById('reset-api-presence-penalty-btn')?.addEventListener('click', () => {
       presenceSlider.value = 0.0;
       presenceInput.value = 0.0;
     });
-    document.getElementById('reset-api-frequency-penalty-btn').addEventListener('click', () => {
+    document.getElementById('reset-api-frequency-penalty-btn')?.addEventListener('click', () => {
       frequencySlider.value = 0.0;
       frequencyInput.value = 0.0;
     });
@@ -2024,37 +2026,37 @@ window.initFeatures = function(state, db) {
 
 
 
-    document.getElementById('manage-product-categories-btn').addEventListener('click', openProductCategoryManager);
-    document.getElementById('close-product-category-manager-btn').addEventListener('click', () => {
+    document.getElementById('manage-product-categories-btn')?.addEventListener('click', openProductCategoryManager);
+    document.getElementById('close-product-category-manager-btn')?.addEventListener('click', () => {
       document.getElementById('product-category-manager-modal').classList.remove('visible');
 
 
       openProductEditor(editingProductId);
     });
-    document.getElementById('add-new-product-category-btn').addEventListener('click', addNewProductCategory);
-    document.getElementById('existing-product-categories-list').addEventListener('click', (e) => {
+    document.getElementById('add-new-product-category-btn')?.addEventListener('click', addNewProductCategory);
+    document.getElementById('existing-product-categories-list')?.addEventListener('click', (e) => {
       if (e.target.classList.contains('delete-group-btn')) {
         deleteProductCategory(parseInt(e.target.dataset.id));
       }
     });
 
 
-    document.getElementById('add-product-variation-btn').addEventListener('click', () => addProductVariationInput());
+    document.getElementById('add-product-variation-btn')?.addEventListener('click', () => addProductVariationInput());
 
 
-    document.getElementById('cancel-variation-selection-btn').addEventListener('click', () => {
+    document.getElementById('cancel-variation-selection-btn')?.addEventListener('click', () => {
       document.getElementById('variation-selection-modal').classList.remove('visible');
     });
-    document.getElementById('variation-decrease-qty').addEventListener('click', () => {
+    document.getElementById('variation-decrease-qty')?.addEventListener('click', () => {
       const display = document.getElementById('variation-quantity-display');
       let qty = parseInt(display.textContent);
       if (qty > 1) display.textContent = qty - 1;
     });
-    document.getElementById('variation-increase-qty').addEventListener('click', () => {
+    document.getElementById('variation-increase-qty')?.addEventListener('click', () => {
       const display = document.getElementById('variation-quantity-display');
       display.textContent = parseInt(display.textContent) + 1;
     });
-    document.getElementById('product-category-tabs').addEventListener('click', (e) => {
+    document.getElementById('product-category-tabs')?.addEventListener('click', (e) => {
 
       if (e.target.classList.contains('product-category-tab')) {
 
@@ -2064,13 +2066,13 @@ window.initFeatures = function(state, db) {
         switchShoppingCategory(categoryId);
       }
     });
-    document.getElementById('generate-shopping-items-btn').addEventListener('click', handleGenerateShoppingItems);
-    document.getElementById('shopping-settings-btn').addEventListener('click', openShoppingSettingsModal);
-    document.getElementById('save-shopping-settings-btn').addEventListener('click', saveShoppingSettings);
-    document.getElementById('cancel-shopping-settings-btn').addEventListener('click', () => {
+    document.getElementById('generate-shopping-items-btn')?.addEventListener('click', handleGenerateShoppingItems);
+    document.getElementById('shopping-settings-btn')?.addEventListener('click', openShoppingSettingsModal);
+    document.getElementById('save-shopping-settings-btn')?.addEventListener('click', saveShoppingSettings);
+    document.getElementById('cancel-shopping-settings-btn')?.addEventListener('click', () => {
       document.getElementById('shopping-settings-modal').classList.remove('visible');
     });
-    document.getElementById('select-all-products-checkbox').addEventListener('change', (e) => {
+    document.getElementById('select-all-products-checkbox')?.addEventListener('change', (e) => {
       const isChecked = e.target.checked;
 
       const visibleItems = document.querySelectorAll('#product-grid .product-item');
@@ -2088,7 +2090,7 @@ window.initFeatures = function(state, db) {
     });
 
 
-    document.getElementById('delete-selected-products-btn').addEventListener('click', async () => {
+    document.getElementById('delete-selected-products-btn')?.addEventListener('click', async () => {
       if (selectedProducts.size === 0) {
         alert("请先选择要删除的商品。");
         return;
@@ -2129,18 +2131,18 @@ window.initFeatures = function(state, db) {
 
 
 
-    document.getElementById('novelai-switch').addEventListener('change', (e) => {
+    document.getElementById('novelai-switch')?.addEventListener('change', (e) => {
       const detailsDiv = document.getElementById('novelai-details');
       detailsDiv.style.display = e.target.checked ? 'block' : 'none';
     });
 
     // Google Imagen 开关与事件
-    document.getElementById('google-imagen-switch').addEventListener('change', (e) => {
+    document.getElementById('google-imagen-switch')?.addEventListener('change', (e) => {
       const detailsDiv = document.getElementById('google-imagen-details');
       detailsDiv.style.display = e.target.checked ? 'block' : 'none';
     });
 
-    document.getElementById('google-imagen-key-toggle').addEventListener('click', function () {
+    document.getElementById('google-imagen-key-toggle')?.addEventListener('click', function () {
       const input = document.getElementById('google-imagen-api-key');
       if (input.type === 'password') {
         input.type = 'text';
@@ -2151,11 +2153,31 @@ window.initFeatures = function(state, db) {
       }
     });
 
-    document.getElementById('google-imagen-test-btn').addEventListener('click', testGoogleImagenGeneration);
+    document.getElementById('google-imagen-test-btn')?.addEventListener('click', testGoogleImagenGeneration);
 
-    document.getElementById('google-imagen-fetch-models-btn').addEventListener('click', fetchGoogleImagenModels);
+    const openAIImageSwitch = document.getElementById('openai-image-switch');
+    openAIImageSwitch?.addEventListener('change', (e) => {
+      const detailsDiv = document.getElementById('openai-image-details');
+      if (detailsDiv) detailsDiv.style.display = e.target.checked ? 'block' : 'none';
+    });
 
-    document.getElementById('novelai-key-toggle').addEventListener('click', function () {
+    document.getElementById('openai-image-key-toggle')?.addEventListener('click', function () {
+      const input = document.getElementById('openai-image-api-key');
+      if (!input) return;
+      input.type = input.type === 'password' ? 'text' : 'password';
+      this.textContent = input.type === 'password' ? '🧐' : '😌';
+    });
+
+    document.getElementById('openai-image-output-format')?.addEventListener('change', (e) => {
+      const compressionRow = document.getElementById('openai-image-compression-row');
+      if (compressionRow) compressionRow.style.display = ['jpeg', 'webp'].includes(e.target.value) ? 'flex' : 'none';
+    });
+
+    document.getElementById('openai-image-test-btn')?.addEventListener('click', testOpenAIImageGeneration);
+
+    document.getElementById('google-imagen-fetch-models-btn')?.addEventListener('click', fetchGoogleImagenModels);
+
+    document.getElementById('novelai-key-toggle')?.addEventListener('click', function () {
       const input = document.getElementById('novelai-api-key');
       if (input.type === 'password') {
         input.type = 'text';
@@ -2167,13 +2189,13 @@ window.initFeatures = function(state, db) {
     });
 
 
-    document.getElementById('novelai-settings-btn').addEventListener('click', () => {
+    document.getElementById('novelai-settings-btn')?.addEventListener('click', () => {
       loadNovelAISettings();
       document.getElementById('novelai-settings-modal').style.display = 'flex';
     });
 
 
-    document.getElementById('nai-cors-proxy').addEventListener('change', (e) => {
+    document.getElementById('nai-cors-proxy')?.addEventListener('change', (e) => {
       const customProxyGroup = document.getElementById('nai-custom-proxy-group');
       if (e.target.value === 'custom') {
         customProxyGroup.style.display = 'block';
@@ -2182,25 +2204,25 @@ window.initFeatures = function(state, db) {
       }
     });
 
-    document.getElementById('close-novelai-settings').addEventListener('click', () => {
+    document.getElementById('close-novelai-settings')?.addEventListener('click', () => {
       document.getElementById('novelai-settings-modal').style.display = 'none';
     });
 
 
-    document.getElementById('save-nai-settings-btn').addEventListener('click', () => {
+    document.getElementById('save-nai-settings-btn')?.addEventListener('click', () => {
       saveNovelAISettings();
       document.getElementById('novelai-settings-modal').style.display = 'none';
       alert('NovelAI设置已保存！');
     });
 
-    document.getElementById('reset-nai-settings-btn').addEventListener('click', () => {
+    document.getElementById('reset-nai-settings-btn')?.addEventListener('click', () => {
       if (confirm('确定要恢复默认设置吗？')) {
         resetNovelAISettings();
       }
     });
 
 
-    document.getElementById('novelai-test-btn').addEventListener('click', () => {
+    document.getElementById('novelai-test-btn')?.addEventListener('click', () => {
       const apiKey = document.getElementById('novelai-api-key').value.trim();
       if (!apiKey) {
         alert('请先填写NovelAI API Key！');
@@ -2212,22 +2234,22 @@ window.initFeatures = function(state, db) {
     });
 
 
-    document.getElementById('close-novelai-test').addEventListener('click', () => {
+    document.getElementById('close-novelai-test')?.addEventListener('click', () => {
       document.getElementById('novelai-test-modal').style.display = 'none';
     });
 
-    document.getElementById('close-nai-test-btn').addEventListener('click', () => {
+    document.getElementById('close-nai-test-btn')?.addEventListener('click', () => {
       document.getElementById('novelai-test-modal').style.display = 'none';
     });
 
 
-    document.getElementById('nai-generate-btn').addEventListener('click', async () => {
+    document.getElementById('nai-generate-btn')?.addEventListener('click', async () => {
       await generateNovelAIImage();
     });
 
 
 
-    document.getElementById('nai-download-btn').addEventListener('click', () => {
+    document.getElementById('nai-download-btn')?.addEventListener('click', () => {
       const img = document.getElementById('nai-result-image');
       const link = document.createElement('a');
       link.href = img.src;
@@ -2236,7 +2258,7 @@ window.initFeatures = function(state, db) {
     });
 
 
-    document.getElementById('character-nai-prompts-btn').addEventListener('click', () => {
+    document.getElementById('character-nai-prompts-btn')?.addEventListener('click', () => {
       if (!state.activeChatId) return;
       const chat = state.chats[state.activeChatId];
 
@@ -2255,11 +2277,11 @@ window.initFeatures = function(state, db) {
     });
 
 
-    document.getElementById('close-character-nai-prompts').addEventListener('click', () => {
+    document.getElementById('close-character-nai-prompts')?.addEventListener('click', () => {
       document.getElementById('character-nai-prompts-modal').style.display = 'none';
     });
 
-    document.getElementById('save-character-nai-prompts-btn').addEventListener('click', async () => {
+    document.getElementById('save-character-nai-prompts-btn')?.addEventListener('click', async () => {
       if (!state.activeChatId) return;
       const chat = state.chats[state.activeChatId];
 
@@ -2291,7 +2313,7 @@ window.initFeatures = function(state, db) {
       alert('角色专属NAI提示词已保存！');
     });
 
-    document.getElementById('reset-character-nai-prompts-btn').addEventListener('click', () => {
+    document.getElementById('reset-character-nai-prompts-btn')?.addEventListener('click', () => {
       if (confirm('确定要清空当前角色的NAI提示词配置吗？')) {
         document.getElementById('character-nai-positive').value = '';
         document.getElementById('character-nai-negative').value = '';
@@ -2299,7 +2321,7 @@ window.initFeatures = function(state, db) {
     });
 
 
-    document.getElementById('group-character-nai-prompts-btn').addEventListener('click', () => {
+    document.getElementById('group-character-nai-prompts-btn')?.addEventListener('click', () => {
       if (!state.activeChatId) return;
       const chat = state.chats[state.activeChatId];
 
@@ -2318,15 +2340,15 @@ window.initFeatures = function(state, db) {
     });
 
 
-    document.getElementById('manage-frames-btn').addEventListener('click', toggleFrameManagementMode);
-    document.getElementById('select-all-frames-checkbox').addEventListener('change', handleSelectAllFrames);
-    document.getElementById('delete-selected-frames-btn').addEventListener('click', executeBatchDeleteFrames);
-    document.getElementById('delete-current-category-btn').addEventListener('click', handleDeleteCurrentCategory);
-    document.getElementById('char-wallet-back-btn').addEventListener('click', () => {
+    document.getElementById('manage-frames-btn')?.addEventListener('click', toggleFrameManagementMode);
+    document.getElementById('select-all-frames-checkbox')?.addEventListener('change', handleSelectAllFrames);
+    document.getElementById('delete-selected-frames-btn')?.addEventListener('click', executeBatchDeleteFrames);
+    document.getElementById('delete-current-category-btn')?.addEventListener('click', handleDeleteCurrentCategory);
+    document.getElementById('char-wallet-back-btn')?.addEventListener('click', () => {
 
       switchToCharScreen('char-taobao-screen');
     });
-    document.getElementById('sticker-binding-chat-list').addEventListener('click', (e) => {
+    document.getElementById('sticker-binding-chat-list')?.addEventListener('click', (e) => {
       const item = e.target.closest('.contact-picker-item');
       if (item) {
         const checkbox = item.querySelector('.sticker-binding-checkbox');
@@ -2350,27 +2372,27 @@ window.initFeatures = function(state, db) {
       }
     });
 
-    document.getElementById('open-nai-gallery-btn').addEventListener('click', openNaiGallery);
-    document.getElementById('nai-gallery-tabs').addEventListener('click', (e) => {
+    document.getElementById('open-nai-gallery-btn')?.addEventListener('click', openNaiGallery);
+    document.getElementById('nai-gallery-tabs')?.addEventListener('click', (e) => {
       const tab = e.target.closest('.nai-gallery-tab');
       if (tab && !tab.classList.contains('active')) {
         switchNaiGalleryTab(tab.dataset.tabId);
       }
     });
-    document.getElementById('close-nai-gallery-btn').addEventListener('click', () => {
+    document.getElementById('close-nai-gallery-btn')?.addEventListener('click', () => {
       document.getElementById('nai-gallery-panel').classList.remove('visible');
     });
 
-    document.getElementById('manage-nai-gallery-btn').addEventListener('click', toggleNaiGalleryManagementMode);
+    document.getElementById('manage-nai-gallery-btn')?.addEventListener('click', toggleNaiGalleryManagementMode);
 
-    document.getElementById('nai-gallery-grid-local').addEventListener('click', (e) => {
+    document.getElementById('nai-gallery-grid-local')?.addEventListener('click', (e) => {
       handleNaiGalleryGridClick(e);
     });
-    document.getElementById('nai-gallery-grid-cloud').addEventListener('click', (e) => {
+    document.getElementById('nai-gallery-grid-cloud')?.addEventListener('click', (e) => {
       handleNaiGalleryGridClick(e);
     });
 
-    document.getElementById('select-all-nai-gallery-checkbox').addEventListener('change', (e) => {
+    document.getElementById('select-all-nai-gallery-checkbox')?.addEventListener('change', (e) => {
       const isChecked = e.target.checked;
       const activeGridId = `nai-gallery-grid-${activeNaiGalleryTab}`;
 
@@ -2386,19 +2408,19 @@ window.initFeatures = function(state, db) {
       });
       updateNaiGalleryActionButtons();
     });
-    document.getElementById('download-selected-nai-gallery-btn').addEventListener('click', () => executeBatchDownloadNaiImages());
-    document.getElementById('upload-selected-nai-gallery-btn').addEventListener('click', () => executeBatchUploadNaiImagesToImgBB());
-    document.getElementById('export-selected-nai-gallery-btn').addEventListener('click', () => executeBatchExportNaiImages());
-    document.getElementById('delete-selected-nai-gallery-btn').addEventListener('click', () => executeBatchDeleteNaiImages());
-    document.getElementById('delete-selected-nai-gallery-btn').addEventListener('click', () => executeBatchDeleteNaiImages());
-    document.getElementById('chat-expand-btn').addEventListener('click', () => {
+    document.getElementById('download-selected-nai-gallery-btn')?.addEventListener('click', () => executeBatchDownloadNaiImages());
+    document.getElementById('upload-selected-nai-gallery-btn')?.addEventListener('click', () => executeBatchUploadNaiImagesToImgBB());
+    document.getElementById('export-selected-nai-gallery-btn')?.addEventListener('click', () => executeBatchExportNaiImages());
+    document.getElementById('delete-selected-nai-gallery-btn')?.addEventListener('click', () => executeBatchDeleteNaiImages());
+    document.getElementById('delete-selected-nai-gallery-btn')?.addEventListener('click', () => executeBatchDeleteNaiImages());
+    document.getElementById('chat-expand-btn')?.addEventListener('click', () => {
       document.body.classList.toggle('chat-actions-expanded');
     });
-    document.getElementById('profile-edit-btn').addEventListener('click', openThoughtEditor);
-    document.getElementById('open-quick-reply-btn').addEventListener('click', openQuickReplyModal);
+    document.getElementById('profile-edit-btn')?.addEventListener('click', openThoughtEditor);
+    document.getElementById('open-quick-reply-btn')?.addEventListener('click', openQuickReplyModal);
     
     // ========== 旁白功能 ==========
-    document.getElementById('narration-btn').addEventListener('click', async () => {
+    document.getElementById('narration-btn')?.addEventListener('click', async () => {
       if (!state.activeChatId) {
         alert('请先选择一个聊天对象！');
         return;
@@ -2431,7 +2453,7 @@ window.initFeatures = function(state, db) {
       }
     });
 
-    document.getElementById('cancel-quick-reply-btn').addEventListener('click', () => {
+    document.getElementById('cancel-quick-reply-btn')?.addEventListener('click', () => {
       document.getElementById('quick-reply-modal').classList.remove('visible');
     });
 
@@ -2496,7 +2518,7 @@ window.initFeatures = function(state, db) {
       truthGameState.currentAiMember = members[idx];
     }
 
-    document.getElementById('open-truth-game-btn').addEventListener('click', () => {
+    document.getElementById('open-truth-game-btn')?.addEventListener('click', () => {
       if (!state.activeChatId) {
         alert('请先选择一个聊天对象！');
         return;
@@ -2534,7 +2556,7 @@ window.initFeatures = function(state, db) {
       }
     });
 
-    document.getElementById('truth-game-settings-btn').addEventListener('click', () => {
+    document.getElementById('truth-game-settings-btn')?.addEventListener('click', () => {
       if (!state.activeChatId) return;
       const chat = state.chats[state.activeChatId];
 
@@ -2546,11 +2568,11 @@ window.initFeatures = function(state, db) {
       document.getElementById('truth-game-settings-modal').classList.add('visible');
     });
 
-    document.getElementById('cancel-truth-settings-btn').addEventListener('click', () => {
+    document.getElementById('cancel-truth-settings-btn')?.addEventListener('click', () => {
       document.getElementById('truth-game-settings-modal').classList.remove('visible');
     });
 
-    document.getElementById('save-truth-settings-btn').addEventListener('click', async () => {
+    document.getElementById('save-truth-settings-btn')?.addEventListener('click', async () => {
       if (!state.activeChatId) return;
       const chat = state.chats[state.activeChatId];
 
@@ -2573,7 +2595,7 @@ window.initFeatures = function(state, db) {
     });
 
     // 最小化真心话对话框
-    document.getElementById('minimize-truth-game-btn').addEventListener('click', () => {
+    document.getElementById('minimize-truth-game-btn')?.addEventListener('click', () => {
       const modal = document.getElementById('truth-game-modal');
       const floatBall = document.getElementById('truth-game-float-ball');
       const chat = state.chats[state.activeChatId];
@@ -2693,7 +2715,7 @@ window.initFeatures = function(state, db) {
       floatBall.addEventListener('touchstart', startDrag, { passive: false });
     })();
 
-    document.getElementById('close-truth-game-btn').addEventListener('click', async () => {
+    document.getElementById('close-truth-game-btn')?.addEventListener('click', async () => {
       // 强制中断所有正在进行的API请求
       if (truthGameState.abortController) {
         truthGameState.abortController.abort();
@@ -2854,7 +2876,7 @@ window.initFeatures = function(state, db) {
       });
     });
 
-    document.getElementById('truth-start-game-btn').addEventListener('click', async () => {
+    document.getElementById('truth-start-game-btn')?.addEventListener('click', async () => {
       if (!truthGameState.isActive || truthGameState.waitingForAI) return;
 
       const chat = state.chats[state.activeChatId];
@@ -2974,7 +2996,7 @@ ${qaContext}
       }
     }
 
-    document.getElementById('truth-send-btn').addEventListener('click', async () => {
+    document.getElementById('truth-send-btn')?.addEventListener('click', async () => {
       const input = document.getElementById('truth-input');
       const content = input.value.trim();
       if (!content || truthGameState.waitingForAI) return;
@@ -3007,7 +3029,7 @@ ${qaContext}
       }
     });
 
-    document.getElementById('truth-call-api-btn').addEventListener('click', async () => {
+    document.getElementById('truth-call-api-btn')?.addEventListener('click', async () => {
       if (!state.activeChatId || truthGameState.waitingForAI) return;
 
       const chat = getTruthGameEffectiveChat();
@@ -3116,14 +3138,14 @@ ${qaContext}
       }
     });
 
-    document.getElementById('truth-input').addEventListener('keypress', (e) => {
+    document.getElementById('truth-input')?.addEventListener('keypress', (e) => {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
         document.getElementById('truth-send-btn').click();
       }
     });
 
-    document.getElementById('truth-input').addEventListener('input', function () {
+    document.getElementById('truth-input')?.addEventListener('input', function () {
       this.style.height = 'auto';
       this.style.height = Math.min(this.scrollHeight, 100) + 'px';
     });
@@ -3692,7 +3714,7 @@ ${truthGameHistoryContext}
       activeTruthGameMessageTimestamp = null;
     }
 
-    document.getElementById('cancel-message-action-btn').addEventListener('click', () => {
+    document.getElementById('cancel-message-action-btn')?.addEventListener('click', () => {
       if (activeTruthGameMessageTimestamp) {
         closeTruthGameMessageActions();
       } else if (activeWatchTogetherMessageTimestamp) {
@@ -3700,7 +3722,7 @@ ${truthGameHistoryContext}
       }
     });
 
-    document.getElementById('copy-message-btn').addEventListener('click', () => {
+    document.getElementById('copy-message-btn')?.addEventListener('click', () => {
       if (activeTruthGameMessageTimestamp) {
         const message = truthGameState.messages.find(m => m.timestamp === activeTruthGameMessageTimestamp);
         if (message) {
@@ -3716,7 +3738,7 @@ ${truthGameHistoryContext}
       }
     });
 
-    document.getElementById('copy-timestamp-btn').addEventListener('click', () => {
+    document.getElementById('copy-timestamp-btn')?.addEventListener('click', () => {
       if (activeTruthGameMessageTimestamp) {
         const date = new Date(activeTruthGameMessageTimestamp);
         const timeStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:${String(date.getSeconds()).padStart(2, '0')}`;
@@ -3725,7 +3747,7 @@ ${truthGameHistoryContext}
       }
     });
 
-    document.getElementById('translate-message-btn').addEventListener('click', async () => {
+    document.getElementById('translate-message-btn')?.addEventListener('click', async () => {
       if (activeTruthGameMessageTimestamp) {
         const message = truthGameState.messages.find(m => m.timestamp === activeTruthGameMessageTimestamp);
         if (message && message.content) {
@@ -3777,7 +3799,7 @@ ${truthGameHistoryContext}
       }
     });
 
-    document.getElementById('edit-message-btn').addEventListener('click', async () => {
+    document.getElementById('edit-message-btn')?.addEventListener('click', async () => {
       if (activeTruthGameMessageTimestamp) {
         const message = truthGameState.messages.find(m => m.timestamp === activeTruthGameMessageTimestamp);
         if (message) {
@@ -3803,7 +3825,7 @@ ${truthGameHistoryContext}
       }
     });
 
-    document.getElementById('recall-message-btn').addEventListener('click', async () => {
+    document.getElementById('recall-message-btn')?.addEventListener('click', async () => {
       if (activeTruthGameMessageTimestamp) {
         const targetTimestamp = activeTruthGameMessageTimestamp;
         const message = truthGameState.messages.find(m => m.timestamp === targetTimestamp);
@@ -3978,7 +4000,7 @@ ${truthGameHistoryContext}
     window.watchTogetherState = watchTogetherState;
 
     // 打开观影界面
-    document.getElementById('open-watch-together-btn').addEventListener('click', () => {
+    document.getElementById('open-watch-together-btn')?.addEventListener('click', () => {
       if (!state.activeChatId) {
         alert('请先选择一个聊天对象！');
         return;
@@ -4025,23 +4047,23 @@ ${truthGameHistoryContext}
     });
 
     // 关闭观影界面
-    document.getElementById('close-watch-together-btn').addEventListener('click', () => {
+    document.getElementById('close-watch-together-btn')?.addEventListener('click', () => {
       stopWatchTogether();
     });
 
     // 上传按钮
-    document.getElementById('watch-together-upload-btn').addEventListener('click', () => {
+    document.getElementById('watch-together-upload-btn')?.addEventListener('click', () => {
       document.getElementById('watch-together-upload-modal').classList.add('visible');
     });
 
     // 本地上传
-    document.getElementById('watch-together-upload-local').addEventListener('click', () => {
+    document.getElementById('watch-together-upload-local')?.addEventListener('click', () => {
       document.getElementById('watch-together-file-input').click();
       document.getElementById('watch-together-upload-modal').classList.remove('visible');
     });
 
     // URL上传
-    document.getElementById('watch-together-upload-url').addEventListener('click', () => {
+    document.getElementById('watch-together-upload-url')?.addEventListener('click', () => {
       document.getElementById('watch-together-upload-modal').classList.remove('visible');
       document.getElementById('watch-together-url-modal').classList.add('visible');
     });
@@ -4059,12 +4081,12 @@ ${truthGameHistoryContext}
     }
 
     // 取消上传
-    document.getElementById('cancel-watch-together-upload-btn').addEventListener('click', () => {
+    document.getElementById('cancel-watch-together-upload-btn')?.addEventListener('click', () => {
       document.getElementById('watch-together-upload-modal').classList.remove('visible');
     });
 
     // 文件选择
-    document.getElementById('watch-together-file-input').addEventListener('change', (e) => {
+    document.getElementById('watch-together-file-input')?.addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (file) {
         loadWatchTogetherVideo(file);
@@ -4072,7 +4094,7 @@ ${truthGameHistoryContext}
     });
 
     // URL确认
-    document.getElementById('confirm-watch-together-url-btn').addEventListener('click', () => {
+    document.getElementById('confirm-watch-together-url-btn')?.addEventListener('click', () => {
       const url = document.getElementById('watch-together-url-input').value.trim();
       if (url) {
         loadWatchTogetherVideoFromUrl(url);
@@ -4082,7 +4104,7 @@ ${truthGameHistoryContext}
     });
 
     // 取消URL
-    document.getElementById('cancel-watch-together-url-btn').addEventListener('click', () => {
+    document.getElementById('cancel-watch-together-url-btn')?.addEventListener('click', () => {
       document.getElementById('watch-together-url-modal').classList.remove('visible');
     });
 
@@ -4119,53 +4141,53 @@ ${truthGameHistoryContext}
     }
 
     // 播放列表按钮
-    document.getElementById('watch-together-playlist-btn').addEventListener('click', () => {
+    document.getElementById('watch-together-playlist-btn')?.addEventListener('click', () => {
       openPlaylist();
     });
 
     // 关闭播放列表
-    document.getElementById('close-watch-together-playlist-btn').addEventListener('click', () => {
+    document.getElementById('close-watch-together-playlist-btn')?.addEventListener('click', () => {
       document.getElementById('watch-together-playlist-modal').classList.remove('visible');
     });
 
-    document.getElementById('cancel-watch-together-playlist-btn').addEventListener('click', () => {
+    document.getElementById('cancel-watch-together-playlist-btn')?.addEventListener('click', () => {
       document.getElementById('watch-together-playlist-modal').classList.remove('visible');
     });
 
     // 保存视频到播放列表
-    document.getElementById('confirm-save-video-btn').addEventListener('click', () => {
+    document.getElementById('confirm-save-video-btn')?.addEventListener('click', () => {
       saveVideoToPlaylist();
     });
 
-    document.getElementById('cancel-save-video-btn').addEventListener('click', () => {
+    document.getElementById('cancel-save-video-btn')?.addEventListener('click', () => {
       document.getElementById('watch-together-save-video-modal').classList.remove('visible');
     });
 
     // 设置按钮
-    document.getElementById('watch-together-settings-btn').addEventListener('click', () => {
+    document.getElementById('watch-together-settings-btn')?.addEventListener('click', () => {
       loadWatchTogetherSettings();
       document.getElementById('watch-together-settings-modal').classList.add('visible');
     });
 
     // 语音API选择
-    document.getElementById('watch-together-speech-api-select').addEventListener('change', (e) => {
+    document.getElementById('watch-together-speech-api-select')?.addEventListener('change', (e) => {
       const whisperConfig = document.getElementById('watch-together-whisper-config');
       whisperConfig.style.display = e.target.value === 'whisper' ? 'block' : 'none';
     });
 
     // 保存设置
-    document.getElementById('save-watch-together-settings-btn').addEventListener('click', () => {
+    document.getElementById('save-watch-together-settings-btn')?.addEventListener('click', () => {
       saveWatchTogetherSettings();
       document.getElementById('watch-together-settings-modal').classList.remove('visible');
     });
 
     // 取消设置
-    document.getElementById('cancel-watch-together-settings-btn').addEventListener('click', () => {
+    document.getElementById('cancel-watch-together-settings-btn')?.addEventListener('click', () => {
       document.getElementById('watch-together-settings-modal').classList.remove('visible');
     });
 
     // 重置位置按钮
-    document.getElementById('reset-watch-together-position-btn').addEventListener('click', () => {
+    document.getElementById('reset-watch-together-position-btn')?.addEventListener('click', () => {
       const chat = state.chats[watchTogetherState.chatId];
       if (!chat) return;
       
@@ -4187,7 +4209,7 @@ ${truthGameHistoryContext}
     });
 
     // 聊天框收起/展开
-    document.getElementById('watch-together-chat-toggle').addEventListener('click', () => {
+    document.getElementById('watch-together-chat-toggle')?.addEventListener('click', () => {
       const chatFloat = document.getElementById('watch-together-chat-float');
       const isMinimized = chatFloat.classList.contains('minimized');
 
@@ -4201,17 +4223,17 @@ ${truthGameHistoryContext}
     });
 
     // 发送消息
-    document.getElementById('watch-together-chat-send').addEventListener('click', () => {
+    document.getElementById('watch-together-chat-send')?.addEventListener('click', () => {
       sendWatchTogetherUserMessage();
     });
 
     // 调用API
-    document.getElementById('watch-together-call-api-btn').addEventListener('click', () => {
+    document.getElementById('watch-together-call-api-btn')?.addEventListener('click', () => {
       callWatchTogetherAPI();
     });
 
     // 回车发送
-    document.getElementById('watch-together-chat-input').addEventListener('keydown', (e) => {
+    document.getElementById('watch-together-chat-input')?.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
         sendWatchTogetherUserMessage();
@@ -5542,23 +5564,23 @@ ${linkedContents}
     // ========== 一起看电影功能结束 ==========
 
 
-    document.getElementById('add-quick-reply-btn').addEventListener('click', addNewQuickReply);
+    document.getElementById('add-quick-reply-btn')?.addEventListener('click', addNewQuickReply);
 
 
 
-    document.getElementById('minimize-char-music-btn').addEventListener('click', minimizeCharMusicPlayer);
+    document.getElementById('minimize-char-music-btn')?.addEventListener('click', minimizeCharMusicPlayer);
 
 
-    document.getElementById('char-music-restore-btn').addEventListener('click', restoreCharMusicPlayer);
+    document.getElementById('char-music-restore-btn')?.addEventListener('click', restoreCharMusicPlayer);
 
 
     makeDraggable(document.getElementById('char-music-restore-btn'), document.getElementById('char-music-restore-btn'));
 
-    document.getElementById('imgbb-enable-switch').addEventListener('change', (e) => {
+    document.getElementById('imgbb-enable-switch')?.addEventListener('change', (e) => {
       document.getElementById('imgbb-settings-details').style.display = e.target.checked ? 'block' : 'none';
     });
 
-    document.getElementById('imgbb-key-toggle').addEventListener('click', function () {
+    document.getElementById('imgbb-key-toggle')?.addEventListener('click', function () {
       const input = document.getElementById('imgbb-api-key');
       if (input.type === 'password') {
         input.type = 'text';
@@ -5568,11 +5590,11 @@ ${linkedContents}
         this.textContent = '🧐';
       }
     });
-    document.getElementById('catbox-enable-switch').addEventListener('change', (e) => {
+    document.getElementById('catbox-enable-switch')?.addEventListener('change', (e) => {
       document.getElementById('catbox-settings-details').style.display = e.target.checked ? 'block' : 'none';
     });
 
-    document.getElementById('catbox-key-toggle').addEventListener('click', function () {
+    document.getElementById('catbox-key-toggle')?.addEventListener('click', function () {
       const input = document.getElementById('catbox-userhash');
       if (input.type === 'password') {
         input.type = 'text';
@@ -5649,7 +5671,7 @@ ${linkedContents}
         }
       });
     }
-    document.getElementById('toggle-reading-fullscreen-btn').addEventListener('click', toggleReadingFullscreen);
+    document.getElementById('toggle-reading-fullscreen-btn')?.addEventListener('click', toggleReadingFullscreen);
 
     // ========================================
     // ▼▼▼ 你画我猜功能（在DOMContentLoaded内部以访问state）▼▼▼
@@ -6917,7 +6939,7 @@ ${finalInstruction}
         await showCustomAlert(`${actionText}成功`, `亲属卡${actionText}已发送给对方。`);
       });
     }
-    document.getElementById('char-wallet-content').addEventListener('click', async (e) => {
+    document.getElementById('char-wallet-content')?.addEventListener('click', async (e) => {
       if (e.target.classList.contains('unbind-kinship-btn')) {
         e.stopPropagation();
         const chatId = e.target.dataset.chatId;
@@ -7072,24 +7094,24 @@ ${finalInstruction}
         }
       });
     }
-    document.getElementById('export-appearance-btn').addEventListener('click', exportAppearanceSettings);
+    document.getElementById('export-appearance-btn')?.addEventListener('click', exportAppearanceSettings);
     // --- To-Do List Events ---
     const todoBtn = document.getElementById('open-todo-list-btn');
     if (todoBtn) todoBtn.addEventListener('click', window.openTodoList);
 
-    document.getElementById('todo-list-back-btn').addEventListener('click', () => showScreen('chat-interface-screen'));
+    document.getElementById('todo-list-back-btn')?.addEventListener('click', () => showScreen('chat-interface-screen'));
 
-    document.getElementById('todo-prev-day-btn').addEventListener('click', () => changeTodoDate(-1));
+    document.getElementById('todo-prev-day-btn')?.addEventListener('click', () => changeTodoDate(-1));
 
-    document.getElementById('todo-next-day-btn').addEventListener('click', () => changeTodoDate(1));
+    document.getElementById('todo-next-day-btn')?.addEventListener('click', () => changeTodoDate(1));
 
-    document.getElementById('add-todo-btn').addEventListener('click', () => openTodoEditor(null));
+    document.getElementById('add-todo-btn')?.addEventListener('click', () => openTodoEditor(null));
 
-    document.getElementById('cancel-todo-editor-btn').addEventListener('click', () => {
+    document.getElementById('cancel-todo-editor-btn')?.addEventListener('click', () => {
       document.getElementById('todo-editor-modal').classList.remove('visible');
     });
 
-    document.getElementById('save-todo-btn').addEventListener('click', saveTodo);
+    document.getElementById('save-todo-btn')?.addEventListener('click', saveTodo);
     const todoDateDisplay = document.getElementById('todo-current-date-display');
     if (todoDateDisplay) {
       // 1. 动态创建一个隐藏的 input[type="date"]
@@ -7168,16 +7190,16 @@ ${finalInstruction}
     if (selectAllBtn) {
       selectAllBtn.addEventListener('click', window.handleSelectAllEmails);
     }
-    document.getElementById('manage-rules-btn').addEventListener('click', toggleRuleManagementMode);
-    document.getElementById('import-rules-btn').addEventListener('click', () => {
+    document.getElementById('manage-rules-btn')?.addEventListener('click', toggleRuleManagementMode);
+    document.getElementById('import-rules-btn')?.addEventListener('click', () => {
       document.getElementById('import-rules-input').click();
     });
-    document.getElementById('import-rules-input').addEventListener('change', handleRulesImport);
+    document.getElementById('import-rules-input')?.addEventListener('change', handleRulesImport);
 
     // 2. 底部操作栏按钮
-    document.getElementById('select-all-rules-checkbox').addEventListener('change', handleSelectAllRules);
-    document.getElementById('export-selected-rules-btn').addEventListener('click', exportSelectedRules);
-    document.getElementById('delete-selected-rules-btn').addEventListener('click', deleteSelectedRules);
+    document.getElementById('select-all-rules-checkbox')?.addEventListener('change', handleSelectAllRules);
+    document.getElementById('export-selected-rules-btn')?.addEventListener('click', exportSelectedRules);
+    document.getElementById('delete-selected-rules-btn')?.addEventListener('click', deleteSelectedRules);
     // ... 在 init() 函数内 ...
     const redditSearchBtn = document.getElementById('char-reddit-search-btn');
     if (redditSearchBtn) {
@@ -7201,21 +7223,21 @@ ${finalInstruction}
     if (regenRedditBtn) {
       regenRedditBtn.addEventListener('click', handleGenerateSimulatedReddit);
     }
-    document.getElementById('nai-preset-select').addEventListener('change', handleNaiPresetChange);
-    document.getElementById('save-nai-preset-btn').addEventListener('click', () => handleSaveNaiPreset(false));
-    document.getElementById('update-nai-preset-btn').addEventListener('click', () => handleSaveNaiPreset(true));
-    document.getElementById('delete-nai-preset-btn').addEventListener('click', handleDeleteNaiPreset);
-    document.getElementById('bind-nai-preset-btn').addEventListener('click', openNaiBindingModal);
+    document.getElementById('nai-preset-select')?.addEventListener('change', handleNaiPresetChange);
+    document.getElementById('save-nai-preset-btn')?.addEventListener('click', () => handleSaveNaiPreset(false));
+    document.getElementById('update-nai-preset-btn')?.addEventListener('click', () => handleSaveNaiPreset(true));
+    document.getElementById('delete-nai-preset-btn')?.addEventListener('click', handleDeleteNaiPreset);
+    document.getElementById('bind-nai-preset-btn')?.addEventListener('click', openNaiBindingModal);
 
-    document.getElementById('save-nai-binding-btn').addEventListener('click', saveNaiBinding);
-    document.getElementById('cancel-nai-binding-btn').addEventListener('click', () => {
+    document.getElementById('save-nai-binding-btn')?.addEventListener('click', saveNaiBinding);
+    document.getElementById('cancel-nai-binding-btn')?.addEventListener('click', () => {
       document.getElementById('nai-binding-modal').classList.remove('visible');
     });
-    document.getElementById('manage-quick-reply-categories-btn').addEventListener('click', openQuickReplyCategoryManager);
+    document.getElementById('manage-quick-reply-categories-btn')?.addEventListener('click', openQuickReplyCategoryManager);
 
     // 2. 绑定分类管理器内的按钮
-    document.getElementById('add-new-quick-reply-category-btn').addEventListener('click', addNewQuickReplyCategory);
-    document.getElementById('close-quick-reply-category-manager-btn').addEventListener('click', () => {
+    document.getElementById('add-new-quick-reply-category-btn')?.addEventListener('click', addNewQuickReplyCategory);
+    document.getElementById('close-quick-reply-category-manager-btn')?.addEventListener('click', () => {
       document.getElementById('quick-reply-category-manager-modal').classList.remove('visible');
       renderQuickReplyList(true); // 关闭时刷新主列表的Tabs
     });

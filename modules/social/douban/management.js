@@ -1,6 +1,12 @@
   async function openDeleteDoubanPostsModal() {
     const modal = document.getElementById('delete-douban-posts-modal');
     const listEl = document.getElementById('delete-douban-posts-list');
+    if (!modal || !listEl) {
+      console.warn("未找到 delete-douban-posts-modal 或 delete-douban-posts-list 元素");
+      return;
+    }
+    // 帖子管理是豆瓣设置的子页面，避免两个弹窗同时显示造成内容和按钮重叠。
+    document.getElementById('douban-settings-modal')?.classList.remove('visible');
     listEl.innerHTML = '';
 
     // 获取所有豆瓣帖子
@@ -45,7 +51,10 @@
     });
 
     // 重置全选状态
-    document.getElementById('select-all-douban-posts').checked = false;
+    const selectAllCb = document.getElementById('select-all-douban-posts');
+    if (selectAllCb) {
+      selectAllCb.checked = false;
+    }
 
     modal.classList.add('visible');
   }
@@ -78,6 +87,7 @@
 
       // 关闭模态框
       document.getElementById('delete-douban-posts-modal').classList.remove('visible');
+      document.getElementById('douban-settings-modal')?.classList.add('visible');
 
       // 如果当前在豆瓣页面，刷新列表
       if (state.currentScreen === 'douban-screen') {

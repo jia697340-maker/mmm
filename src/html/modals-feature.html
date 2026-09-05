@@ -134,56 +134,119 @@
       <div class="modal-footer"> <button class="cancel" id="close-cleaned-songs-btn">关闭</button> <button class="save" id="research-selected-songs-btn">重新搜索选中</button> </div>
     </div>
   </div>
-  <div id="douban-settings-modal" class="modal">
+  <div id="douban-settings-modal" class="modal douban-modern-modal">
     <div class="modal-content">
       <div class="modal-header"> <span>豆瓣设置</span> </div>
-      <div class="modal-body">
-        <div class="form-group douban-settings-item"> <label for="douban-min-posts-input"> 每次生成帖子数范围 <p style="font-size: 12px; font-weight: normal; color: #999; margin-top: 5px;"> 设置AI在豆瓣页面一次性生成帖子的最小和最大数量。 </p> </label>
-          <div class="douban-settings-controls"> <input type="number" id="douban-min-posts-input" min="1" value="12"> <span>到</span> <input type="number" id="douban-max-posts-input" min="1" value="20"> <span>篇</span> </div>
+      <div class="modal-body douban-settings-modal-body">
+        <!-- 帖子数量范围：上下两行布局，永不横向溢出 -->
+        <div class="douban-setting-card">
+          <div class="douban-setting-card-title">每次生成帖子数范围</div>
+          <div class="douban-setting-card-desc">设置AI在豆瓣页面一次性生成帖子的最小和最大数量。</div>
+          <div class="douban-number-range-wrapper">
+            <span class="douban-range-label">最少</span>
+            <input type="number" id="douban-min-posts-input" class="douban-modern-num-input" min="1" value="12">
+            <span class="douban-range-sep">至</span>
+            <span class="douban-range-label">最多</span>
+            <input type="number" id="douban-max-posts-input" class="douban-modern-num-input" min="1" value="20">
+            <span class="douban-range-unit">篇</span>
+          </div>
         </div>
-        <hr style="opacity: 0.2; margin: 15px 0;">
-        <div class="form-group" style="margin-bottom: 15px;">
-          <label style="display: block; margin-bottom: 8px; font-weight: 500;">我的豆瓣身份设定<p style="font-size: 12px; font-weight: normal; color: #999; margin-top: 5px; margin-bottom: 0;">设置我在豆瓣里的专属头像和昵称。留空则默认使用全局QQ身份。</p></label>
-          <div style="display: flex; align-items: center; gap: 15px; margin-top: 10px;">
-            <div class="avatar-upload" style="margin: 0;">
-                <img id="douban-user-avatar-preview" src="" style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 1px solid #ddd; cursor: pointer;" onclick="handleWidgetImageChange('douban-user-avatar-preview')" onerror="this.src='https://i.postimg.cc/nMbyyt1t/D7CD735A73F5FD1D7B8407E0EB8BBAC0.png'">
-                <input type="file" id="douban-user-avatar-input" accept="image/*" hidden>
+
+        <!-- 身份设定：上下两行布局，支持弹性自适应 -->
+        <div class="douban-setting-card">
+          <div class="douban-setting-card-title">我的豆瓣身份设定</div>
+          <div class="douban-setting-card-desc">设置我在豆瓣里的专属头像和昵称。留空则默认使用全局QQ身份。</div>
+          
+          <div class="douban-identity-row">
+            <div class="douban-avatar-wrap" onclick="handleWidgetImageChange('douban-user-avatar-preview')">
+              <img id="douban-user-avatar-preview" src="" alt="豆瓣头像" onerror="this.src='https://i.postimg.cc/nMbyyt1t/D7CD735A73F5FD1D7B8407E0EB8BBAC0.png'">
+              <span class="douban-avatar-badge" title="点击更换头像">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+              </span>
+              <input type="file" id="douban-user-avatar-input" accept="image/*" hidden>
             </div>
-            <div style="display: flex; flex: 1; align-items: stretch; height: 42px; gap: 15px;">
-                <input type="text" id="douban-user-nickname-input" placeholder="输入我的豆瓣名称..." style="flex: 1; padding: 0 12px; border: 1.5px solid #000; border-radius: 6px; font-size: 14px; outline: none; box-sizing: border-box;">
-                <button id="douban-user-avatar-reset-btn" style="margin: 0; padding: 0 16px; font-size: 13px; font-weight: 500; background: #fff; border: 1.5px solid #000; border-radius: 6px; color: #000; cursor: pointer; box-sizing: border-box; height: 100%; transition: all 0.2s;">重置</button>
+            <div class="douban-identity-inputs">
+              <input type="text" id="douban-user-nickname-input" class="douban-modern-input" placeholder="输入我的豆瓣名称...">
+              <button id="douban-user-avatar-reset-btn" class="douban-modern-sub-btn" type="button">重置</button>
             </div>
           </div>
         </div>
-        <hr style="opacity: 0.2; margin: 15px 0;">
-        <div class="form-group douban-settings-item">
-          <label> 
-            <input type="checkbox" id="douban-enable-ai-avatar-checkbox" checked> 
-            开启通用AI生图
-            <p style="font-size: 12px; font-weight: normal; color: #999; margin-top: 5px;"> 
-              关闭后，NPC头像将使用默认头像或自定义头像库中的头像。 
-            </p> 
+
+        <!-- 开启通用AI生图：左右优雅 Switch 开关 -->
+        <div class="douban-setting-card douban-setting-switch-card">
+          <div class="douban-switch-info">
+            <div class="douban-setting-card-title">开启通用AI生图</div>
+            <div class="douban-setting-card-desc">关闭后，NPC头像将使用默认头像或自定义头像库中的头像。</div>
+          </div>
+          <label class="douban-switch-label">
+            <input type="checkbox" id="douban-enable-ai-avatar-checkbox" checked>
+            <span class="douban-switch-slider"></span>
           </label>
         </div>
-        <hr style="opacity: 0.2; margin: 15px 0;">
-        <div class="form-group douban-settings-item">
-          <label> NPC头像自定义 <p style="font-size: 12px; font-weight: normal; color: #999; margin-top: 5px;"> 上传自定义NPC头像，将随机分配给使用的NPC。一个头像对应一个NPC。 </p> </label>
+
+        <!-- 功能管理项：精美列表入口 -->
+        <div class="douban-setting-card douban-manage-section">
+          <div class="douban-manage-row" id="manage-npc-avatars-btn">
+            <div class="douban-manage-text">
+              <div class="douban-manage-title">NPC头像自定义</div>
+              <div class="douban-manage-desc">上传自定义NPC头像，分配给NPC使用。</div>
+            </div>
+            <div class="douban-manage-action">
+              <span>管理</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </div>
+          </div>
+
+          <div class="douban-manage-divider"></div>
+
+          <div class="douban-manage-row" id="manage-custom-groups-btn">
+            <div class="douban-manage-text">
+              <div class="douban-manage-title">自定义小组管理</div>
+              <div class="douban-manage-desc">添加和管理自定义豆瓣小组与专属提示词。</div>
+            </div>
+            <div class="douban-manage-action">
+              <span>管理</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </div>
+          </div>
+
+          <div class="douban-manage-divider"></div>
+
+          <div class="douban-manage-row" id="manage-douban-posts-btn">
+            <div class="douban-manage-text">
+              <div class="douban-manage-title">帖子管理</div>
+              <div class="douban-manage-desc">可选择性或批量删除已生成的豆瓣帖子。</div>
+            </div>
+            <div class="douban-manage-action">
+              <span>管理</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </div>
+          </div>
         </div>
-        <button class="douban-manage-btn" id="manage-npc-avatars-btn">管理NPC头像</button>
-        <hr style="opacity: 0.2; margin: 15px 0;">
-        <div class="form-group douban-settings-item">
-          <label> 自定义小组管理 <p style="font-size: 12px; font-weight: normal; color: #999; margin-top: 5px;"> 添加和管理自定义豆瓣小组，设置小组名称和提示词。 </p> </label>
-        </div>
-        <button class="douban-manage-btn" id="manage-custom-groups-btn">管理自定义小组</button>
-        <hr style="opacity: 0.2; margin: 15px 0;">
-        <div class="form-group douban-settings-item">
-          <label> 帖子管理 <p style="font-size: 12px; font-weight: normal; color: #999; margin-top: 5px;"> 可以选择性删除已生成的豆瓣帖子。 </p> </label>
-        </div>
-        <button class="douban-manage-btn" id="manage-douban-posts-btn">管理豆瓣帖子</button>
       </div>
-      <div class="modal-footer"> <button class="cancel" id="cancel-douban-settings-btn"data-lang-key="cancel">取消</button> <button class="save" id="save-douban-settings-btn"data-lang-key="save">保存</button> </div>
+      <div class="modal-footer"> <button class="cancel" id="cancel-douban-settings-btn" data-lang-key="cancel">取消</button> <button class="save" id="save-douban-settings-btn" data-lang-key="save">保存</button> </div>
     </div>
   </div><audio id="char-audio-player" preload="auto"></audio>
+  <!-- 豆瓣帖子管理/删除弹窗 -->
+  <div id="delete-douban-posts-modal" class="modal douban-post-management-modal">
+    <div class="modal-content douban-post-management-dialog">
+      <div class="modal-header douban-post-management-header">
+        <span>管理豆瓣帖子</span>
+        <label class="douban-select-all-label">
+          <input type="checkbox" id="select-all-douban-posts">
+          <span>全选</span>
+        </label>
+      </div>
+      <div class="modal-body douban-post-management-list" id="delete-douban-posts-list">
+        <!-- JS 动态生成 -->
+      </div>
+      <div class="modal-footer douban-post-management-footer">
+        <button class="cancel" id="cancel-delete-douban-posts-btn" data-lang-key="cancel">取消</button>
+        <button class="save btn-danger" id="confirm-delete-douban-posts-btn">确认删除</button>
+      </div>
+    </div>
+  </div>
+
   <div id="douban-cast-modal" class="modal">
     <div class="modal-content" style="height: 70%;">
       <div class="modal-header">
@@ -232,58 +295,102 @@
       </div>
     </div>
   </div>
-  <div id="npc-avatars-modal" class="modal">
-    <div class="modal-content" style="height: 70%; max-height: 600px;">
-      <div class="modal-header"> 
-        <span>NPC头像管理</span> 
-        <div style="display: flex; gap: 10px;">
-          <button class="save" id="add-npc-avatar-url-btn" style="padding: 5px 15px; font-size: 13px;">+ URL上传</button>
-          <button class="save" id="add-npc-avatar-local-btn" style="padding: 5px 15px; font-size: 13px;">+ 本地上传</button>
+  <div id="npc-avatars-modal" class="modal douban-modern-modal npc-avatars-custom-modal">
+    <div class="modal-content npc-modal-dialog">
+      <div class="modal-header npc-modal-header"> 
+        <div class="npc-header-title-group">
+          <span class="npc-header-main-title">NPC头像管理</span>
+          <span class="npc-header-sub-count" id="npc-avatars-total-badge" style="display: none;">0</span>
+        </div>
+        <div class="douban-modal-header-actions" id="npc-header-actions">
+          <button class="npc-header-btn" id="add-npc-avatar-url-btn" type="button">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+            <span>URL导入</span>
+          </button>
+          <button class="npc-header-btn primary" id="add-npc-avatar-local-btn" type="button">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+            <span>本地多图</span>
+          </button>
         </div>
       </div>
-      <div class="modal-body" style="padding: 15px; display: flex; flex-direction: column; height: calc(100% - 120px); overflow: hidden;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-shrink: 0;">
-          <label style="font-size: 14px; display: flex; align-items: center; gap: 5px;">
-            <input type="checkbox" id="select-all-npc-avatars"> 全选
+      <div class="modal-body npc-modal-body" id="npc-avatars-modal-body">
+        <div class="npc-toolbar" id="npc-avatars-toolbar" style="display: none;">
+          <label class="npc-toolbar-checkbox-wrap" for="select-all-npc-avatars">
+            <input type="checkbox" id="select-all-npc-avatars" class="npc-checkbox-input">
+            <span class="npc-checkbox-box"></span>
+            <span class="npc-toolbar-text" id="npc-avatars-select-text">全选</span>
           </label>
-          <button class="save btn-danger" id="delete-selected-npc-avatars-btn" style="padding: 5px 15px; font-size: 13px; display: none;">删除选中</button>
+          <button class="npc-del-btn" id="delete-selected-npc-avatars-btn" type="button" style="display: none;">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+            <span id="delete-selected-npc-avatars-text">删除选中</span>
+          </button>
         </div>
-        <div id="npc-avatars-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 15px; overflow-y: auto; flex: 1;"> </div>
+        <div id="npc-avatars-grid" class="npc-avatars-grid"> </div>
       </div>
-      <div class="modal-footer"> 
-        <button class="cancel" id="close-npc-avatars-btn">关闭</button>
+      <div class="modal-footer npc-modal-footer"> 
+        <button class="npc-close-btn" id="close-npc-avatars-btn" type="button">关闭</button>
       </div>
     </div>
   </div>
   <input type="file" id="npc-avatar-local-input" accept="image/*" multiple style="display: none;">
-  <div id="custom-groups-modal" class="modal">
-    <div class="modal-content" style="height: 75%;">
+
+  <!-- NPC头像批量URL添加弹窗 -->
+  <div id="npc-avatar-batch-url-modal" class="modal douban-modern-modal">
+    <div class="modal-content" style="max-width: 400px; height: auto;">
+      <div class="modal-header">
+        <span>批量添加网络头像</span>
+      </div>
+      <div class="modal-body douban-submodal-body">
+        <div class="douban-form-block">
+          <label class="douban-form-label" for="npc-avatar-batch-urls-input">
+            图片链接 (URL)
+            <span class="douban-form-subtip">支持多图！一行一个链接，或用逗号/分号分隔</span>
+          </label>
+          <textarea id="npc-avatar-batch-urls-input" class="douban-modern-textarea" style="min-height: 130px;" placeholder="https://example.com/avatar1.jpg&#10;https://example.com/avatar2.jpg&#10;..."></textarea>
+          <div id="npc-avatar-url-count-hint" style="font-size: 12px; color: #8e8e93; margin-top: 5px; font-weight: 500;">识别到 0 个有效链接</div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="cancel" id="cancel-batch-npc-avatar-url-btn">取消</button>
+        <button class="save" id="confirm-batch-npc-avatar-url-btn">批量添加</button>
+      </div>
+    </div>
+  </div>
+  <div id="custom-groups-modal" class="modal douban-modern-modal">
+    <div class="modal-content" style="height: auto; max-height: 80vh;">
       <div class="modal-header"> 
         <span>自定义小组管理</span> 
-        <button class="save" id="add-custom-group-btn" style="padding: 5px 15px; font-size: 13px;">+ 添加小组</button>
+        <button class="douban-header-pill-btn primary" id="add-custom-group-btn">+ 添加小组</button>
       </div>
-      <div class="modal-body" id="custom-groups-list" style="padding: 15px; overflow-y: auto;"> </div>
+      <div class="modal-body douban-submodal-body" id="custom-groups-list"> </div>
       <div class="modal-footer"> 
         <button class="cancel" id="close-custom-groups-btn">关闭</button> 
       </div>
     </div>
   </div>
-  <div id="edit-custom-group-modal" class="modal">
+  <div id="edit-custom-group-modal" class="modal douban-modern-modal">
     <div class="modal-content">
       <div class="modal-header"> <span id="edit-group-modal-title">编辑小组</span> </div>
-      <div class="modal-body">
-        <div class="form-group">
-          <label for="custom-group-name-input">小组名称</label>
-          <input type="text" id="custom-group-name-input" placeholder="例如：吃喝玩乐小组" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px;">
+      <div class="modal-body douban-submodal-body">
+        <div class="douban-form-block">
+          <label class="douban-form-label" for="custom-group-name-input">小组名称</label>
+          <input type="text" id="custom-group-name-input" class="douban-modern-input" placeholder="例如：吃喝玩乐小组">
         </div>
-        <div class="form-group" style="margin-top: 15px;">
-          <label for="custom-group-prompt-input">小组提示词 <p style="font-size: 12px; font-weight: normal; color: #999; margin-top: 5px;">描述这个小组的主题和风格，AI会根据这个提示词生成相关内容</p></label>
-          <textarea id="custom-group-prompt-input" placeholder="例如：这是一个分享美食、旅游、娱乐的生活方式小组，成员们喜欢分享各地美食推荐、旅行攻略和娱乐活动..." style="width: 100%; min-height: 120px; padding: 10px; border: 1px solid #ddd; border-radius: 8px; resize: vertical;"></textarea>
+        <div class="douban-form-block">
+          <label class="douban-form-label" for="custom-group-prompt-input">
+            小组提示词
+            <span class="douban-form-subtip">描述小组主题风格，AI会根据提示词生成相关内容</span>
+          </label>
+          <textarea id="custom-group-prompt-input" class="douban-modern-textarea" placeholder="例如：这是一个分享美食、旅游、娱乐的生活方式小组，成员们喜欢分享各地美食推荐、旅行攻略和娱乐活动..."></textarea>
         </div>
-        <div class="form-group" style="margin-top: 15px;">
-          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+        <div class="douban-form-block douban-switch-row">
+          <div class="douban-switch-text">
+            <span class="douban-form-label" style="margin: 0;">启用此小组</span>
+            <span class="douban-form-subtip" style="margin: 2px 0 0 0;">刷新时自动生成该小组讨论内容</span>
+          </div>
+          <label class="douban-switch-label">
             <input type="checkbox" id="custom-group-enabled-input">
-            <span>启用此小组（刷新时生成内容）</span>
+            <span class="douban-switch-slider"></span>
           </label>
         </div>
       </div>

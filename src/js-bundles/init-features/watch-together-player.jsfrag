@@ -23,7 +23,7 @@
     window.watchTogetherState = watchTogetherState;
 
     // 打开观影界面
-    document.getElementById('open-watch-together-btn').addEventListener('click', () => {
+    document.getElementById('open-watch-together-btn')?.addEventListener('click', () => {
       if (!state.activeChatId) {
         alert('请先选择一个聊天对象！');
         return;
@@ -70,23 +70,23 @@
     });
 
     // 关闭观影界面
-    document.getElementById('close-watch-together-btn').addEventListener('click', () => {
+    document.getElementById('close-watch-together-btn')?.addEventListener('click', () => {
       stopWatchTogether();
     });
 
     // 上传按钮
-    document.getElementById('watch-together-upload-btn').addEventListener('click', () => {
+    document.getElementById('watch-together-upload-btn')?.addEventListener('click', () => {
       document.getElementById('watch-together-upload-modal').classList.add('visible');
     });
 
     // 本地上传
-    document.getElementById('watch-together-upload-local').addEventListener('click', () => {
+    document.getElementById('watch-together-upload-local')?.addEventListener('click', () => {
       document.getElementById('watch-together-file-input').click();
       document.getElementById('watch-together-upload-modal').classList.remove('visible');
     });
 
     // URL上传
-    document.getElementById('watch-together-upload-url').addEventListener('click', () => {
+    document.getElementById('watch-together-upload-url')?.addEventListener('click', () => {
       document.getElementById('watch-together-upload-modal').classList.remove('visible');
       document.getElementById('watch-together-url-modal').classList.add('visible');
     });
@@ -104,12 +104,12 @@
     }
 
     // 取消上传
-    document.getElementById('cancel-watch-together-upload-btn').addEventListener('click', () => {
+    document.getElementById('cancel-watch-together-upload-btn')?.addEventListener('click', () => {
       document.getElementById('watch-together-upload-modal').classList.remove('visible');
     });
 
     // 文件选择
-    document.getElementById('watch-together-file-input').addEventListener('change', (e) => {
+    document.getElementById('watch-together-file-input')?.addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (file) {
         loadWatchTogetherVideo(file);
@@ -117,7 +117,7 @@
     });
 
     // URL确认
-    document.getElementById('confirm-watch-together-url-btn').addEventListener('click', () => {
+    document.getElementById('confirm-watch-together-url-btn')?.addEventListener('click', () => {
       const url = document.getElementById('watch-together-url-input').value.trim();
       if (url) {
         loadWatchTogetherVideoFromUrl(url);
@@ -127,7 +127,7 @@
     });
 
     // 取消URL
-    document.getElementById('cancel-watch-together-url-btn').addEventListener('click', () => {
+    document.getElementById('cancel-watch-together-url-btn')?.addEventListener('click', () => {
       document.getElementById('watch-together-url-modal').classList.remove('visible');
     });
 
@@ -164,53 +164,53 @@
     }
 
     // 播放列表按钮
-    document.getElementById('watch-together-playlist-btn').addEventListener('click', () => {
+    document.getElementById('watch-together-playlist-btn')?.addEventListener('click', () => {
       openPlaylist();
     });
 
     // 关闭播放列表
-    document.getElementById('close-watch-together-playlist-btn').addEventListener('click', () => {
+    document.getElementById('close-watch-together-playlist-btn')?.addEventListener('click', () => {
       document.getElementById('watch-together-playlist-modal').classList.remove('visible');
     });
 
-    document.getElementById('cancel-watch-together-playlist-btn').addEventListener('click', () => {
+    document.getElementById('cancel-watch-together-playlist-btn')?.addEventListener('click', () => {
       document.getElementById('watch-together-playlist-modal').classList.remove('visible');
     });
 
     // 保存视频到播放列表
-    document.getElementById('confirm-save-video-btn').addEventListener('click', () => {
+    document.getElementById('confirm-save-video-btn')?.addEventListener('click', () => {
       saveVideoToPlaylist();
     });
 
-    document.getElementById('cancel-save-video-btn').addEventListener('click', () => {
+    document.getElementById('cancel-save-video-btn')?.addEventListener('click', () => {
       document.getElementById('watch-together-save-video-modal').classList.remove('visible');
     });
 
     // 设置按钮
-    document.getElementById('watch-together-settings-btn').addEventListener('click', () => {
+    document.getElementById('watch-together-settings-btn')?.addEventListener('click', () => {
       loadWatchTogetherSettings();
       document.getElementById('watch-together-settings-modal').classList.add('visible');
     });
 
     // 语音API选择
-    document.getElementById('watch-together-speech-api-select').addEventListener('change', (e) => {
+    document.getElementById('watch-together-speech-api-select')?.addEventListener('change', (e) => {
       const whisperConfig = document.getElementById('watch-together-whisper-config');
       whisperConfig.style.display = e.target.value === 'whisper' ? 'block' : 'none';
     });
 
     // 保存设置
-    document.getElementById('save-watch-together-settings-btn').addEventListener('click', () => {
+    document.getElementById('save-watch-together-settings-btn')?.addEventListener('click', () => {
       saveWatchTogetherSettings();
       document.getElementById('watch-together-settings-modal').classList.remove('visible');
     });
 
     // 取消设置
-    document.getElementById('cancel-watch-together-settings-btn').addEventListener('click', () => {
+    document.getElementById('cancel-watch-together-settings-btn')?.addEventListener('click', () => {
       document.getElementById('watch-together-settings-modal').classList.remove('visible');
     });
 
     // 重置位置按钮
-    document.getElementById('reset-watch-together-position-btn').addEventListener('click', () => {
+    document.getElementById('reset-watch-together-position-btn')?.addEventListener('click', () => {
       const chat = state.chats[watchTogetherState.chatId];
       if (!chat) return;
       
@@ -232,7 +232,7 @@
     });
 
     // 聊天框收起/展开
-    document.getElementById('watch-together-chat-toggle').addEventListener('click', () => {
+    document.getElementById('watch-together-chat-toggle')?.addEventListener('click', () => {
       const chatFloat = document.getElementById('watch-together-chat-float');
       const isMinimized = chatFloat.classList.contains('minimized');
 
@@ -246,17 +246,17 @@
     });
 
     // 发送消息
-    document.getElementById('watch-together-chat-send').addEventListener('click', () => {
+    document.getElementById('watch-together-chat-send')?.addEventListener('click', () => {
       sendWatchTogetherUserMessage();
     });
 
     // 调用API
-    document.getElementById('watch-together-call-api-btn').addEventListener('click', () => {
+    document.getElementById('watch-together-call-api-btn')?.addEventListener('click', () => {
       callWatchTogetherAPI();
     });
 
     // 回车发送
-    document.getElementById('watch-together-chat-input').addEventListener('keydown', (e) => {
+    document.getElementById('watch-together-chat-input')?.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
         sendWatchTogetherUserMessage();

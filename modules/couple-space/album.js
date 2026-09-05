@@ -391,3 +391,7 @@ ${ctx.summaryContext ? '对话总结:\n' + ctx.summaryContext : ''}
   }
 }
 
+// Initialize auto album timers when app loads
+if (typeof setTimeout !== 'undefined') {
+  setTimeout(setupCoupleSpaceAlbumAutoTimer, 6000);
+}

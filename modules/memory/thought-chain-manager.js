@@ -7,6 +7,7 @@ const ThoughtChainManager = {
     basePresetId: null,
     lastSavedSnapshot: '',
     behavior: null,
+    organizeMode: false,
 
     defaultBehavior: {
         prefillEnabled: true,
@@ -80,6 +81,18 @@ const ThoughtChainManager = {
 
     clone(value) {
         return JSON.parse(JSON.stringify(value));
+    },
+
+    async showThoughtChainConfirm(...args) {
+        document.body.classList.add('tc-modal-context');
+        try { return await showCustomConfirm(...args); }
+        finally { document.body.classList.remove('tc-modal-context'); }
+    },
+
+    async showThoughtChainPrompt(...args) {
+        document.body.classList.add('tc-modal-context');
+        try { return await showCustomPrompt(...args); }
+        finally { document.body.classList.remove('tc-modal-context'); }
     },
 
     escapeHtml(value) {
@@ -214,7 +227,7 @@ const ThoughtChainManager = {
         const selectedValue = selectEl.value;
 
         if (this.lastSavedSnapshot && this.getStateSnapshot() !== this.lastSavedSnapshot) {
-            const confirmed = await showCustomConfirm('未保存修改', '当前配置有未保存修改，确定放弃修改并切换预设吗？', {
+            const confirmed = await this.showThoughtChainConfirm('未保存修改', '当前配置有未保存修改，确定放弃修改并切换预设吗？', {
                 confirmButtonText: '放弃并切换'
             });
             if (!confirmed) {
@@ -264,7 +277,7 @@ const ThoughtChainManager = {
     },
 
     async savePreset() {
-        const name = await showCustomPrompt('保存思维链预设', '请输入预设名称');
+        const name = await this.showThoughtChainPrompt('保存思维链预设', '请输入预设名称');
         if (!name || !name.trim()) return;
 
         const presetData = {
@@ -279,7 +292,7 @@ const ThoughtChainManager = {
         try {
             const existingPreset = await db.thoughtChainPresets.where('name').equals(presetData.name).first();
             if (existingPreset) {
-                const confirmed = await showCustomConfirm('覆盖预设', `名为 "${presetData.name}" 的预设已存在。要覆盖它吗？`, {
+                const confirmed = await this.showThoughtChainConfirm('覆盖预设', `名为 "${presetData.name}" 的预设已存在。要覆盖它吗？`, {
                     confirmButtonClass: 'btn-danger'
                 });
                 if (!confirmed) return;
@@ -311,7 +324,7 @@ const ThoughtChainManager = {
             const preset = await db.thoughtChainPresets.get(selectedId);
             if (!preset) return;
 
-            const confirmed = await showCustomConfirm('删除预设', `确定要删除预设 "${preset.name}" 吗？`, {
+            const confirmed = await this.showThoughtChainConfirm('删除预设', `确定要删除预设 "${preset.name}" 吗？`, {
                 confirmButtonClass: 'btn-danger'
             });
             if (confirmed) {
@@ -443,6 +456,18 @@ const ThoughtChainManager = {
             importPresetFile.addEventListener('change', (e) => this.importPreset(e));
         }
 
+        const organizeBtn = document.getElementById('tc-organize-btn');
+        if (organizeBtn) organizeBtn.addEventListener('click', () => {
+            this.organizeMode = true;
+            this.renderList();
+        });
+        const organizeDoneBtn = document.getElementById('tc-organize-done-btn');
+        if (organizeDoneBtn) organizeDoneBtn.addEventListener('click', () => {
+            this.organizeMode = false;
+            this.selectedIds = [];
+            this.renderList();
+        });
+
         const duplicatePresetBtn = document.getElementById('duplicate-thought-chain-preset-btn');
         if (duplicatePresetBtn) duplicatePresetBtn.addEventListener('click', () => this.duplicatePreset());
         const renamePresetBtn = document.getElementById('rename-thought-chain-preset-btn');
@@ -517,7 +542,7 @@ const ThoughtChainManager = {
     },
 
     async createNewPreset() {
-        const name = await showCustomPrompt('新建思维链预设', '请输入新模板名称');
+        const name = await this.showThoughtChainPrompt('新建思维链预设', '请输入新模板名称');
         if (!name || !name.trim()) return;
 
         // 仅保留头尾核心条目
@@ -535,7 +560,7 @@ const ThoughtChainManager = {
         try {
             const existingPreset = await db.thoughtChainPresets.where('name').equals(presetData.name).first();
             if (existingPreset) {
-                const confirmed = await showCustomConfirm('覆盖预设', `名为 "${presetData.name}" 的预设已存在。要覆盖它吗？`, {
+                const confirmed = await this.showThoughtChainConfirm('覆盖预设', `名为 "${presetData.name}" 的预设已存在。要覆盖它吗？`, {
                     confirmButtonClass: 'btn-danger'
                 });
                 if (!confirmed) return;
@@ -559,7 +584,7 @@ const ThoughtChainManager = {
     },
 
     async duplicatePreset() {
-        const name = await showCustomPrompt('复制思维链预设', '请输入副本名称');
+        const name = await this.showThoughtChainPrompt('复制思维链预设', '请输入副本名称');
         if (!name || !name.trim()) return;
         const presetData = {
             name: name.trim(),
@@ -591,7 +616,7 @@ const ThoughtChainManager = {
         }
         const preset = await db.thoughtChainPresets.get(selectedId);
         if (!preset) return;
-        const name = await showCustomPrompt('重命名思维链预设', '请输入新名称', preset.name);
+        const name = await this.showThoughtChainPrompt('重命名思维链预设', '请输入新名称', preset.name);
         if (!name || !name.trim() || name.trim() === preset.name) return;
         const existing = await db.thoughtChainPresets.where('name').equals(name.trim()).first();
         if (existing && existing.id !== selectedId) {
@@ -606,7 +631,7 @@ const ThoughtChainManager = {
     async revertCurrentPreset() {
         const presetReference = this.currentPresetId || this.basePresetId;
         if (presetReference === 'default') {
-            const confirmed = await showCustomConfirm('撤销修改', '确定恢复到内置默认模板吗？');
+            const confirmed = await this.showThoughtChainConfirm('撤销修改', '确定恢复到内置默认模板吗？');
             if (!confirmed) return;
             this.items = this.normalizeItems(this.clone(this.defaultItems));
             this.behavior = this.normalizeBehavior(this.defaultBehavior);
@@ -629,7 +654,7 @@ const ThoughtChainManager = {
         }
         const preset = await db.thoughtChainPresets.get(selectedId);
         if (!preset) return;
-        const confirmed = await showCustomConfirm('撤销修改', '确定恢复到这个预设上次保存的状态吗？');
+        const confirmed = await this.showThoughtChainConfirm('撤销修改', '确定恢复到这个预设上次保存的状态吗？');
         if (!confirmed) return;
         this.items = this.normalizeItems(this.clone(preset.items));
         this.behavior = this.normalizeBehavior(preset.behavior);
@@ -708,7 +733,7 @@ const ThoughtChainManager = {
                 if (!allowedRoles.has(item.role)) throw new Error(`第 ${index + 1} 个条目的发送身份无效。`);
             });
 
-            const confirmed = await showCustomConfirm('导入配置', '确定要导入此思维链配置吗？这将覆盖当前的未保存配置。', { confirmButtonText: '确定导入' });
+            const confirmed = await this.showThoughtChainConfirm('导入配置', '确定要导入此思维链配置吗？这将覆盖当前的未保存配置。', { confirmButtonText: '确定导入' });
             if (confirmed) {
                 this.items = this.normalizeItems(parsedItems);
                 // 重置所有导入项的内部状态以防冲突 (可选，但推荐生成新的内部 ID)
@@ -730,7 +755,7 @@ const ThoughtChainManager = {
                     defaultName = defaultName.substring('思维链预设_'.length);
                 }
                 
-                const name = await showCustomPrompt('保存为预设', '请输入新预设的名称', defaultName);
+                const name = await this.showThoughtChainPrompt('保存为预设', '请输入新预设的名称', defaultName);
                 if (name && name.trim()) {
                     const presetData = {
                         name: name.trim(),
@@ -744,7 +769,7 @@ const ThoughtChainManager = {
                     const existingPreset = await db.thoughtChainPresets.where('name').equals(presetData.name).first();
                     let shouldSave = true;
                     if (existingPreset) {
-                        const overwrite = await showCustomConfirm('覆盖预设', `名为 "${presetData.name}" 的预设已存在。要覆盖它吗？`, {
+                        const overwrite = await this.showThoughtChainConfirm('覆盖预设', `名为 "${presetData.name}" 的预设已存在。要覆盖它吗？`, {
                             confirmButtonClass: 'btn-danger'
                         });
                         if (!overwrite) {
@@ -950,7 +975,7 @@ const ThoughtChainManager = {
         this.openEditor(copy.id);
     },
 
-    renderList() {
+    legacyRenderList() {
         const listContainer = document.getElementById('thought-chain-list');
         if (!listContainer) return;
         const existingIds = new Set(this.items.map(item => item.id));
@@ -1169,6 +1194,90 @@ const ThoughtChainManager = {
                 }
             });
         });
+    },
+
+    renderList() {
+        const list = document.getElementById('thought-chain-list');
+        if (!list) return;
+        const existingIds = new Set(this.items.map(item => item.id));
+        this.selectedIds = this.selectedIds.filter(id => existingIds.has(id));
+        list.className = `thought-chain-list ${this.organizeMode ? 'is-organizing' : 'is-browsing'}`;
+        list.innerHTML = '';
+
+        if (!this.items.length) {
+            list.innerHTML = '<div class="tc-empty"><span class="tc-empty-index">00</span><p>还没有思考模块</p><button class="tc-add-empty" type="button">新增思考模块</button></div>';
+            list.querySelector('button').addEventListener('click', () => this.openEditor());
+            return;
+        }
+
+        if (this.organizeMode) {
+            const allSelected = this.selectedIds.length === this.items.length;
+            const toolbar = document.createElement('div');
+            toolbar.className = 'tc-organize-toolbar';
+            toolbar.innerHTML = `<div class="tc-toolbar-heading"><span class="tc-kicker">EDITING ORDER</span><strong>编排模块</strong></div>
+                <label class="tc-select-all"><input type="checkbox" id="tc-select-all" ${allSelected ? 'checked' : ''}><span>全选</span></label>
+                <div class="tc-batch-actions"><button id="tc-btn-move-top" type="button">置顶</button><button id="tc-btn-move-up" type="button">上移</button><button id="tc-btn-move-down" type="button">下移</button><button id="tc-btn-move-bottom" type="button">置底</button></div>
+                <button id="tc-organize-done-btn" class="tc-done-btn" type="button">完成</button>`;
+            list.appendChild(toolbar);
+            toolbar.querySelector('#tc-select-all').addEventListener('change', e => this.toggleAllSelection(e.target.checked));
+            toolbar.querySelector('#tc-btn-move-top').addEventListener('click', () => this.moveSelectedTop());
+            toolbar.querySelector('#tc-btn-move-up').addEventListener('click', () => this.moveSelectedUp());
+            toolbar.querySelector('#tc-btn-move-down').addEventListener('click', () => this.moveSelectedDown());
+            toolbar.querySelector('#tc-btn-move-bottom').addEventListener('click', () => this.moveSelectedBottom());
+            toolbar.querySelector('#tc-organize-done-btn').addEventListener('click', () => { this.organizeMode = false; this.selectedIds = []; this.renderList(); });
+        }
+
+        const positionLabels = { head: 'HEAD', middle: 'MIDDLE', bottom: 'BOTTOM', before_history: '记录前', in_chat: '记录内', after_history: '记录后' };
+        const roleLabels = { system: 'SYSTEM', assistant: 'ASSISTANT', user: 'USER' };
+        this.items.forEach((item, index) => {
+            const el = document.createElement('article');
+            el.className = `tc-module tc-position-${item.position} ${item.enabled ? '' : 'is-disabled'} ${item.isCore ? 'is-core' : ''}`;
+            el.dataset.index = index; el.dataset.id = item.id; el.draggable = this.organizeMode;
+            const safeId = this.escapeHtml(item.id);
+            const summary = this.escapeHtml(item.content).replace(/\n/g, '<br>');
+            el.innerHTML = `<div class="tc-module-index">${String(index + 1).padStart(2, '0')}</div>
+                ${this.organizeMode ? `<div class="tc-drag-handle" title="拖动排序" aria-label="拖动排序">⋮⋮</div><input class="tc-item-select" type="checkbox" data-id="${safeId}" ${this.selectedIds.includes(item.id) ? 'checked' : ''}>` : ''}
+                <div class="tc-module-main"><div class="tc-module-topline"><h3>${this.escapeHtml(item.name)}</h3>${item.isCore ? '<span class="tc-core-label">CORE</span>' : ''}<span class="tc-module-state"><i></i>${item.enabled ? '启用' : '停用'}</span></div>
+                    <p class="tc-module-summary">${summary}</p><div class="tc-module-meta"><span>${this.escapeHtml(positionLabels[item.position] || item.position)}</span><span>${roleLabels[item.role] || this.escapeHtml(item.role)}</span>${item.position === 'in_chat' ? `<span>DEPTH ${Number(item.depth) || 0}</span>` : ''}</div></div>
+                <details class="tc-module-more"><summary aria-label="更多操作">···</summary><div class="tc-more-menu">
+                    <button class="tc-item-edit-btn" data-id="${safeId}" type="button">编辑</button><button class="tc-item-toggle-action" data-id="${safeId}" type="button">${item.enabled ? '停用' : '启用'}</button>
+                    <button class="tc-item-move-top-btn" data-index="${index}" type="button">置顶</button><button class="tc-item-move-up-btn" data-index="${index}" type="button">上移</button><button class="tc-item-move-down-btn" data-index="${index}" type="button">下移</button><button class="tc-item-move-bottom-btn" data-index="${index}" type="button">置底</button><button class="tc-item-duplicate-btn" data-id="${safeId}" type="button">复制</button>
+                    ${item.isCore ? '<span class="tc-protected-note">核心模块不可删除</span>' : `<button class="tc-item-delete-btn tc-danger-action" data-id="${safeId}" type="button">删除</button>`}</div></details>`;
+            list.appendChild(el);
+
+            if (this.organizeMode) {
+                el.addEventListener('dragstart', e => { this.draggedItemId = item.id; e.dataTransfer.effectAllowed = 'move'; el.classList.add('is-dragging'); });
+                el.addEventListener('dragend', () => { this.draggedItemId = null; el.classList.remove('is-dragging'); list.querySelectorAll('.tc-module').forEach(card => card.classList.remove('drop-before', 'drop-after')); });
+                el.addEventListener('dragover', e => { e.preventDefault(); el.classList.toggle('drop-before', e.clientY < el.getBoundingClientRect().top + el.offsetHeight / 2); el.classList.toggle('drop-after', e.clientY >= el.getBoundingClientRect().top + el.offsetHeight / 2); });
+                el.addEventListener('drop', e => { e.preventDefault(); const from = this.items.findIndex(i => i.id === this.draggedItemId); if (from < 0 || from === index) return; let to = index + (e.clientY >= el.getBoundingClientRect().top + el.offsetHeight / 2 ? 1 : 0); const moved = this.items.splice(from, 1)[0]; if (from < to) to--; this.items.splice(to, 0, moved); this.syncOrdersFromList(); this.saveData(); this.renderList(); });
+                el.querySelector('.tc-item-select').addEventListener('change', e => this.toggleSelection(e.target.dataset.id));
+            } else {
+                // 浏览模式下，点击卡片直接打开查看/编辑弹窗
+                el.addEventListener('click', (e) => {
+                    // 如果点击的是右侧更多操作菜单、摘要展开标签或按钮，则不触发整卡点击
+                    if (e.target.closest('.tc-module-more') || e.target.closest('button') || e.target.closest('input')) {
+                        return;
+                    }
+                    // 如果用户正在划词选中文本，不触发打开
+                    const selection = window.getSelection ? window.getSelection().toString() : '';
+                    if (selection && selection.trim().length > 0) {
+                        return;
+                    }
+                    this.openEditor(item.id);
+                });
+            }
+        });
+        const addEntry = document.createElement('button');
+        addEntry.className = 'tc-add-entry';
+        addEntry.type = 'button';
+        addEntry.innerHTML = '<span>＋</span><span><strong>新增思考模块</strong><small>创建一个可自由命名、排序与启停的条目</small></span>';
+        addEntry.addEventListener('click', () => this.openEditor());
+        list.appendChild(addEntry);
+        list.querySelectorAll('.tc-item-edit-btn').forEach(btn => btn.addEventListener('click', e => this.openEditor(e.currentTarget.dataset.id)));
+        list.querySelectorAll('.tc-item-toggle-action').forEach(btn => btn.addEventListener('click', e => { const item = this.items.find(i => i.id === e.currentTarget.dataset.id); if (item) { item.enabled = !item.enabled; this.saveData(); this.renderList(); } }));
+        [['.tc-item-move-top-btn','moveItemTop'],['.tc-item-move-up-btn','moveItemUp'],['.tc-item-move-down-btn','moveItemDown'],['.tc-item-move-bottom-btn','moveItemBottom']].forEach(([selector, method]) => list.querySelectorAll(selector).forEach(btn => btn.addEventListener('click', e => this[method](Number(e.currentTarget.dataset.index)))));
+        list.querySelectorAll('.tc-item-duplicate-btn').forEach(btn => btn.addEventListener('click', e => this.duplicateItem(e.currentTarget.dataset.id)));
+        list.querySelectorAll('.tc-item-delete-btn').forEach(btn => btn.addEventListener('click', e => { if (confirm('确定要删除这个条目吗？')) { this.items = this.items.filter(i => i.id !== e.currentTarget.dataset.id); this.selectedIds = this.selectedIds.filter(id => id !== e.currentTarget.dataset.id); this.saveData(); this.renderList(); } }));
     },
 
     openEditor(itemId = null) {
@@ -1453,3 +1562,4 @@ const ThoughtChainManager = {
 document.addEventListener('DOMContentLoaded', () => {
     ThoughtChainManager.init();
 });
+

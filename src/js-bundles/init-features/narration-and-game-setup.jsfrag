@@ -1,7 +1,7 @@
 
-    document.getElementById('google-imagen-fetch-models-btn').addEventListener('click', fetchGoogleImagenModels);
+    document.getElementById('google-imagen-fetch-models-btn')?.addEventListener('click', fetchGoogleImagenModels);
 
-    document.getElementById('novelai-key-toggle').addEventListener('click', function () {
+    document.getElementById('novelai-key-toggle')?.addEventListener('click', function () {
       const input = document.getElementById('novelai-api-key');
       if (input.type === 'password') {
         input.type = 'text';
@@ -13,13 +13,13 @@
     });
 
 
-    document.getElementById('novelai-settings-btn').addEventListener('click', () => {
+    document.getElementById('novelai-settings-btn')?.addEventListener('click', () => {
       loadNovelAISettings();
       document.getElementById('novelai-settings-modal').style.display = 'flex';
     });
 
 
-    document.getElementById('nai-cors-proxy').addEventListener('change', (e) => {
+    document.getElementById('nai-cors-proxy')?.addEventListener('change', (e) => {
       const customProxyGroup = document.getElementById('nai-custom-proxy-group');
       if (e.target.value === 'custom') {
         customProxyGroup.style.display = 'block';
@@ -28,25 +28,25 @@
       }
     });
 
-    document.getElementById('close-novelai-settings').addEventListener('click', () => {
+    document.getElementById('close-novelai-settings')?.addEventListener('click', () => {
       document.getElementById('novelai-settings-modal').style.display = 'none';
     });
 
 
-    document.getElementById('save-nai-settings-btn').addEventListener('click', () => {
+    document.getElementById('save-nai-settings-btn')?.addEventListener('click', () => {
       saveNovelAISettings();
       document.getElementById('novelai-settings-modal').style.display = 'none';
       alert('NovelAI设置已保存！');
     });
 
-    document.getElementById('reset-nai-settings-btn').addEventListener('click', () => {
+    document.getElementById('reset-nai-settings-btn')?.addEventListener('click', () => {
       if (confirm('确定要恢复默认设置吗？')) {
         resetNovelAISettings();
       }
     });
 
 
-    document.getElementById('novelai-test-btn').addEventListener('click', () => {
+    document.getElementById('novelai-test-btn')?.addEventListener('click', () => {
       const apiKey = document.getElementById('novelai-api-key').value.trim();
       if (!apiKey) {
         alert('请先填写NovelAI API Key！');
@@ -58,22 +58,22 @@
     });
 
 
-    document.getElementById('close-novelai-test').addEventListener('click', () => {
+    document.getElementById('close-novelai-test')?.addEventListener('click', () => {
       document.getElementById('novelai-test-modal').style.display = 'none';
     });
 
-    document.getElementById('close-nai-test-btn').addEventListener('click', () => {
+    document.getElementById('close-nai-test-btn')?.addEventListener('click', () => {
       document.getElementById('novelai-test-modal').style.display = 'none';
     });
 
 
-    document.getElementById('nai-generate-btn').addEventListener('click', async () => {
+    document.getElementById('nai-generate-btn')?.addEventListener('click', async () => {
       await generateNovelAIImage();
     });
 
 
 
-    document.getElementById('nai-download-btn').addEventListener('click', () => {
+    document.getElementById('nai-download-btn')?.addEventListener('click', () => {
       const img = document.getElementById('nai-result-image');
       const link = document.createElement('a');
       link.href = img.src;
@@ -82,7 +82,7 @@
     });
 
 
-    document.getElementById('character-nai-prompts-btn').addEventListener('click', () => {
+    document.getElementById('character-nai-prompts-btn')?.addEventListener('click', () => {
       if (!state.activeChatId) return;
       const chat = state.chats[state.activeChatId];
 
@@ -101,11 +101,11 @@
     });
 
 
-    document.getElementById('close-character-nai-prompts').addEventListener('click', () => {
+    document.getElementById('close-character-nai-prompts')?.addEventListener('click', () => {
       document.getElementById('character-nai-prompts-modal').style.display = 'none';
     });
 
-    document.getElementById('save-character-nai-prompts-btn').addEventListener('click', async () => {
+    document.getElementById('save-character-nai-prompts-btn')?.addEventListener('click', async () => {
       if (!state.activeChatId) return;
       const chat = state.chats[state.activeChatId];
 
@@ -137,7 +137,7 @@
       alert('角色专属NAI提示词已保存！');
     });
 
-    document.getElementById('reset-character-nai-prompts-btn').addEventListener('click', () => {
+    document.getElementById('reset-character-nai-prompts-btn')?.addEventListener('click', () => {
       if (confirm('确定要清空当前角色的NAI提示词配置吗？')) {
         document.getElementById('character-nai-positive').value = '';
         document.getElementById('character-nai-negative').value = '';
@@ -145,7 +145,7 @@
     });
 
 
-    document.getElementById('group-character-nai-prompts-btn').addEventListener('click', () => {
+    document.getElementById('group-character-nai-prompts-btn')?.addEventListener('click', () => {
       if (!state.activeChatId) return;
       const chat = state.chats[state.activeChatId];
 
@@ -164,15 +164,15 @@
     });
 
 
-    document.getElementById('manage-frames-btn').addEventListener('click', toggleFrameManagementMode);
-    document.getElementById('select-all-frames-checkbox').addEventListener('change', handleSelectAllFrames);
-    document.getElementById('delete-selected-frames-btn').addEventListener('click', executeBatchDeleteFrames);
-    document.getElementById('delete-current-category-btn').addEventListener('click', handleDeleteCurrentCategory);
-    document.getElementById('char-wallet-back-btn').addEventListener('click', () => {
+    document.getElementById('manage-frames-btn')?.addEventListener('click', toggleFrameManagementMode);
+    document.getElementById('select-all-frames-checkbox')?.addEventListener('change', handleSelectAllFrames);
+    document.getElementById('delete-selected-frames-btn')?.addEventListener('click', executeBatchDeleteFrames);
+    document.getElementById('delete-current-category-btn')?.addEventListener('click', handleDeleteCurrentCategory);
+    document.getElementById('char-wallet-back-btn')?.addEventListener('click', () => {
 
       switchToCharScreen('char-taobao-screen');
     });
-    document.getElementById('sticker-binding-chat-list').addEventListener('click', (e) => {
+    document.getElementById('sticker-binding-chat-list')?.addEventListener('click', (e) => {
       const item = e.target.closest('.contact-picker-item');
       if (item) {
         const checkbox = item.querySelector('.sticker-binding-checkbox');
@@ -196,27 +196,27 @@
       }
     });
 
-    document.getElementById('open-nai-gallery-btn').addEventListener('click', openNaiGallery);
-    document.getElementById('nai-gallery-tabs').addEventListener('click', (e) => {
+    document.getElementById('open-nai-gallery-btn')?.addEventListener('click', openNaiGallery);
+    document.getElementById('nai-gallery-tabs')?.addEventListener('click', (e) => {
       const tab = e.target.closest('.nai-gallery-tab');
       if (tab && !tab.classList.contains('active')) {
         switchNaiGalleryTab(tab.dataset.tabId);
       }
     });
-    document.getElementById('close-nai-gallery-btn').addEventListener('click', () => {
+    document.getElementById('close-nai-gallery-btn')?.addEventListener('click', () => {
       document.getElementById('nai-gallery-panel').classList.remove('visible');
     });
 
-    document.getElementById('manage-nai-gallery-btn').addEventListener('click', toggleNaiGalleryManagementMode);
+    document.getElementById('manage-nai-gallery-btn')?.addEventListener('click', toggleNaiGalleryManagementMode);
 
-    document.getElementById('nai-gallery-grid-local').addEventListener('click', (e) => {
+    document.getElementById('nai-gallery-grid-local')?.addEventListener('click', (e) => {
       handleNaiGalleryGridClick(e);
     });
-    document.getElementById('nai-gallery-grid-cloud').addEventListener('click', (e) => {
+    document.getElementById('nai-gallery-grid-cloud')?.addEventListener('click', (e) => {
       handleNaiGalleryGridClick(e);
     });
 
-    document.getElementById('select-all-nai-gallery-checkbox').addEventListener('change', (e) => {
+    document.getElementById('select-all-nai-gallery-checkbox')?.addEventListener('change', (e) => {
       const isChecked = e.target.checked;
       const activeGridId = `nai-gallery-grid-${activeNaiGalleryTab}`;
 
@@ -232,19 +232,19 @@
       });
       updateNaiGalleryActionButtons();
     });
-    document.getElementById('download-selected-nai-gallery-btn').addEventListener('click', () => executeBatchDownloadNaiImages());
-    document.getElementById('upload-selected-nai-gallery-btn').addEventListener('click', () => executeBatchUploadNaiImagesToImgBB());
-    document.getElementById('export-selected-nai-gallery-btn').addEventListener('click', () => executeBatchExportNaiImages());
-    document.getElementById('delete-selected-nai-gallery-btn').addEventListener('click', () => executeBatchDeleteNaiImages());
-    document.getElementById('delete-selected-nai-gallery-btn').addEventListener('click', () => executeBatchDeleteNaiImages());
-    document.getElementById('chat-expand-btn').addEventListener('click', () => {
+    document.getElementById('download-selected-nai-gallery-btn')?.addEventListener('click', () => executeBatchDownloadNaiImages());
+    document.getElementById('upload-selected-nai-gallery-btn')?.addEventListener('click', () => executeBatchUploadNaiImagesToImgBB());
+    document.getElementById('export-selected-nai-gallery-btn')?.addEventListener('click', () => executeBatchExportNaiImages());
+    document.getElementById('delete-selected-nai-gallery-btn')?.addEventListener('click', () => executeBatchDeleteNaiImages());
+    document.getElementById('delete-selected-nai-gallery-btn')?.addEventListener('click', () => executeBatchDeleteNaiImages());
+    document.getElementById('chat-expand-btn')?.addEventListener('click', () => {
       document.body.classList.toggle('chat-actions-expanded');
     });
-    document.getElementById('profile-edit-btn').addEventListener('click', openThoughtEditor);
-    document.getElementById('open-quick-reply-btn').addEventListener('click', openQuickReplyModal);
+    document.getElementById('profile-edit-btn')?.addEventListener('click', openThoughtEditor);
+    document.getElementById('open-quick-reply-btn')?.addEventListener('click', openQuickReplyModal);
     
     // ========== 旁白功能 ==========
-    document.getElementById('narration-btn').addEventListener('click', async () => {
+    document.getElementById('narration-btn')?.addEventListener('click', async () => {
       if (!state.activeChatId) {
         alert('请先选择一个聊天对象！');
         return;
@@ -277,7 +277,7 @@
       }
     });
 
-    document.getElementById('cancel-quick-reply-btn').addEventListener('click', () => {
+    document.getElementById('cancel-quick-reply-btn')?.addEventListener('click', () => {
       document.getElementById('quick-reply-modal').classList.remove('visible');
     });
 
@@ -342,7 +342,7 @@
       truthGameState.currentAiMember = members[idx];
     }
 
-    document.getElementById('open-truth-game-btn').addEventListener('click', () => {
+    document.getElementById('open-truth-game-btn')?.addEventListener('click', () => {
       if (!state.activeChatId) {
         alert('请先选择一个聊天对象！');
         return;
@@ -380,7 +380,7 @@
       }
     });
 
-    document.getElementById('truth-game-settings-btn').addEventListener('click', () => {
+    document.getElementById('truth-game-settings-btn')?.addEventListener('click', () => {
       if (!state.activeChatId) return;
       const chat = state.chats[state.activeChatId];
 
@@ -392,11 +392,11 @@
       document.getElementById('truth-game-settings-modal').classList.add('visible');
     });
 
-    document.getElementById('cancel-truth-settings-btn').addEventListener('click', () => {
+    document.getElementById('cancel-truth-settings-btn')?.addEventListener('click', () => {
       document.getElementById('truth-game-settings-modal').classList.remove('visible');
     });
 
-    document.getElementById('save-truth-settings-btn').addEventListener('click', async () => {
+    document.getElementById('save-truth-settings-btn')?.addEventListener('click', async () => {
       if (!state.activeChatId) return;
       const chat = state.chats[state.activeChatId];
 
@@ -419,7 +419,7 @@
     });
 
     // 最小化真心话对话框
-    document.getElementById('minimize-truth-game-btn').addEventListener('click', () => {
+    document.getElementById('minimize-truth-game-btn')?.addEventListener('click', () => {
       const modal = document.getElementById('truth-game-modal');
       const floatBall = document.getElementById('truth-game-float-ball');
       const chat = state.chats[state.activeChatId];
@@ -539,7 +539,7 @@
       floatBall.addEventListener('touchstart', startDrag, { passive: false });
     })();
 
-    document.getElementById('close-truth-game-btn').addEventListener('click', async () => {
+    document.getElementById('close-truth-game-btn')?.addEventListener('click', async () => {
       // 强制中断所有正在进行的API请求
       if (truthGameState.abortController) {
         truthGameState.abortController.abort();
@@ -700,7 +700,7 @@
       });
     });
 
-    document.getElementById('truth-start-game-btn').addEventListener('click', async () => {
+    document.getElementById('truth-start-game-btn')?.addEventListener('click', async () => {
       if (!truthGameState.isActive || truthGameState.waitingForAI) return;
 
       const chat = state.chats[state.activeChatId];
@@ -820,7 +820,7 @@ ${qaContext}
       }
     }
 
-    document.getElementById('truth-send-btn').addEventListener('click', async () => {
+    document.getElementById('truth-send-btn')?.addEventListener('click', async () => {
       const input = document.getElementById('truth-input');
       const content = input.value.trim();
       if (!content || truthGameState.waitingForAI) return;
@@ -853,7 +853,7 @@ ${qaContext}
       }
     });
 
-    document.getElementById('truth-call-api-btn').addEventListener('click', async () => {
+    document.getElementById('truth-call-api-btn')?.addEventListener('click', async () => {
       if (!state.activeChatId || truthGameState.waitingForAI) return;
 
       const chat = getTruthGameEffectiveChat();
@@ -962,14 +962,14 @@ ${qaContext}
       }
     });
 
-    document.getElementById('truth-input').addEventListener('keypress', (e) => {
+    document.getElementById('truth-input')?.addEventListener('keypress', (e) => {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
         document.getElementById('truth-send-btn').click();
       }
     });
 
-    document.getElementById('truth-input').addEventListener('input', function () {
+    document.getElementById('truth-input')?.addEventListener('input', function () {
       this.style.height = 'auto';
       this.style.height = Math.min(this.scrollHeight, 100) + 'px';
     });

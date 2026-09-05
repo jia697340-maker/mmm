@@ -688,6 +688,7 @@ ${linkedContents}
           else if (msg.type === 'ai_image') contentText = `[图片: ${msg.description}]`;
           else if (msg.type === 'naiimag') contentText = `[NovelAI图片: ${msg.prompt}]`;
           else if (msg.type === 'googleimag') contentText = `[Google Imagen图片: ${msg.prompt}]`;
+          else if (msg.type === 'openaiimag') contentText = `[GPT图片: ${msg.prompt}]`;
           else contentText = String(msg.content);
           return `${sender}: ${contentText}`;
         }).join('\n');
@@ -1082,6 +1083,13 @@ ${linkedContents}
           * 专注于描述内容本身即可，使用英文撰写prompt。
         - 使用场景：当你想要分享一张写实风格的高质量图片时使用。
         - 不要频繁使用，只在真正想分享图片的时候使用。` : '';
+
+        let openAIImageGroupContext = localStorage.getItem('openai-image-enabled') === 'true' ? `-   **GPT 图片分享**: \`{"type": "openaiimag", "name": "你的角色名", "prompt": "详细的画面描述..."}\`
+        - 【禁止暴露这是AI生成的图片!】
+        - 根据当前对话、角色人设、情绪和场景撰写具体提示词。
+        - 可使用中文或英文自然语言，明确主体、环境、构图、光线、风格和氛围。
+        - 适合需要准确理解复杂描述、画面文字或精细构图的场景。
+        - 不要频繁使用，只在真正想分享图片的时候使用。` : '';
         
         let bilingualAlertVoice = chat.settings.enableBilingualMode ? ' ⚠️ （注意：如果该角色是指定的双语角色，必须使用双语格式：外语〖中文〗）' : '';
 
@@ -1124,6 +1132,7 @@ ${linkedContents}
           'narratorInstruction': narratorInstruction,
           'novelAiImageGroupContext': novelAiImageGroupContext,
           'googleImagenGroupContext': googleImagenGroupContext,
+          'openAIImageGroupContext': openAIImageGroupContext,
           'bilingualAlertVoice': bilingualAlertVoice
         };
 
@@ -1162,6 +1171,7 @@ ${linkedContents}
           else if (msg.type === 'ai_image') content = `[${sender} 发送了一张图片，图片内容描述为：'${msg.content}']`;
           else if (msg.type === 'naiimag') content = `[${sender} 分享了一张NovelAI图片，prompt: ${msg.prompt}]`;
           else if (msg.type === 'googleimag') content = `[${sender} 分享了一张Google Imagen图片，prompt: ${msg.prompt}]`;
+          else if (msg.type === 'openaiimag') content = `[${sender} 分享了一张GPT图片，prompt: ${msg.prompt}]`;
           else if (msg.type === 'voice_message') content = `[${sender} 发送了一条语音，内容是：'${msg.content}']`;
           else if (msg.type === 'transfer') {
             // --- 修复开始：明确转账状态和方向 ---
@@ -1349,9 +1359,10 @@ ${linkedContents}
         if (isOfflineMode) {
           const novelaiEnabled = localStorage.getItem('novelai-enabled') === 'true';
           const googleImagenEnabled = localStorage.getItem('google-imagen-enabled') === 'true';
-          const imageGenEnabled = novelaiEnabled || googleImagenEnabled;
-          const imageType = novelaiEnabled ? 'naiimag' : 'googleimag';
-          const imageTypeName = novelaiEnabled ? 'NovelAI' : 'Google Imagen';
+          const openAIImageEnabled = localStorage.getItem('openai-image-enabled') === 'true';
+          const imageGenEnabled = novelaiEnabled || googleImagenEnabled || openAIImageEnabled;
+          const imageType = novelaiEnabled ? 'naiimag' : (googleImagenEnabled ? 'googleimag' : 'openaiimag');
+          const imageTypeName = novelaiEnabled ? 'NovelAI' : (googleImagenEnabled ? 'Google Imagen' : 'GPT 生图');
           const minLength = chat.settings.offlineMinLength || 100;
           const maxLength = chat.settings.offlineMaxLength || 300;
           const myNickname = chat.settings.myNickname || '我';
@@ -1399,7 +1410,7 @@ ${enabledEntries}
       },
       {
         "type": "${imageType}",
-        "prompt": "${imageType === 'naiimag' ? '1girl, solo, detailed anime art style, (smiling:1.2), sitting in a cafe, looking at viewer, masterpiece, best quality, ... (根据上面的文字内容生成详细的英文prompt)' : 'A detailed photorealistic scene based on the text content above, high quality, 4K...'}"
+        "prompt": "${imageType === 'naiimag' ? '1girl, solo, detailed anime art style, (smiling:1.2), sitting in a cafe, looking at viewer, masterpiece, best quality, ... (根据上面的文字内容生成详细的英文prompt)' : (imageType === 'googleimag' ? 'A detailed photorealistic scene based on the text content above, high quality, 4K...' : '根据上面的文字内容，详细描述主体、环境、构图、光线、风格和氛围...')}"
       }
     ]
     \`\`\`
@@ -1415,7 +1426,7 @@ ${enabledEntries}
 # 【格式铁律 (最高优先级：常规模式)】
 1.  **【格式】**: 你的回复【必须】是一个JSON数组，且数组中【永远只能包含一个】元素，即 \`offline_text\` 对象。
 2.  **【【【绝对禁止】】】**: 
-    -   【绝对禁止】返回 "naiimag" 或 "googleimag" 对象。
+    -   【绝对禁止】返回 "naiimag"、"googleimag" 或 "openaiimag" 对象。
     -   【绝对禁止】返回纯文本（即没有JSON包装的文字）。
     -   【绝对禁止】在JSON数组前后添加任何 markdown 标记 (如 \`\`\`json)。
 3.  **【输出示例 (必须遵守)】**:
@@ -1714,6 +1725,8 @@ ${enabledEntries}
                 contentSummary = (post.publicText || '') + ` [包含${prompts.length}张NovelAI图片: ${prompts.join(', ')}]`;
               } else if (post.type === 'googleimag' && post.prompt) {
                 contentSummary = (post.publicText || '') + ` [包含1张Google Imagen图片: ${post.prompt}]`;
+              } else if (post.type === 'openaiimag' && post.prompt) {
+                contentSummary = (post.publicText || '') + ` [包含1张GPT图片: ${post.prompt}]`;
               } else {
 
                 contentSummary = String(post.publicText || post.content || "一条动态").substring(0, 50) + '...';
@@ -2012,6 +2025,7 @@ ${getActiveThoughtsPrompt()}
 -   **发动态(文字图)**: \`[{"type": "qzone_post", "postType": "text_image", "publicText": "(可选)公开文字", "hiddenContent": "图片描述", "image_prompt": "图片的【英文】关键词, 用%20分隔, 风格为风景/动漫/插画/二次元等, 禁止真人"}]\`
 \${localStorage.getItem('novelai-enabled') === 'true' ? \`-   **公开发布NovelAI真实图片动态**: \\\`{"type": "qzone_post", "postType": "naiimag", "publicText": "(可选)动态的配文", "prompt": "详细的英文描述词..."}\\\`\` : ''}
 \${localStorage.getItem('google-imagen-enabled') === 'true' ? \`-   **公开发布Google Imagen真实图片动态**: \\\`{"type": "qzone_post", "postType": "googleimag", "publicText": "(可选)动态的配文", "prompt": "详细的英文描述词..."}\\\`\` : ''}
+\${localStorage.getItem('openai-image-enabled') === 'true' ? \`-   **公开发布GPT图片动态**: \\\`{"type": "qzone_post", "postType": "openaiimag", "publicText": "(可选)动态的配文", "prompt": "详细的画面描述..."}\\\`\` : ''}
 -   **转发动态**: \`[{"type": "repost", "postId": 动态ID, "comment": "转发评论"}]\`
 -   **评论动态**: \`[{"type": "qzone_comment", "name": "\${chat.originalName}", "postId": 123, "commentText": "评论内容"}]\` (name必须填你自己的本名"\${chat.originalName}"，绝对不能填用户的名字)
 -   **点赞动态**: \`{"type": "qzone_like", "postId": 456}\`
@@ -2250,6 +2264,13 @@ ${getActiveThoughtsPrompt()}
     - 使用场景：当你想要在【私聊对话中】直接给用户发送一张写实风格的高质量图片时使用。
     - 不要频繁使用，只在真正想分享图片的时候使用。
     - 注意：这会直接在聊天记录中显示图片，而不是发布到动态。` : '';
+
+          let openAIImageContext = localStorage.getItem('openai-image-enabled') === 'true' ? `-   **GPT 图片分享 (在聊天中直接发送)**: \`{"type": "openaiimag", "prompt": "详细的画面描述..."}\`
+    - **【绝不能暴露是AI生成的图片！】**
+    - 根据当前对话、角色人设、情绪和场景撰写具体提示词。
+    - 可使用中文或英文自然语言，明确主体、环境、构图、光线、风格和氛围。
+    - 不要频繁使用，只在真正想分享图片的时候使用。
+    - 注意：这会直接在聊天记录中显示图片，而不是发布到动态。` : '';
     
           let crossChatInstruction = (() => {
             const enableCrossChat = chat.settings.enableCrossChat !== null ? chat.settings.enableCrossChat : state.globalSettings.enableCrossChat;
@@ -2318,6 +2339,7 @@ ${getActiveThoughtsPrompt()}
             'bilingualAlertVoice': chat.settings.enableBilingualMode ? ' ⚠️ 必须使用双语格式：外语〖中文〗（播放时只读外语，但用户可以查看翻译）' : '',
             'novelAiImageContext': novelAiImageContext,
             'googleImagenContext': googleImagenContext,
+            'openAIImageContext': openAIImageContext,
             'qzoneActionsPrompt': qzoneActionsPrompt,
             'viewMyPhonePrompt': viewMyPhonePrompt,
             'crossChatInstruction': crossChatInstruction,
@@ -3017,6 +3039,9 @@ ${getActiveThoughtsPrompt()}
           } else if (localStorage.getItem('google-imagen-enabled') === 'true') {
             msgData.type = 'googleimag';
             msgData.prompt = msgData.image_prompt || msgData.description || 'a beautiful scene';
+          } else if (localStorage.getItem('openai-image-enabled') === 'true') {
+            msgData.type = 'openaiimag';
+            msgData.prompt = msgData.image_prompt || msgData.description || 'A beautiful scene';
           }
         }
 
@@ -3882,6 +3907,12 @@ ${getActiveThoughtsPrompt()}
                   const aiPrompt = prompts[i];
                   console.log(`生成第${i + 1}张图片，prompt:`, aiPrompt);
 
+                  if (typeof generateNaiImageFromPrompt === 'function') {
+                    const generatedData = await generateNaiImageFromPrompt(aiPrompt, chat.id);
+                    generatedImageUrls.push(generatedData.imageUrl);
+                    continue;
+                  }
+
 
                   const naiPrompts = getCharacterNAIPrompts(chat.id);
 
@@ -4215,6 +4246,25 @@ ${getActiveThoughtsPrompt()}
               } catch (error) {
                 console.error('❌ 动态Google Imagen图片生成失败:', error);
                 newPost.content = (newPost.content || newPost.publicText || '') + `\n[Google Imagen图片生成失败: ${error.message}]`;
+              }
+            }
+
+            // GPT 动态图片生成
+            if (msgData.postType === 'openaiimag' && msgData.prompt) {
+              try {
+                const openAIPrompt = msgData.prompt || 'A beautiful scene';
+                const openAIResult = await generateOpenAIImageFromPrompt(openAIPrompt);
+                newPost.imageUrls = [openAIResult.imageUrl];
+                newPost.imageUrl = openAIResult.imageUrl;
+                newPost.prompt = openAIPrompt;
+                newPost.fullPrompt = openAIResult.fullPrompt;
+                newPost.model = openAIResult.model;
+                newPost.mimeType = openAIResult.mimeType;
+                newPost.requestId = openAIResult.requestId;
+                newPost.imageCount = 1;
+              } catch (error) {
+                console.error('❌ 动态 GPT 图片生成失败:', error);
+                newPost.content = (newPost.content || newPost.publicText || '') + `\n[GPT 图片生成失败: ${error.message}]`;
               }
             }
 
@@ -5081,6 +5131,27 @@ ${getActiveThoughtsPrompt()}
 
           case 'naiimag':
 
+            if (typeof generateNaiImageFromPrompt === 'function') {
+              try {
+                const aiPrompt = msgData.prompt || 'a beautiful scene';
+                const generatedData = await generateNaiImageFromPrompt(aiPrompt, chat.id);
+                aiMessage = {
+                  ...baseMessage,
+                  type: 'naiimag',
+                  imageUrl: generatedData.imageUrl,
+                  prompt: aiPrompt,
+                  fullPrompt: generatedData.fullPrompt
+                };
+              } catch (error) {
+                console.error('❌ NAI图片生成失败:', error);
+                aiMessage = {
+                  ...baseMessage,
+                  content: `[图片生成失败: ${error.message}]`
+                };
+              }
+              break;
+            }
+
             try {
               console.log('📸 NovelAI图片生成开始，AI提供的prompt:', msgData.prompt);
 
@@ -5425,6 +5496,29 @@ ${getActiveThoughtsPrompt()}
             }
             break;
 
+          case 'openaiimag':
+            try {
+              const openAIPrompt = msgData.prompt || msgData.image_prompt || msgData.description || 'A beautiful scene';
+              const openAIResult = await generateOpenAIImageFromPrompt(openAIPrompt);
+              aiMessage = {
+                ...baseMessage,
+                type: 'openaiimag',
+                imageUrl: openAIResult.imageUrl,
+                prompt: openAIPrompt,
+                fullPrompt: openAIResult.fullPrompt,
+                model: openAIResult.model,
+                mimeType: openAIResult.mimeType,
+                requestId: openAIResult.requestId
+              };
+            } catch (error) {
+              console.error('❌ GPT 图片生成失败:', error);
+              aiMessage = {
+                ...baseMessage,
+                content: `[GPT 图片生成失败: ${error.message}]`
+              };
+            }
+            break;
+
           default:
             console.warn("收到了未知的AI指令类型:", msgData.type);
             break;
@@ -5445,7 +5539,9 @@ ${getActiveThoughtsPrompt()}
                 notificationText = `[收到一个外卖代付请求]`;
                 break;
               case 'ai_image':
+              case 'naiimag':
               case 'googleimag':
+              case 'openaiimag':
                 notificationText = `[图片]`;
                 break;
               case 'voice_message':
@@ -5477,7 +5573,9 @@ ${getActiveThoughtsPrompt()}
                 notificationText = `[收到一个外卖代付请求]`;
                 break;
               case 'ai_image':
+              case 'naiimag':
               case 'googleimag':
+              case 'openaiimag':
                 notificationText = `[图片]`;
                 break;
               case 'voice_message':

@@ -280,7 +280,9 @@
       titleEl.textContent = '请添加歌曲';
       artistEl.textContent = '...';
     }
-    playPauseBtn.textContent = musicState.isPlaying ? '❚❚' : '▶';
+    if (playPauseBtn) {
+      playPauseBtn.textContent = musicState.isPlaying ? '❚❚' : '▶';
+    }
   }
 
   function updateElapsedTimeDisplay() {
@@ -603,34 +605,179 @@
     const modes = ['order', 'random', 'single'];
     const currentModeIndex = modes.indexOf(musicState.playMode);
     musicState.playMode = modes[(currentModeIndex + 1) % modes.length];
-    document.getElementById('music-mode-btn').textContent = {
-      'order': '顺序',
-      'random': '随机',
-      'single': '单曲'
-    }[musicState.playMode];
+    updatePlayModeUI();
+  }
+
+  function updatePlayModeUI() {
+    const modeBtn = document.getElementById('music-mode-btn');
+    if (!modeBtn) return;
+    const mode = musicState.playMode || 'order';
+    
+    if (mode === 'random') {
+      modeBtn.title = '播放模式: 随机播放';
+      modeBtn.innerHTML = `
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="16 3 21 3 21 8"></polyline>
+          <line x1="4" y1="20" x2="21" y2="3"></line>
+          <polyline points="21 16 21 21 16 21"></polyline>
+          <line x1="15" y1="15" x2="21" y2="21"></line>
+          <line x1="4" y1="4" x2="9" y2="9"></line>
+        </svg>`;
+    } else if (mode === 'single') {
+      modeBtn.title = '播放模式: 单曲循环';
+      modeBtn.innerHTML = `
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m17 2 4 4-4 4"></path>
+          <path d="M3 11v-1a4 4 0 0 1 4-4h14"></path>
+          <path d="m7 22-4-4 4-4"></path>
+          <path d="M21 13v1a4 4 0 0 1-4 4H3"></path>
+          <text x="12" y="15" font-size="9" font-weight="700" text-anchor="middle" fill="currentColor" stroke="none">1</text>
+        </svg>`;
+    } else {
+      modeBtn.title = '播放模式: 顺序播放';
+      modeBtn.innerHTML = `
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m17 2 4 4-4 4"></path>
+          <path d="M3 11v-1a4 4 0 0 1 4-4h14"></path>
+          <path d="m7 22-4-4 4-4"></path>
+          <path d="M21 13v1a4 4 0 0 1-4 4H3"></path>
+        </svg>`;
+    }
+  }
+
+  function parseFileNameToSongInfo(fileName) {
+    let cleanName = fileName.replace(/\.[^/.]+$/, "").trim();
+    let name = cleanName;
+    let artist = "未知歌手";
+
+    if (cleanName.includes(' - ')) {
+      const parts = cleanName.split(' - ');
+      if (parts.length >= 2) {
+        artist = parts[0].trim();
+        name = parts.slice(1).join(' - ').trim();
+      }
+    } else if (cleanName.includes('-')) {
+      const parts = cleanName.split('-');
+      if (parts.length >= 2) {
+        artist = parts[0].trim();
+        name = parts.slice(1).join('-').trim();
+      }
+    }
+    return { name: name || cleanName || '未知歌曲', artist: artist || '未知歌手' };
   }
 
   async function addSongFromURL() {
-    const url = await showCustomPrompt("添加网络歌曲", "请输入歌曲的URL", "", "url");
-    if (!url) return;
-    const name = await showCustomPrompt("歌曲信息", "请输入歌名");
-    if (!name) return;
-    const artist = await showCustomPrompt("歌曲信息", "请输入歌手名");
-    if (!artist) return;
-    // 选择歌单
-    const playlistId = await showPlaylistPicker('添加到哪个歌单？');
-    musicState.playlist.push({
-      name,
-      artist,
-      src: url,
-      isLocal: false,
-      playlistId: playlistId
-    });
-    await saveGlobalPlaylist();
-    updatePlaylistUI();
-    if (musicState.currentIndex === -1) {
-      musicState.currentIndex = musicState.playlist.length - 1;
-      updatePlayerUI();
+    const modeChoice = await showChoiceModal("添加网络音频", [
+      { text: "单首添加", value: "single" },
+      { text: "批量导入 (支持多行/链接列表)", value: "batch" }
+    ]);
+
+    if (!modeChoice) return;
+
+    if (modeChoice === "single") {
+      const url = await showCustomPrompt("添加网络歌曲", "请输入歌曲的URL", "", "url");
+      if (!url || !url.trim()) return;
+      const name = await showCustomPrompt("歌曲信息", "请输入歌名");
+      if (!name || !name.trim()) return;
+      const artist = await showCustomPrompt("歌曲信息", "请输入歌手名", "未知歌手");
+      if (artist === null) return;
+      // 选择歌单
+      const playlistId = await showPlaylistPicker('添加到哪个歌单？');
+      musicState.playlist.push({
+        name: name.trim(),
+        artist: (artist && artist.trim()) || "未知歌手",
+        src: url.trim(),
+        isLocal: false,
+        cover: 'https://s3plus.meituan.net/opapisdk/op_ticket_885190757_1757748720126_qdqqd_1jt5sv.jpeg',
+        playlistId: playlistId
+      });
+      await saveGlobalPlaylist();
+      updatePlaylistUI();
+      if (musicState.currentIndex === -1) {
+        musicState.currentIndex = musicState.playlist.length - 1;
+        updatePlayerUI();
+      }
+      showToast('歌曲已添加', 'success');
+    } else if (modeChoice === "batch") {
+      const batchText = await showCustomPrompt(
+        "批量添加网络音频",
+        "每行输入一首歌曲，支持以下格式：\n1. 音频URL\n2. 歌名, 歌手, 音频URL\n3. 歌手 - 歌名, 音频URL",
+        "",
+        "textarea"
+      );
+      if (!batchText || !batchText.trim()) return;
+
+      const lines = batchText.split('\n').map(l => l.trim()).filter(Boolean);
+      if (lines.length === 0) return;
+
+      const playlistId = await showPlaylistPicker('添加到哪个歌单？');
+      let count = 0;
+
+      for (const line of lines) {
+        let name = "网络音频";
+        let artist = "未知歌手";
+        let src = "";
+
+        if (line.includes(',')) {
+          const parts = line.split(',').map(p => p.trim());
+          if (parts.length === 2) {
+            name = parts[0] || "网络音频";
+            src = parts[1];
+          } else if (parts.length >= 3) {
+            name = parts[0] || "网络音频";
+            artist = parts[1] || "未知歌手";
+            src = parts[2];
+          }
+        } else if (line.includes('，')) {
+          const parts = line.split('，').map(p => p.trim());
+          if (parts.length === 2) {
+            name = parts[0] || "网络音频";
+            src = parts[1];
+          } else if (parts.length >= 3) {
+            name = parts[0] || "网络音频";
+            artist = parts[1] || "未知歌手";
+            src = parts[2];
+          }
+        } else {
+          src = line;
+          // 尝试从 URL 路径获取文件名作为歌名
+          try {
+            const urlObj = new URL(src);
+            const pathName = decodeURIComponent(urlObj.pathname.split('/').pop() || '');
+            if (pathName) {
+              const parsed = parseFileNameToSongInfo(pathName);
+              name = parsed.name;
+              artist = parsed.artist;
+            }
+          } catch (_) {
+            name = `网络歌曲 ${count + 1}`;
+          }
+        }
+
+        if (src && (src.startsWith('http://') || src.startsWith('https://') || src.startsWith('data:'))) {
+          musicState.playlist.push({
+            name: name,
+            artist: artist,
+            src: src,
+            isLocal: false,
+            cover: 'https://s3plus.meituan.net/opapisdk/op_ticket_885190757_1757748720126_qdqqd_1jt5sv.jpeg',
+            playlistId: playlistId
+          });
+          count++;
+        }
+      }
+
+      if (count > 0) {
+        await saveGlobalPlaylist();
+        updatePlaylistUI();
+        if (musicState.currentIndex === -1 && musicState.playlist.length > 0) {
+          musicState.currentIndex = 0;
+          updatePlayerUI();
+        }
+        await showCustomAlert("批量导入成功", `成功批量添加了 ${count} 首网络歌曲！`);
+      } else {
+        await showCustomAlert("导入失败", "未识别到有效的音频链接，请检查格式后重试。");
+      }
     }
   }
 
@@ -872,60 +1019,72 @@
 
   async function addSongFromLocal(event) {
     const files = event.target.files;
-    if (!files.length) return;
+    if (!files || !files.length) return;
 
     // 先选择歌单
     const playlistId = await showPlaylistPicker('添加到哪个歌单？');
+    const isBatch = files.length > 1;
 
     let uploadedCount = 0;
-    for (const file of files) {
-      let name = file.name.replace(/\.[^/.]+$/, "");
-      name = await showCustomPrompt("歌曲信息", "请输入歌名", name);
-      if (name === null) continue;
 
-      const artist = await showCustomPrompt("歌曲信息", "请输入歌手名", "未知歌手");
-      if (artist === null) continue;
+    if (isBatch) {
+      showToast(`正在批量导入 ${files.length} 首歌曲...`, 'info');
+    }
 
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const parsedInfo = parseFileNameToSongInfo(file.name);
+      let name = parsedInfo.name;
+      let artist = parsedInfo.artist;
       let lrcContent = "";
-      const wantLrc = await showCustomConfirm("导入歌词", `要为《${name}》添加歌词吗？`);
-      if (wantLrc) {
-        lrcContent = await getLrcContent() || "";
-      }
 
+      if (!isBatch) {
+        // 单个文件允许手动确认歌名、歌手和歌词
+        const customName = await showCustomPrompt("歌曲信息", "请输入歌名", name);
+        if (customName === null) continue;
+        if (customName.trim()) name = customName.trim();
+
+        const customArtist = await showCustomPrompt("歌曲信息", "请输入歌手名", artist);
+        if (customArtist === null) continue;
+        if (customArtist.trim()) artist = customArtist.trim();
+
+        const wantLrc = await showCustomConfirm("导入歌词", `要为《${name}》添加歌词吗？`);
+        if (wantLrc) {
+          lrcContent = await getLrcContent() || "";
+        }
+      }
 
       let songSrc = null;
       let isLocal = true;
 
-      try {
-        // 尝试上传到 Catbox
-        const catboxUrl = await uploadFileToCatbox(file); // 'file' 是现成的 File 对象
-
-        if (catboxUrl) {
-          // 上传成功
-          songSrc = catboxUrl;
-          isLocal = false; // 这是一个网络 URL
-          await showCustomAlert("上传成功", `歌曲 "${file.name}" 已成功上传并保存到您的 Catbox 账户！`);
-        } else {
-
-          console.log("Catbox 未配置，将歌曲保存为本地 ArrayBuffer。");
+      // 如果开启了 Catbox 配置，尝试上传到 Catbox
+      const hasCatbox = state.apiConfig && state.apiConfig.catboxEnable && state.apiConfig.catboxUserHash;
+      if (hasCatbox) {
+        try {
+          const catboxUrl = await uploadFileToCatbox(file);
+          if (catboxUrl) {
+            songSrc = catboxUrl;
+            isLocal = false;
+          } else {
+            songSrc = await file.arrayBuffer();
+            isLocal = true;
+          }
+        } catch (uploadError) {
+          console.warn(`[本地音频] 上传Catbox失败，降级为本地保存: ${file.name}`, uploadError);
           songSrc = await file.arrayBuffer();
           isLocal = true;
         }
-      } catch (uploadError) {
-
-        console.error("Catbox 上传失败:", uploadError);
-        await showCustomAlert("上传失败", `歌曲上传到 Catbox 失败: ${uploadError.message}\n\n将改为本地保存。`);
+      } else {
         songSrc = await file.arrayBuffer();
         isLocal = true;
       }
 
-
       musicState.playlist.push({
         name,
         artist,
-        src: songSrc,       // <-- 修改
-        fileType: file.type,
-        isLocal: isLocal,     // <-- 修改
+        src: songSrc,
+        fileType: file.type || 'audio/mpeg',
+        isLocal: isLocal,
         lrcContent: lrcContent,
         cover: 'https://s3plus.meituan.net/opapisdk/op_ticket_885190757_1757748720126_qdqqd_1jt5sv.jpeg',
         playlistId: playlistId
@@ -939,6 +1098,11 @@
       if (musicState.currentIndex === -1 && musicState.playlist.length > 0) {
         musicState.currentIndex = 0;
         updatePlayerUI();
+      }
+      if (isBatch) {
+        await showCustomAlert("批量添加成功", `已成功添加 ${uploadedCount} 首本地歌曲！`);
+      } else {
+        showToast("歌曲已添加", "success");
       }
     }
     event.target.value = null;
@@ -1610,7 +1774,7 @@
 
   async function cleanupInvalidSongs() {
     if (musicState.playlist.length === 0) {
-      alert("播放列表是空的，无需清理。");
+      showToast("播放列表是空的，无需清理。");
       return;
     }
 
@@ -2466,6 +2630,7 @@
   window.playNext = playNext;
   window.playPrev = playPrev;
   window.changePlayMode = changePlayMode;
+  window.updatePlayModeUI = updatePlayModeUI;
   window.addSongFromURL = addSongFromURL;
   window.playSong = playSong;
   window.handleChangeBackground = handleChangeBackground;

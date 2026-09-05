@@ -333,17 +333,16 @@
            .music-controls {
                display: flex;
                align-items: center;
-               justify-content: center;
-               gap: 20px;
+               justify-content: space-between;
                width: 100%;
-               margin-bottom: 30px;
+               padding: 0 6px;
+               box-sizing: border-box;
+               margin-bottom: 25px;
            }
 
            .music-controls button {
                background: none;
                border: none;
-               font-size: 16px;
-               font-weight: bold;
                cursor: pointer;
                color: #333;
                width: 44px;
@@ -351,11 +350,57 @@
                display: flex;
                justify-content: center;
                align-items: center;
-               transition: transform 0.2s;
+               transition: transform 0.2s, opacity 0.2s, color 0.2s;
+               user-select: none;
+               outline: none;
+               padding: 0;
            }
 
            .music-controls button:active {
                transform: scale(0.9);
+           }
+
+           .music-controls .secondary-control-btn {
+               color: #444;
+               opacity: 0.85;
+           }
+
+           .music-controls .secondary-control-btn:hover {
+               opacity: 1;
+               color: #000;
+           }
+
+           .music-controls .secondary-control-btn.active {
+               color: var(--accent-color, #007aff);
+               opacity: 1;
+           }
+
+           .music-controls .secondary-control-btn.text-btn {
+               font-size: 13px;
+               font-weight: 600;
+               border-radius: 12px;
+               width: 32px;
+               height: 32px;
+               border: 1.5px solid rgba(0, 0, 0, 0.18);
+               color: #444;
+               letter-spacing: 0.5px;
+               transition: all 0.2s ease;
+               display: flex;
+               align-items: center;
+               justify-content: center;
+           }
+
+           .music-controls .secondary-control-btn.text-btn:hover {
+               border-color: rgba(0, 0, 0, 0.4);
+               color: #111;
+               transform: scale(1.05);
+           }
+
+           .music-controls .secondary-control-btn.text-btn.active {
+               background-color: var(--accent-color, #007aff);
+               border-color: var(--accent-color, #007aff);
+               color: #fff;
+               box-shadow: 0 2px 8px rgba(0, 122, 255, 0.35);
            }
 
            .music-controls .play-pause-btn {
@@ -364,6 +409,11 @@
                height: 60px;
                border-radius: 50%;
                background-color: rgba(0, 0, 0, 0.05);
+               color: #222;
+           }
+
+           .music-controls .play-pause-btn:hover {
+               background-color: rgba(0, 0, 0, 0.08);
            }
 
            .music-bottom-actions {
@@ -433,4 +483,3 @@
                cursor: pointer;
                color: var(--accent-color);
            }
-

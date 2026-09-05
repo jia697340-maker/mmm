@@ -233,11 +233,12 @@
                bottom: 0;
                left: 0;
                width: 100%;
-               background: rgba(255, 255, 255, 0.95);
+               background: rgba(255, 253, 249, 0.97);
                backdrop-filter: blur(20px);
                padding: 16px 24px;
                padding-bottom: calc(16px + env(safe-area-inset-bottom));
                border-top: 1px solid var(--gr-border);
+               box-shadow: 0 -8px 28px rgba(35, 42, 38, 0.06);
                box-sizing: border-box;
            }
 
@@ -765,7 +766,7 @@
     gap: 6px;
     width: 100%;
     overflow-x: auto;
-    padding: 2px 0 6px;
+    padding: 0 0 8px;
     scrollbar-width: none;
 }
 
@@ -773,14 +774,16 @@
 
 .gr-tool-btn {
     flex: 0 0 auto;
-    border: 1px solid var(--gr-border);
-    background: var(--gr-surface);
-    color: var(--gr-text-main);
+    border: 1px solid #e7e3dd;
+    background: rgba(255, 255, 255, .72);
+    color: #606762;
     border-radius: 999px;
-    padding: 7px 11px;
+    padding: 6px 10px;
     font-size: 12px;
     cursor: pointer;
 }
+
+.gr-tool-btn:hover { border-color: rgba(27,79,62,.35); color: var(--gr-primary); }
 
 .gr-tool-btn:disabled { opacity: .55; cursor: not-allowed; }
 
@@ -796,6 +799,141 @@
     min-height: 44px;
     padding: 8px;
     font-size: 12px;
+    text-align: left;
+    color: var(--gr-text-main);
+    cursor: pointer;
+    appearance: none;
+}
+
+.gr-writing-mode::after { content: '⌄'; float: right; color: var(--gr-text-sub); }
+.gr-author-select-trigger {
+    text-align: left;
+    color: var(--gr-text-main);
+    cursor: pointer;
+    appearance: none;
+}
+.gr-author-select-trigger::after { content: '⌄'; float: right; color: var(--gr-text-sub); }
+
+.gr-writing-mode-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 10020;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(28, 35, 31, .22);
+    backdrop-filter: blur(4px);
+}
+
+.gr-writing-mode-modal.visible { display: flex; }
+.gr-writing-mode-dialog {
+    width: min(360px, 100%);
+    max-height: min(560px, 86vh);
+    overflow: auto;
+    background: #fffdf9;
+    border: 1px solid rgba(27,79,62,.12);
+    border-radius: 20px;
+    box-shadow: 0 18px 60px rgba(25, 35, 29, .2);
+}
+.gr-writing-mode-dialog-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 17px 18px 13px;
+    color: var(--gr-primary);
+    font-family: Georgia, "Songti SC", serif;
+    font-size: 16px;
+    font-weight: 600;
+}
+.gr-writing-mode-close {
+    border: 0;
+    background: transparent;
+    color: var(--gr-text-sub);
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+}
+.gr-writing-mode-options { padding: 0 10px 10px; }
+.gr-writing-mode-options button {
+    display: block;
+    width: 100%;
+    padding: 13px 12px;
+    border: 0;
+    border-radius: 12px;
+    background: transparent;
+    color: var(--gr-text-main);
+    text-align: left;
+    font-size: 14px;
+    cursor: pointer;
+}
+.gr-writing-mode-options button:hover { background: rgba(27,79,62,.07); }
+.gr-writing-mode-options span {
+    display: block;
+    margin-top: 4px;
+    color: var(--gr-text-sub);
+    font-size: 12px;
+}
+
+.gr-author-picker-add {
+    width: 100%;
+    margin-bottom: 6px;
+    padding: 11px 12px;
+    border: 1px dashed rgba(27,79,62,.35);
+    border-radius: 12px;
+    background: rgba(27,79,62,.05);
+    color: var(--gr-primary);
+    text-align: left;
+    font-size: 14px;
+    cursor: pointer;
+}
+.gr-author-picker-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-radius: 12px;
+}
+.gr-author-picker-item:hover { background: rgba(27,79,62,.06); }
+.gr-author-picker-choice {
+    flex: 1;
+    min-width: 0;
+    width: auto !important;
+    padding: 12px;
+    border: 0;
+    background: transparent;
+    color: var(--gr-text-main);
+    text-align: left;
+    font-size: 14px;
+    cursor: pointer;
+}
+.gr-author-picker-choice span,
+.gr-author-picker-choice small {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.gr-author-picker-choice small { margin-top: 4px; color: var(--gr-text-sub); font-size: 12px; }
+.gr-author-picker-edit {
+    flex: 0 0 auto;
+    width: auto !important;
+    margin-right: 10px;
+    padding: 5px 8px;
+    border: 1px solid var(--gr-border);
+    border-radius: 8px;
+    background: var(--gr-surface);
+    color: var(--gr-primary);
+    font-size: 12px;
+    cursor: pointer;
+}
+.gr-author-picker-item.selected {
+    background: rgba(27,79,62,.09);
+}
+.gr-author-picker-item.selected .gr-author-picker-choice span::after {
+    content: '✓';
+    float: right;
+    color: var(--gr-primary);
+    font-weight: 700;
 }
 
 #gr-direction-input {
@@ -950,10 +1088,59 @@
 
 @media (max-width: 520px) {
     .gr-settings-grid { grid-template-columns: 1fr; }
-    .gr-direction-group { grid-template-columns: 1fr; }
-    #gr-writing-controls { align-items: flex-end !important; }
-    .gr-writing-mode { min-height: 38px; }
-    .gr-control-panel { padding-left: 10px; padding-right: 10px; }
+    /* 窄屏下将输入区与操作区分层，避免按钮挤压剧情输入框 */
+    #gr-writing-controls {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        align-items: stretch !important;
+        gap: 8px !important;
+    }
+
+    .gr-direction-group {
+        grid-column: 1 / -1;
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+        width: 100%;
+    }
+
+    .gr-writing-mode {
+        width: 100%;
+        height: auto !important;
+        min-height: 42px;
+        box-sizing: border-box;
+    }
+
+    #gr-direction-input {
+        width: 100%;
+        height: 58px;
+        min-height: 58px;
+        box-sizing: border-box;
+    }
+
+    #gr-reroll-btn {
+        width: 46px;
+        min-width: 46px;
+        min-height: 46px;
+        padding: 0 !important;
+        justify-content: center;
+        box-sizing: border-box;
+    }
+
+    #gr-generate-btn {
+        width: 100%;
+        min-height: 46px;
+        justify-content: center;
+        box-sizing: border-box;
+        border-radius: 14px;
+    }
+
+    .gr-control-panel {
+        padding: 12px 14px;
+        padding-bottom: calc(12px + env(safe-area-inset-bottom));
+        border-radius: 18px 18px 0 0;
+    }
 }
 
            /* 如果之前没有定义 gr-input，补充一下以防万一 */

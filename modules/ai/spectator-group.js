@@ -260,6 +260,9 @@ ${linkedContents}
           } else if (localStorage.getItem('google-imagen-enabled') === 'true') {
             msgData.type = 'googleimag';
             msgData.prompt = msgData.image_prompt || msgData.description || 'a beautiful scene';
+          } else if (localStorage.getItem('openai-image-enabled') === 'true') {
+            msgData.type = 'openaiimag';
+            msgData.prompt = msgData.image_prompt || msgData.description || 'A beautiful scene';
           }
         }
 
@@ -303,6 +306,54 @@ ${linkedContents}
               content: msgData.description,
               image_prompt: msgData.image_prompt
             };
+            break;
+          case 'naiimag':
+            try {
+              const naiResult = await generateNaiImageFromPrompt(msgData.prompt, chat.id);
+              aiMessage = {
+                ...baseMessage,
+                type: 'naiimag',
+                imageUrl: naiResult.imageUrl,
+                prompt: msgData.prompt,
+                fullPrompt: naiResult.fullPrompt
+              };
+            } catch (error) {
+              console.error('旁观模式生成 NovelAI 图片失败:', error);
+              aiMessage = { ...baseMessage, content: `[图片生成失败: ${error.message}]` };
+            }
+            break;
+          case 'googleimag':
+            try {
+              const googleResult = await generateGoogleImagenFromPrompt(msgData.prompt);
+              aiMessage = {
+                ...baseMessage,
+                type: 'googleimag',
+                imageUrl: googleResult.imageUrl,
+                prompt: msgData.prompt,
+                fullPrompt: googleResult.fullPrompt
+              };
+            } catch (error) {
+              console.error('旁观模式生成 Google Imagen 图片失败:', error);
+              aiMessage = { ...baseMessage, content: `[图片生成失败: ${error.message}]` };
+            }
+            break;
+          case 'openaiimag':
+            try {
+              const openAIResult = await generateOpenAIImageFromPrompt(msgData.prompt);
+              aiMessage = {
+                ...baseMessage,
+                type: 'openaiimag',
+                imageUrl: openAIResult.imageUrl,
+                prompt: msgData.prompt,
+                fullPrompt: openAIResult.fullPrompt,
+                model: openAIResult.model,
+                mimeType: openAIResult.mimeType,
+                requestId: openAIResult.requestId
+              };
+            } catch (error) {
+              console.error('旁观模式生成 GPT 图片失败:', error);
+              aiMessage = { ...baseMessage, content: `[图片生成失败: ${error.message}]` };
+            }
             break;
           case 'voice_message':
 

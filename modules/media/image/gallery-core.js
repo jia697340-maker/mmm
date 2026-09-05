@@ -9,7 +9,7 @@
       for (const chat of allChats) {
         if (chat.history && chat.history.length > 0) {
           chat.history.forEach(msg => {
-            if ((msg.type === 'naiimag' || msg.type === 'googleimag') && msg.imageUrl) {
+            if ((msg.type === 'naiimag' || msg.type === 'googleimag' || msg.type === 'openaiimag') && msg.imageUrl) {
               allNaiImages.push({ sourceType: 'chat', imageUrl: msg.imageUrl, prompt: msg.prompt || msg.fullPrompt || 'NAI Image', chatId: chat.id, msgTimestamp: msg.timestamp });
             }
           });
@@ -19,7 +19,7 @@
     try {
       const allPosts = await db.qzonePosts.toArray();
       allPosts.forEach(post => {
-        if (post.type === 'naiimag' || post.type === 'googleimag') {
+        if (post.type === 'naiimag' || post.type === 'googleimag' || post.type === 'openaiimag') {
           const urls = post.imageUrls || (post.imageUrl ? [post.imageUrl] : []);
           const prompts = Array.isArray(post.prompt) ? post.prompt : [post.prompt || 'NAI Image'];
           urls.forEach((url, index) => {
@@ -74,11 +74,21 @@
       item.dataset.key = itemKey;
       item.dataset.imageUrl = img.imageUrl;
       item.dataset.prompt = img.prompt;
-      item.innerHTML = `<div class="nai-image-container" style="background-image: url(${img.imageUrl})">
-        <div class="nai-gallery-controls">
+      const imageContainer = document.createElement('div');
+      imageContainer.className = 'nai-image-container';
+      imageContainer.style.backgroundImage = `url("${String(img.imageUrl).replace(/["\\\n\r]/g, '\\$&')}")`;
+
+      const controls = document.createElement('div');
+      controls.className = 'nai-gallery-controls';
+      controls.innerHTML = `
           <button class="nai-gallery-download-btn" title="下载"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"></path></svg></button>
-          <button class="nai-gallery-delete-btn" title="删除"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"></path></svg></button>
-        </div></div><span class="nai-gallery-name">${img.prompt}</span>`;
+          <button class="nai-gallery-delete-btn" title="删除"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"></path></svg></button>`;
+      imageContainer.appendChild(controls);
+
+      const name = document.createElement('span');
+      name.className = 'nai-gallery-name';
+      name.textContent = img.prompt;
+      item.append(imageContainer, name);
       fragment.appendChild(item);
     });
     gridEl.appendChild(fragment);

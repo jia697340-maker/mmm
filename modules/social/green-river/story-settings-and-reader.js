@@ -43,6 +43,9 @@
       if (selectedAuthorId === a.id) opt.selected = true;
       authorSelect.appendChild(opt);
     });
+    bindAuthorPicker();
+    const authorTrigger = document.getElementById('gr-author-select-trigger');
+    if (authorTrigger) authorTrigger.textContent = authorSelect.selectedOptions[0]?.textContent || '请选择作者';
 
     // 2. 加载角色列表 (Chats + NPCs)
     const charList = document.getElementById('gr-char-list');
@@ -270,6 +273,7 @@
 
     const contentArea = document.getElementById('gr-reader-content');
     contentArea.innerHTML = '';
+    bindWritingModePicker();
 
     // --- 场景 A: 尚未开始 (没有章节) ---
     if (totalChapters === 0) {
@@ -443,6 +447,83 @@
 
     showScreen('gr-reader-screen');
     contentArea.scrollTop = 0;
+  }
+
+  // 辅助：绑定自定义写作方式选择器
+  function bindWritingModePicker() {
+    const trigger = document.getElementById('gr-writing-mode-trigger');
+    const select = document.getElementById('gr-writing-mode');
+    const modal = document.getElementById('gr-writing-mode-modal');
+    if (!trigger || !select || !modal || trigger.dataset.bound === 'true') return;
+    // 控制栏使用 backdrop-filter，会给 fixed 子元素建立新的坐标系；
+    // 将弹窗提升到 body，才能相对整个屏幕真正居中。
+    if (modal.parentElement !== document.body) document.body.appendChild(modal);
+    const close = () => {
+      modal.classList.remove('visible');
+      modal.setAttribute('aria-hidden', 'true');
+      trigger.setAttribute('aria-expanded', 'false');
+    };
+    trigger.onclick = () => {
+      modal.classList.add('visible');
+      modal.setAttribute('aria-hidden', 'false');
+      trigger.setAttribute('aria-expanded', 'true');
+    };
+    document.getElementById('gr-writing-mode-close')?.addEventListener('click', close);
+    modal.addEventListener('click', (event) => {
+      if (event.target === modal) return close();
+      const option = event.target.closest('[data-value]');
+      if (!option) return;
+      select.value = option.dataset.value;
+      trigger.firstChild.textContent = option.firstChild.textContent;
+      close();
+    });
+    trigger.dataset.bound = 'true';
+  }
+
+  function bindAuthorPicker() {
+    const trigger = document.getElementById('gr-author-select-trigger');
+    const select = document.getElementById('gr-author-select');
+    const modal = document.getElementById('gr-author-select-modal');
+    const options = document.getElementById('gr-author-select-options');
+    if (!trigger || !select || !modal || !options || trigger.dataset.bound === 'true') return;
+    if (modal.parentElement !== document.body) document.body.appendChild(modal);
+    const close = () => {
+      modal.classList.remove('visible');
+      modal.setAttribute('aria-hidden', 'true');
+      trigger.setAttribute('aria-expanded', 'false');
+    };
+    trigger.onclick = () => {
+      const escape = window.GreenRiverStoryEngine?.escapeHtml || (value => String(value));
+      options.innerHTML = `<button type="button" class="gr-author-picker-add" data-add-author="true">＋ 新增作者文风</button>` +
+        Array.from(select.options).map(option =>
+          `<div class="gr-author-picker-item${select.value === option.value ? ' selected' : ''}" data-value="${escape(option.value)}">
+             <button type="button" class="gr-author-picker-choice"><span>${escape(option.textContent)}</span><small>使用该作者的文风进行创作</small></button>
+             <button type="button" class="gr-author-picker-edit" data-edit-author="${escape(option.value)}">编辑</button>
+           </div>`
+        ).join('');
+      modal.classList.add('visible');
+      modal.setAttribute('aria-hidden', 'false');
+      trigger.setAttribute('aria-expanded', 'true');
+    };
+    document.getElementById('gr-author-select-close')?.addEventListener('click', close);
+    modal.addEventListener('click', (event) => {
+      if (event.target === modal) return close();
+      if (event.target.closest('[data-add-author]')) {
+        close();
+        return window.openAuthorEditor?.();
+      }
+      const editButton = event.target.closest('[data-edit-author]');
+      if (editButton) {
+        close();
+        return window.openAuthorEditor?.(Number(editButton.dataset.editAuthor));
+      }
+      const option = event.target.closest('[data-value]');
+      if (!option) return;
+      select.value = option.dataset.value;
+      trigger.textContent = option.querySelector('.gr-author-picker-choice span')?.textContent || '';
+      close();
+    });
+    trigger.dataset.bound = 'true';
   }
 
   // 辅助：绑定生成按钮

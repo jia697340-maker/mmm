@@ -397,7 +397,7 @@
           lastMsgDisplay = `[系统消息] ${lastMsgObj.content}`;
         } else if (lastMsgObj.type === 'transfer') {
           lastMsgDisplay = '[转账]';
-        } else if (lastMsgObj.type === 'ai_image' || lastMsgObj.type === 'user_photo' || lastMsgObj.type === 'naiimag' || lastMsgObj.type === 'googleimag') {
+        } else if (lastMsgObj.type === 'ai_image' || lastMsgObj.type === 'user_photo' || lastMsgObj.type === 'naiimag' || lastMsgObj.type === 'googleimag' || lastMsgObj.type === 'openaiimag') {
           lastMsgDisplay = '[照片]';
         } else if (lastMsgObj.type === 'voice_message') {
           lastMsgDisplay = '[语音]';
@@ -469,10 +469,11 @@
         });
       }
 
-      const infoEl = item.querySelector('.info');
-      if (infoEl) {
-        infoEl.addEventListener('click', () => openChat(chat.id));
-      }
+      // 点击聊天列表项进入聊天
+      item.addEventListener('click', (e) => {
+        // 如果点击在头像上双击区域，避免阻碍
+        openChat(chat.id);
+      });
 
       addLongPressListener(item, async (e) => {
         const action = await showChatListActions(chat);

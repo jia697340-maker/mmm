@@ -17,7 +17,7 @@ class UpdateNotification {
   // 创建弹窗HTML
   createNotificationHTML() {
     const updateContent = `
-      <div style="margin-bottom: 15px;"><button id="update-clear-global-css-btn" style="width: 100%; padding: 10px; background: #ff4d4f; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">🧹 清除全局自定义CSS (防错位)</button></div>
+      <div style="margin-bottom: 15px;"><button id="update-clear-global-css-btn" style="width: 100%; padding: 10px; background: #ff4d4f; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">清除全局自定义CSS (防错位)</button></div>
       <div class="update-item important-note">新手必看：DC解答区 <a href="https://discord.com/channels/1379304008157499423/1443544486796853248" target="_blank" style="color: #4A9EFF;">点击前往</a></div>
       <div class="update-item important-note">强烈建议：安装到主屏幕以获得最佳体验</div>
       <div class="update-item important-note">注意：首次打开最好使用魔法</div>

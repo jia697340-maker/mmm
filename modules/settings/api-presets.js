@@ -710,6 +710,37 @@
     if(document.getElementById('google-imagen-negative')) document.getElementById('google-imagen-negative').value = googleImagenSettings.negativePrompt || '';
     document.getElementById('google-imagen-details').style.display = googleImagenEnabled ? 'block' : 'none';
 
+    // GPT 生图设置加载
+    const openAIImageEnabled = localStorage.getItem('openai-image-enabled') === 'true';
+    const openAIImageApiKey = localStorage.getItem('openai-image-api-key') || '';
+    const openAIImageSettings = getOpenAIImageSettings();
+    const openAIImageSwitch = document.getElementById('openai-image-switch');
+    if (openAIImageSwitch) openAIImageSwitch.checked = openAIImageEnabled;
+    const openAIImageModel = document.getElementById('openai-image-model');
+    if (openAIImageModel) openAIImageModel.value = localStorage.getItem('openai-image-model') || openAIImageSettings.model || 'gpt-image-2';
+    const openAIImageApiKeyInput = document.getElementById('openai-image-api-key');
+    if (openAIImageApiKeyInput) openAIImageApiKeyInput.value = openAIImageApiKey;
+    const openAIImageEndpoint = document.getElementById('openai-image-endpoint');
+    if (openAIImageEndpoint) openAIImageEndpoint.value = openAIImageSettings.endpoint || 'https://api.openai.com';
+    const openAIImageSize = document.getElementById('openai-image-size');
+    if (openAIImageSize) openAIImageSize.value = openAIImageSettings.size || 'auto';
+    const openAIImageQuality = document.getElementById('openai-image-quality');
+    if (openAIImageQuality) openAIImageQuality.value = openAIImageSettings.quality || 'auto';
+    const openAIImageFormat = document.getElementById('openai-image-output-format');
+    if (openAIImageFormat) openAIImageFormat.value = openAIImageSettings.outputFormat || 'png';
+    const openAIImageCompression = document.getElementById('openai-image-compression');
+    if (openAIImageCompression) openAIImageCompression.value = openAIImageSettings.outputCompression ?? 100;
+    const openAIImageCompressionRow = document.getElementById('openai-image-compression-row');
+    if (openAIImageCompressionRow) openAIImageCompressionRow.style.display = ['jpeg', 'webp'].includes(openAIImageSettings.outputFormat) ? 'flex' : 'none';
+    const openAIImageBackground = document.getElementById('openai-image-background');
+    if (openAIImageBackground) openAIImageBackground.value = openAIImageSettings.background || 'auto';
+    const openAIImageModeration = document.getElementById('openai-image-moderation');
+    if (openAIImageModeration) openAIImageModeration.value = openAIImageSettings.moderation || 'auto';
+    const openAIImagePositive = document.getElementById('openai-image-positive');
+    if (openAIImagePositive) openAIImagePositive.value = openAIImageSettings.positivePrompt || '';
+    const openAIImageDetails = document.getElementById('openai-image-details');
+    if (openAIImageDetails) openAIImageDetails.style.display = openAIImageEnabled ? 'block' : 'none';
+
     const imgbbEnableSwitch = document.getElementById('imgbb-enable-switch');
     const imgbbApiKeyInput = document.getElementById('imgbb-api-key');
     const imgbbDetailsDiv = document.getElementById('imgbb-settings-details');

@@ -227,10 +227,12 @@
   }
 
   // ========== 全局暴露 ==========
+  window.openChat = openChat;
   window.renderChatInterface = renderChatInterface;
   window.renderChatContext = renderChatContext;
   window.loadMoreMessages = loadMoreMessages;
   window.scrollToOriginalMessage = scrollToOriginalMessage;
   window.disposeChatMessageDom = disposeChatMessageDom;
+  window.setAvatarActingState = setAvatarActingState;
 
   // ========== 从 script.js 迁移：openChatSettings ==========

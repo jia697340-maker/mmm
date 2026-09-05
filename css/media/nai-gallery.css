@@ -153,45 +153,52 @@
                background-color: rgba(0, 123, 255, 0.3);
            }
 
+           .playlist-header {
+               display: flex;
+               justify-content: space-between;
+               align-items: center;
+               padding: 14px 18px;
+               position: relative;
+               box-sizing: border-box;
+               min-height: 48px;
+           }
+
+           .playlist-header .playlist-title,
            .playlist-header>span {
                position: absolute;
                left: 50%;
                transform: translateX(-50%);
                font-weight: 600;
+               font-size: 16px;
+               pointer-events: none;
+               white-space: nowrap;
            }
 
-           /* 2. 确保左右两侧的按钮容器不会遮挡标题 */
-           .playlist-header>div {
-               z-index: 1;
-               /* 保持按钮在标题的“空间”之上 */
-           }
-
-           /* 3. 定义我们新添加的左侧按钮容器 */
            .playlist-header .header-left-actions {
                display: flex;
                align-items: center;
                gap: 10px;
-               /* “返回”和“管理”之间的间距 */
-               z-index: 1;
+               z-index: 2;
            }
 
-           /* 4. 让“管理”/“完成”按钮看起来更像一个辅助操作，而不是导航 */
-           .playlist-header #manage-playlist-btn {
-               font-weight: 400;
-               /* 正常字重 */
+           .playlist-header .header-right-actions {
+               display: flex;
+               align-items: center;
+               gap: 14px;
+               z-index: 2;
+           }
+
+           .playlist-header .panel-btn {
+               cursor: pointer;
                font-size: 15px;
-               /* 稍小一点 */
-               color: var(--accent-color);
-               /* 保持高亮色 */
-           }
-
-           /* 5. （可选）修复暗黑模式下的颜色 */
-           #phone-screen.dark-mode .playlist-header #manage-playlist-btn {
-               color: #f0f0f0;
+               font-weight: 500;
+               color: var(--accent-color, #007aff);
+               user-select: none;
+               padding: 2px 4px;
            }
 
            #phone-screen.dark-mode .playlist-header .panel-btn {
-               color: #f0f0f0;
+               color: var(--accent-color, #0a84ff);
            }
 
            #sticker-action-bar button {
@@ -544,4 +551,3 @@
            .shake-animation {
                animation: shake 0.4s ease;
            }
-

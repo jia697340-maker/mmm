@@ -588,23 +588,23 @@
     // ========== 一起看电影功能结束 ==========
 
 
-    document.getElementById('add-quick-reply-btn').addEventListener('click', addNewQuickReply);
+    document.getElementById('add-quick-reply-btn')?.addEventListener('click', addNewQuickReply);
 
 
 
-    document.getElementById('minimize-char-music-btn').addEventListener('click', minimizeCharMusicPlayer);
+    document.getElementById('minimize-char-music-btn')?.addEventListener('click', minimizeCharMusicPlayer);
 
 
-    document.getElementById('char-music-restore-btn').addEventListener('click', restoreCharMusicPlayer);
+    document.getElementById('char-music-restore-btn')?.addEventListener('click', restoreCharMusicPlayer);
 
 
     makeDraggable(document.getElementById('char-music-restore-btn'), document.getElementById('char-music-restore-btn'));
 
-    document.getElementById('imgbb-enable-switch').addEventListener('change', (e) => {
+    document.getElementById('imgbb-enable-switch')?.addEventListener('change', (e) => {
       document.getElementById('imgbb-settings-details').style.display = e.target.checked ? 'block' : 'none';
     });
 
-    document.getElementById('imgbb-key-toggle').addEventListener('click', function () {
+    document.getElementById('imgbb-key-toggle')?.addEventListener('click', function () {
       const input = document.getElementById('imgbb-api-key');
       if (input.type === 'password') {
         input.type = 'text';
@@ -614,11 +614,11 @@
         this.textContent = '🧐';
       }
     });
-    document.getElementById('catbox-enable-switch').addEventListener('change', (e) => {
+    document.getElementById('catbox-enable-switch')?.addEventListener('change', (e) => {
       document.getElementById('catbox-settings-details').style.display = e.target.checked ? 'block' : 'none';
     });
 
-    document.getElementById('catbox-key-toggle').addEventListener('click', function () {
+    document.getElementById('catbox-key-toggle')?.addEventListener('click', function () {
       const input = document.getElementById('catbox-userhash');
       if (input.type === 'password') {
         input.type = 'text';
@@ -695,7 +695,7 @@
         }
       });
     }
-    document.getElementById('toggle-reading-fullscreen-btn').addEventListener('click', toggleReadingFullscreen);
+    document.getElementById('toggle-reading-fullscreen-btn')?.addEventListener('click', toggleReadingFullscreen);
 
     // ========================================
     // ▼▼▼ 你画我猜功能（在DOMContentLoaded内部以访问state）▼▼▼

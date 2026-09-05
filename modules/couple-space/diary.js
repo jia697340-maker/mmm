@@ -767,6 +767,4 @@ ${ctx.summaryContext ? '对话总结:\n' + ctx.summaryContext : ''}
 // Initialize auto diary timers when app loads
 if (typeof setTimeout !== 'undefined') {
   setTimeout(setupCoupleSpaceDiaryAutoTimer, 5000);
-  setTimeout(setupCoupleSpaceAlbumAutoTimer, 6000);
 }
-

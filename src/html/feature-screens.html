@@ -319,7 +319,8 @@
         </div>
         <div id="gr-writing-controls" style="display:none; gap:8px; align-items:flex-end; width:100%; margin-top:8px;">
              <div class="gr-input-group gr-direction-group" style="flex-grow:1;">
-                <select id="gr-writing-mode" class="gr-select gr-writing-mode" aria-label="写作方式">
+                <button type="button" id="gr-writing-mode-trigger" class="gr-select gr-writing-mode" aria-haspopup="dialog" aria-expanded="false">自然续写</button>
+                <select id="gr-writing-mode" aria-hidden="true" tabindex="-1" hidden>
                     <option value="continue">自然续写</option>
                     <option value="direction">按方向续写</option>
                     <option value="extend">延长当前场景</option>
@@ -338,6 +339,18 @@
                     <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
                 </svg>
             </button>
+        </div>
+        <div id="gr-writing-mode-modal" class="gr-writing-mode-modal" aria-hidden="true">
+            <div class="gr-writing-mode-dialog" role="dialog" aria-modal="true" aria-labelledby="gr-writing-mode-title">
+                <div class="gr-writing-mode-dialog-header"><span id="gr-writing-mode-title">选择写作方式</span><button type="button" id="gr-writing-mode-close" class="gr-writing-mode-close" aria-label="关闭">×</button></div>
+                <div id="gr-writing-mode-options" class="gr-writing-mode-options">
+                    <button type="button" data-value="continue">自然续写<span>承接上一章，自然推进剧情</span></button>
+                    <button type="button" data-value="direction">按方向续写<span>按照你给出的剧情方向展开</span></button>
+                    <button type="button" data-value="extend">延长当前场景<span>继续描写当前场景，不急着切换</span></button>
+                    <button type="button" data-value="transition">补写自然过渡<span>补足场景之间的连接和转折</span></button>
+                    <button type="button" data-value="dialogue">加强人物对话<span>让对话更有潜台词和推进感</span></button>
+                </div>
+            </div>
         </div>
     </div>
 </div>

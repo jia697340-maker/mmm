@@ -177,8 +177,8 @@
             <div class="douban-post-content">${post.content.replace(/\n/g, '<br>')}</div>
             <div class="douban-post-footer">
                  <div class="douban-post-actions">
-                    <span><svg viewBox="0 0 1024 1024"><path d="M170.666667 170.666667h128v682.666666h-128zM426.666667 170.666667h170.666666v682.666666h-170.666666zM725.333333 170.666667h128v682.666666h-128z"></path></svg> ${post.likesCount}</span>
-                    <span><svg viewBox="0 0 1024 1024"><path d="M853.333333 85.333333H170.666667c-46.933333 0-85.333333 38.4-85.333334 85.333334v512c0 46.933333 38.4 85.333333 85.333334 85.333333h512l170.666667 170.666667V170.666667c0-46.933333-38.4-85.333333-85.333334-85.333334z m-42.666666 554.666667H170.666667V170.666667h640v469.333333zM256 384h512v85.333333H256V384z m0-170.666667h512v85.333334H256v-85.333334z"></path></svg> ${post.commentsCount}</span>
+                    <span class="douban-action-likes"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10v12"></path><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.5L12 3a2 2 0 0 1 3 2.88z"></path></svg> <span>${post.likesCount}</span></span>
+                    <span class="douban-action-comments"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg> <span>${post.commentsCount}</span></span>
                 </div>
                 <span class="douban-post-timestamp">${formatTimeAgo(post.timestamp)}</span>
             </div>
@@ -485,5 +485,3 @@ ${charactersContext}
       await showCustomAlert("生成失败", `无法生成内容，请检查API配置或稍后再试。\n错误: ${error.message}`);
     }
   }
-
-

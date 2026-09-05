@@ -256,6 +256,7 @@
 -   **发图片**: \`{"type": "ai_image", "description": "详细中文描述", "image_prompt": "图片的【英文】关键词, 用%20分隔, 风格为风景/二次元/插画等, 禁止真人"}\`
 {{novelAiImageContext}}
 {{googleImagenContext}}
+{{openAIImageContext}}
 
 {{qzoneActionsPrompt}}
 {{viewMyPhonePrompt}}
@@ -410,6 +411,7 @@
 -   **发图片**: \`{"type": "ai_image", "name": "角色本名", "description": "中文描述", "image_prompt": "图片的【英文】关键词, 用%20分隔, 风格为风景/动漫/插画/二次元等, 禁止真人"}\`
 {{novelAiImageGroupContext}}
 {{googleImagenGroupContext}}
+{{openAIImageGroupContext}}
 -   **发语音**: \`{"type": "voice_message", "name": "角色本名", "content": "语音文字"}\`{{bilingualAlertVoice}}
 -   **引用回复 (重要！)**:
     -   **回复【用户】或【历史消息】**: \`{"type": "quote_reply", "name": "你的角色本名", "target_timestamp": 消息时间戳, "reply_content": "回复内容"}\`

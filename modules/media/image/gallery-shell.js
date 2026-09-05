@@ -21,13 +21,23 @@
     const imgElement = bubble ? bubble.querySelector('.realimag-image') : null;
     if (imgElement) imgElement.style.opacity = '0.5';
     try {
-      const generatedData = await generateNaiImageFromPrompt(originalPrompt, chat.id);
+      let generatedData;
+      if (message.type === 'googleimag') {
+        generatedData = await generateGoogleImagenFromPrompt(originalPrompt);
+      } else if (message.type === 'openaiimag') {
+        generatedData = await generateOpenAIImageFromPrompt(originalPrompt);
+      } else {
+        generatedData = await generateNaiImageFromPrompt(originalPrompt, chat.id);
+      }
       message.imageUrl = generatedData.imageUrl;
       message.fullPrompt = generatedData.fullPrompt;
+      if (generatedData.model) message.model = generatedData.model;
+      if (generatedData.mimeType) message.mimeType = generatedData.mimeType;
+      if (generatedData.requestId) message.requestId = generatedData.requestId;
       await db.chats.put(chat);
       if (imgElement) { imgElement.src = generatedData.imageUrl; imgElement.title = generatedData.fullPrompt; imgElement.style.opacity = '1'; }
     } catch (error) {
-      console.error("重新生成NAI图片失败:", error);
+      console.error("重新生成图片失败:", error);
       await showCustomAlert("生成失败", `无法重新生成图片: ${error.message}`);
       if (imgElement) imgElement.style.opacity = '1';
     } finally {

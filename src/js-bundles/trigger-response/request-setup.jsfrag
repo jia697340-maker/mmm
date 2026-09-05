@@ -688,6 +688,7 @@ ${linkedContents}
           else if (msg.type === 'ai_image') contentText = `[图片: ${msg.description}]`;
           else if (msg.type === 'naiimag') contentText = `[NovelAI图片: ${msg.prompt}]`;
           else if (msg.type === 'googleimag') contentText = `[Google Imagen图片: ${msg.prompt}]`;
+          else if (msg.type === 'openaiimag') contentText = `[GPT图片: ${msg.prompt}]`;
           else contentText = String(msg.content);
           return `${sender}: ${contentText}`;
         }).join('\n');

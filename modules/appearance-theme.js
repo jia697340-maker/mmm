@@ -202,7 +202,8 @@
       'online-app': '联机',
       'forum': '论坛',
       'new-world': '情侣空间',
-      'mcp': 'MCP'
+      'mcp': 'MCP',
+      'widget-market': '小组件商城'
     };
 
 

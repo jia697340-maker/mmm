@@ -181,6 +181,25 @@
               }
             }
 
+            // GPT 动态图片生成
+            if (msgData.postType === 'openaiimag' && msgData.prompt) {
+              try {
+                const openAIPrompt = msgData.prompt || 'A beautiful scene';
+                const openAIResult = await generateOpenAIImageFromPrompt(openAIPrompt);
+                newPost.imageUrls = [openAIResult.imageUrl];
+                newPost.imageUrl = openAIResult.imageUrl;
+                newPost.prompt = openAIPrompt;
+                newPost.fullPrompt = openAIResult.fullPrompt;
+                newPost.model = openAIResult.model;
+                newPost.mimeType = openAIResult.mimeType;
+                newPost.requestId = openAIResult.requestId;
+                newPost.imageCount = 1;
+              } catch (error) {
+                console.error('❌ 动态 GPT 图片生成失败:', error);
+                newPost.content = (newPost.content || newPost.publicText || '') + `\n[GPT 图片生成失败: ${error.message}]`;
+              }
+            }
+
             await db.qzonePosts.add(newPost);
             updateUnreadIndicator(unreadPostsCount + 1);
             if (isViewingThisChat && document.getElementById('qzone-screen').classList.contains('active')) {

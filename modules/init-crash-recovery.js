@@ -30,7 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
       
       // 构建恢复信息
       let recoveryInfo = '<div style="max-height: 40vh; overflow-y: auto; padding-right: 5px;">';
-      recoveryInfo += '<div style="margin-bottom: 15px;"><button id="clear-global-css-btn" style="width: 100%; padding: 10px; background: #ff4d4f; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">🧹 清除全局自定义CSS (防错位)</button></div>';
+      recoveryInfo += '<div style="margin-bottom: 15px;"><button id="clear-global-css-btn" style="width: 100%; padding: 10px; background: #ff4d4f; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">清除全局自定义CSS (防错位)</button></div>';
       recoveryInfo += '<b>【您的数据是安全的】</b>\n';
       recoveryInfo += '检测到应用上次异常关闭。您的所有数据已自动保存在本地数据库中，不会丢失。\n\n';
       

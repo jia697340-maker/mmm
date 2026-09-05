@@ -538,7 +538,7 @@ ${truthGameHistoryContext}
       activeTruthGameMessageTimestamp = null;
     }
 
-    document.getElementById('cancel-message-action-btn').addEventListener('click', () => {
+    document.getElementById('cancel-message-action-btn')?.addEventListener('click', () => {
       if (activeTruthGameMessageTimestamp) {
         closeTruthGameMessageActions();
       } else if (activeWatchTogetherMessageTimestamp) {
@@ -546,7 +546,7 @@ ${truthGameHistoryContext}
       }
     });
 
-    document.getElementById('copy-message-btn').addEventListener('click', () => {
+    document.getElementById('copy-message-btn')?.addEventListener('click', () => {
       if (activeTruthGameMessageTimestamp) {
         const message = truthGameState.messages.find(m => m.timestamp === activeTruthGameMessageTimestamp);
         if (message) {
@@ -562,7 +562,7 @@ ${truthGameHistoryContext}
       }
     });
 
-    document.getElementById('copy-timestamp-btn').addEventListener('click', () => {
+    document.getElementById('copy-timestamp-btn')?.addEventListener('click', () => {
       if (activeTruthGameMessageTimestamp) {
         const date = new Date(activeTruthGameMessageTimestamp);
         const timeStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:${String(date.getSeconds()).padStart(2, '0')}`;
@@ -571,7 +571,7 @@ ${truthGameHistoryContext}
       }
     });
 
-    document.getElementById('translate-message-btn').addEventListener('click', async () => {
+    document.getElementById('translate-message-btn')?.addEventListener('click', async () => {
       if (activeTruthGameMessageTimestamp) {
         const message = truthGameState.messages.find(m => m.timestamp === activeTruthGameMessageTimestamp);
         if (message && message.content) {
@@ -623,7 +623,7 @@ ${truthGameHistoryContext}
       }
     });
 
-    document.getElementById('edit-message-btn').addEventListener('click', async () => {
+    document.getElementById('edit-message-btn')?.addEventListener('click', async () => {
       if (activeTruthGameMessageTimestamp) {
         const message = truthGameState.messages.find(m => m.timestamp === activeTruthGameMessageTimestamp);
         if (message) {
@@ -649,7 +649,7 @@ ${truthGameHistoryContext}
       }
     });
 
-    document.getElementById('recall-message-btn').addEventListener('click', async () => {
+    document.getElementById('recall-message-btn')?.addEventListener('click', async () => {
       if (activeTruthGameMessageTimestamp) {
         const targetTimestamp = activeTruthGameMessageTimestamp;
         const message = truthGameState.messages.find(m => m.timestamp === targetTimestamp);

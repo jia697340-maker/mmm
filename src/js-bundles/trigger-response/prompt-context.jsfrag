@@ -272,6 +272,13 @@
           * 专注于描述内容本身即可，使用英文撰写prompt。
         - 使用场景：当你想要分享一张写实风格的高质量图片时使用。
         - 不要频繁使用，只在真正想分享图片的时候使用。` : '';
+
+        let openAIImageGroupContext = localStorage.getItem('openai-image-enabled') === 'true' ? `-   **GPT 图片分享**: \`{"type": "openaiimag", "name": "你的角色名", "prompt": "详细的画面描述..."}\`
+        - 【禁止暴露这是AI生成的图片!】
+        - 根据当前对话、角色人设、情绪和场景撰写具体提示词。
+        - 可使用中文或英文自然语言，明确主体、环境、构图、光线、风格和氛围。
+        - 适合需要准确理解复杂描述、画面文字或精细构图的场景。
+        - 不要频繁使用，只在真正想分享图片的时候使用。` : '';
         
         let bilingualAlertVoice = chat.settings.enableBilingualMode ? ' ⚠️ （注意：如果该角色是指定的双语角色，必须使用双语格式：外语〖中文〗）' : '';
 
@@ -314,6 +321,7 @@
           'narratorInstruction': narratorInstruction,
           'novelAiImageGroupContext': novelAiImageGroupContext,
           'googleImagenGroupContext': googleImagenGroupContext,
+          'openAIImageGroupContext': openAIImageGroupContext,
           'bilingualAlertVoice': bilingualAlertVoice
         };
 
@@ -352,6 +360,7 @@
           else if (msg.type === 'ai_image') content = `[${sender} 发送了一张图片，图片内容描述为：'${msg.content}']`;
           else if (msg.type === 'naiimag') content = `[${sender} 分享了一张NovelAI图片，prompt: ${msg.prompt}]`;
           else if (msg.type === 'googleimag') content = `[${sender} 分享了一张Google Imagen图片，prompt: ${msg.prompt}]`;
+          else if (msg.type === 'openaiimag') content = `[${sender} 分享了一张GPT图片，prompt: ${msg.prompt}]`;
           else if (msg.type === 'voice_message') content = `[${sender} 发送了一条语音，内容是：'${msg.content}']`;
           else if (msg.type === 'transfer') {
             // --- 修复开始：明确转账状态和方向 ---
@@ -539,9 +548,10 @@
         if (isOfflineMode) {
           const novelaiEnabled = localStorage.getItem('novelai-enabled') === 'true';
           const googleImagenEnabled = localStorage.getItem('google-imagen-enabled') === 'true';
-          const imageGenEnabled = novelaiEnabled || googleImagenEnabled;
-          const imageType = novelaiEnabled ? 'naiimag' : 'googleimag';
-          const imageTypeName = novelaiEnabled ? 'NovelAI' : 'Google Imagen';
+          const openAIImageEnabled = localStorage.getItem('openai-image-enabled') === 'true';
+          const imageGenEnabled = novelaiEnabled || googleImagenEnabled || openAIImageEnabled;
+          const imageType = novelaiEnabled ? 'naiimag' : (googleImagenEnabled ? 'googleimag' : 'openaiimag');
+          const imageTypeName = novelaiEnabled ? 'NovelAI' : (googleImagenEnabled ? 'Google Imagen' : 'GPT 生图');
           const minLength = chat.settings.offlineMinLength || 100;
           const maxLength = chat.settings.offlineMaxLength || 300;
           const myNickname = chat.settings.myNickname || '我';
@@ -589,7 +599,7 @@ ${enabledEntries}
       },
       {
         "type": "${imageType}",
-        "prompt": "${imageType === 'naiimag' ? '1girl, solo, detailed anime art style, (smiling:1.2), sitting in a cafe, looking at viewer, masterpiece, best quality, ... (根据上面的文字内容生成详细的英文prompt)' : 'A detailed photorealistic scene based on the text content above, high quality, 4K...'}"
+        "prompt": "${imageType === 'naiimag' ? '1girl, solo, detailed anime art style, (smiling:1.2), sitting in a cafe, looking at viewer, masterpiece, best quality, ... (根据上面的文字内容生成详细的英文prompt)' : (imageType === 'googleimag' ? 'A detailed photorealistic scene based on the text content above, high quality, 4K...' : '根据上面的文字内容，详细描述主体、环境、构图、光线、风格和氛围...')}"
       }
     ]
     \`\`\`
@@ -605,7 +615,7 @@ ${enabledEntries}
 # 【格式铁律 (最高优先级：常规模式)】
 1.  **【格式】**: 你的回复【必须】是一个JSON数组，且数组中【永远只能包含一个】元素，即 \`offline_text\` 对象。
 2.  **【【【绝对禁止】】】**: 
-    -   【绝对禁止】返回 "naiimag" 或 "googleimag" 对象。
+    -   【绝对禁止】返回 "naiimag"、"googleimag" 或 "openaiimag" 对象。
     -   【绝对禁止】返回纯文本（即没有JSON包装的文字）。
     -   【绝对禁止】在JSON数组前后添加任何 markdown 标记 (如 \`\`\`json)。
 3.  **【输出示例 (必须遵守)】**:

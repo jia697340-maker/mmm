@@ -607,6 +607,9 @@
           } else if (localStorage.getItem('google-imagen-enabled') === 'true') {
             msgData.type = 'googleimag';
             msgData.prompt = msgData.image_prompt || msgData.description || 'a beautiful scene';
+          } else if (localStorage.getItem('openai-image-enabled') === 'true') {
+            msgData.type = 'openaiimag';
+            msgData.prompt = msgData.image_prompt || msgData.description || 'A beautiful scene';
           }
         }
 

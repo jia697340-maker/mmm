@@ -104,6 +104,8 @@
                 contentSummary = (post.publicText || '') + ` [包含${prompts.length}张NovelAI图片: ${prompts.join(', ')}]`;
               } else if (post.type === 'googleimag' && post.prompt) {
                 contentSummary = (post.publicText || '') + ` [包含1张Google Imagen图片: ${post.prompt}]`;
+              } else if (post.type === 'openaiimag' && post.prompt) {
+                contentSummary = (post.publicText || '') + ` [包含1张GPT图片: ${post.prompt}]`;
               } else {
 
                 contentSummary = String(post.publicText || post.content || "一条动态").substring(0, 50) + '...';
@@ -402,6 +404,7 @@ ${getActiveThoughtsPrompt()}
 -   **发动态(文字图)**: \`[{"type": "qzone_post", "postType": "text_image", "publicText": "(可选)公开文字", "hiddenContent": "图片描述", "image_prompt": "图片的【英文】关键词, 用%20分隔, 风格为风景/动漫/插画/二次元等, 禁止真人"}]\`
 \${localStorage.getItem('novelai-enabled') === 'true' ? \`-   **公开发布NovelAI真实图片动态**: \\\`{"type": "qzone_post", "postType": "naiimag", "publicText": "(可选)动态的配文", "prompt": "详细的英文描述词..."}\\\`\` : ''}
 \${localStorage.getItem('google-imagen-enabled') === 'true' ? \`-   **公开发布Google Imagen真实图片动态**: \\\`{"type": "qzone_post", "postType": "googleimag", "publicText": "(可选)动态的配文", "prompt": "详细的英文描述词..."}\\\`\` : ''}
+\${localStorage.getItem('openai-image-enabled') === 'true' ? \`-   **公开发布GPT图片动态**: \\\`{"type": "qzone_post", "postType": "openaiimag", "publicText": "(可选)动态的配文", "prompt": "详细的画面描述..."}\\\`\` : ''}
 -   **转发动态**: \`[{"type": "repost", "postId": 动态ID, "comment": "转发评论"}]\`
 -   **评论动态**: \`[{"type": "qzone_comment", "name": "\${chat.originalName}", "postId": 123, "commentText": "评论内容"}]\` (name必须填你自己的本名"\${chat.originalName}"，绝对不能填用户的名字)
 -   **点赞动态**: \`{"type": "qzone_like", "postId": 456}\`
@@ -640,6 +643,13 @@ ${getActiveThoughtsPrompt()}
     - 使用场景：当你想要在【私聊对话中】直接给用户发送一张写实风格的高质量图片时使用。
     - 不要频繁使用，只在真正想分享图片的时候使用。
     - 注意：这会直接在聊天记录中显示图片，而不是发布到动态。` : '';
+
+          let openAIImageContext = localStorage.getItem('openai-image-enabled') === 'true' ? `-   **GPT 图片分享 (在聊天中直接发送)**: \`{"type": "openaiimag", "prompt": "详细的画面描述..."}\`
+    - **【绝不能暴露是AI生成的图片！】**
+    - 根据当前对话、角色人设、情绪和场景撰写具体提示词。
+    - 可使用中文或英文自然语言，明确主体、环境、构图、光线、风格和氛围。
+    - 不要频繁使用，只在真正想分享图片的时候使用。
+    - 注意：这会直接在聊天记录中显示图片，而不是发布到动态。` : '';
     
           let crossChatInstruction = (() => {
             const enableCrossChat = chat.settings.enableCrossChat !== null ? chat.settings.enableCrossChat : state.globalSettings.enableCrossChat;
@@ -708,6 +718,7 @@ ${getActiveThoughtsPrompt()}
             'bilingualAlertVoice': chat.settings.enableBilingualMode ? ' ⚠️ 必须使用双语格式：外语〖中文〗（播放时只读外语，但用户可以查看翻译）' : '',
             'novelAiImageContext': novelAiImageContext,
             'googleImagenContext': googleImagenContext,
+            'openAIImageContext': openAIImageContext,
             'qzoneActionsPrompt': qzoneActionsPrompt,
             'viewMyPhonePrompt': viewMyPhonePrompt,
             'crossChatInstruction': crossChatInstruction,

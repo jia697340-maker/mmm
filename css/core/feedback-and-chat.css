@@ -177,6 +177,44 @@
                margin-top: 0;
            }
 
+           .music-controls svg {
+               display: block;
+               pointer-events: none;
+           }
+
+           #phone-screen.dark-mode .music-controls .secondary-control-btn {
+               color: rgba(255, 255, 255, 0.85);
+           }
+
+           #phone-screen.dark-mode .music-controls .secondary-control-btn:hover {
+               color: #fff;
+           }
+
+           #phone-screen.dark-mode .music-controls .secondary-control-btn.active {
+               color: #0a84ff;
+           }
+
+           #phone-screen.dark-mode .music-controls .secondary-control-btn.text-btn {
+               border-color: rgba(255, 255, 255, 0.25);
+               color: rgba(255, 255, 255, 0.85);
+           }
+
+           #phone-screen.dark-mode .music-controls .secondary-control-btn.text-btn:hover {
+               border-color: rgba(255, 255, 255, 0.5);
+               color: #fff;
+           }
+
+           #phone-screen.dark-mode .music-controls .secondary-control-btn.text-btn.active {
+               background-color: var(--accent-color, #0a84ff);
+               border-color: var(--accent-color, #0a84ff);
+               color: #fff;
+           }
+
+           #phone-screen.dark-mode .music-controls .play-pause-btn {
+               background-color: rgba(255, 255, 255, 0.12);
+               color: #fff;
+           }
+
            #music-return-btn,
            #music-exit-btn,
            #music-playlist-btn {
