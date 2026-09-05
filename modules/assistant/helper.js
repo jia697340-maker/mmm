@@ -1,7 +1,7 @@
 // API设置页面可拖动助手
 class HelperAssistant {
   constructor() {
-    this.imageUrl = 'https://i.postimg.cc/nryMr5SQ/retouch-2026020222230989.png';
+    this.imageUrl = 'https://img.baibai.cv/f/DQmAhe/retouch-2026020222230989.png';
     this.discordHelpUrl = 'https://discord.com/channels/1379304008157499423/1443544486796853248';
     this.discordDmUrl = 'https://discord.com/users/1353222930875551804';
     this.storageKey = 'helper_assistant_position';
@@ -118,6 +118,24 @@ class HelperAssistant {
             <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
           </span>
           <span class="helper-menu-text">声明</span>
+        </div>
+        <div class="helper-menu-item" data-action="third-party-notices">
+          <span class="helper-menu-icon">
+            <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.07.07l2-2a5 5 0 0 0-7.07-7.07l-1.15 1.15"></path><path d="M14 11a5 5 0 0 0-7.07-.07l-2 2A5 5 0 0 0 12 20l1.15-1.15"></path></svg>
+          </span>
+          <span class="helper-menu-text">引用第三方</span>
+        </div>
+        <div class="helper-menu-item" data-action="update-log">
+          <span class="helper-menu-icon">
+            <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"></path><path d="m7 16 4-4 3 3 5-6"></path><path d="M19 9v4h-4"></path></svg>
+          </span>
+          <span class="helper-menu-text">更新日志</span>
+        </div>
+        <div class="helper-menu-item" data-action="resale-notice">
+          <span class="helper-menu-icon">
+            <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h18v18H3z"></path><path d="m7 15 3-3 2 2 4-5 2 2"></path><path d="M7 7h.01"></path></svg>
+          </span>
+          <span class="helper-menu-text">关于倒卖</span>
         </div>
         <div class="helper-menu-item" data-action="hide">
           <span class="helper-menu-icon">
@@ -293,6 +311,15 @@ class HelperAssistant {
       case 'declaration':
         this.showDeclaration();
         break;
+      case 'third-party-notices':
+        this.showThirdPartyNotices();
+        break;
+      case 'update-log':
+        window.open('update-log.html', '_blank');
+        break;
+      case 'resale-notice':
+        this.showResaleNotice();
+        break;
       case 'hide':
         this.hideAssistant();
         break;
@@ -321,6 +348,7 @@ class HelperAssistant {
             <h3>📜 版权说明</h3>
             <p>本项目由EE老师原创，后经JCY老师、KUKU老师、330老师等多位老师共同改版发展。</p>
             <p>本人在各位老师的基础上进行了进一步的调整。</p>
+            <p>角色手机与“我的手机”播放器中的本地歌曲 Blob URL 回收逻辑，参考并改写自穗穗 / 笨蛋小姐的 <a href="https://github.com/yxlforever/YYY/commit/ece2d6bec633ced55c89af3871f96c97ebf3aa7e" target="_blank" rel="noopener noreferrer">yxlforever/YYY 项目提交</a>，在此致谢。</p>
             <p style="font-size: 13px; color: #999; margin-top: 10px;">（可能还有其他贡献者未能一一列出，在此一并致谢）</p>
           </div>
           
@@ -355,6 +383,83 @@ class HelperAssistant {
     // 点击遮罩层关闭
     overlay.addEventListener('click', (e) => {
       if (e.target === overlay) {
+        overlay.classList.remove('show');
+        setTimeout(() => overlay.remove(), 300);
+      }
+    });
+  }
+
+  // 显示第三方引用说明
+  showThirdPartyNotices() {
+    if (document.getElementById('third-party-notices-modal-overlay')) return;
+
+    const overlay = document.createElement('div');
+    overlay.id = 'third-party-notices-modal-overlay';
+    overlay.className = 'declaration-modal-overlay';
+    overlay.innerHTML = `
+      <div class="declaration-modal">
+        <div class="declaration-header">
+          <h2>引用第三方</h2>
+          <button class="declaration-close-btn" onclick="this.closest('#third-party-notices-modal-overlay').remove()">×</button>
+        </div>
+        <div class="declaration-content">
+          <div class="declaration-section">
+            <h3>🔗 当前引用</h3>
+            <p><strong>作者昵称：</strong>穗穗 / 笨蛋小姐</p>
+            <p><strong>项目：</strong><a href="https://github.com/yxlforever/YYY" target="_blank" rel="noopener noreferrer">yxlforever/YYY</a></p>
+            <p><strong>参考提交：</strong><a href="https://github.com/yxlforever/YYY/commit/ece2d6bec633ced55c89af3871f96c97ebf3aa7e" target="_blank" rel="noopener noreferrer">ece2d6b</a></p>
+          </div>
+          <div class="declaration-section">
+            <h3>📌 引用范围</h3>
+            <p>角色手机与“我的手机”播放器中的本地歌曲 Blob URL 回收逻辑参考并改写自上述提交。本项目结合自身模块结构实现为 <code>releaseCharMusicObjectUrl</code>，用于在切歌或关闭播放时回收本地音频资源。</p>
+          </div>
+          <div class="declaration-section">
+            <h3>💗 致谢与维护</h3>
+            <p>感谢穗穗 / 笨蛋小姐公开分享相关实现。后续如继续修改或扩大引用范围，会同步保留来源注释、更新日志与本说明，并核对适用的许可证或授权要求。</p>
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+    setTimeout(() => overlay.classList.add('show'), 10);
+    overlay.addEventListener('click', (event) => {
+      if (event.target === overlay) {
+        overlay.classList.remove('show');
+        setTimeout(() => overlay.remove(), 300);
+      }
+    });
+  }
+
+  // 显示关于倒卖的说明
+  showResaleNotice() {
+    if (document.getElementById('resale-notice-modal-overlay')) return;
+
+    const overlay = document.createElement('div');
+    overlay.id = 'resale-notice-modal-overlay';
+    overlay.className = 'declaration-modal-overlay';
+    overlay.innerHTML = `
+      <div class="declaration-modal">
+        <div class="declaration-header">
+          <h2>关于倒卖</h2>
+          <button class="declaration-close-btn" onclick="this.closest('#resale-notice-modal-overlay').remove()">×</button>
+        </div>
+        <div class="declaration-content">
+          <div class="declaration-section">
+            <p>某些二传的真的不要再搞了，好吧？</p>
+            <p>不允许二传链接，不代表换成直接二传文件就可以。并且已经不止一次看到有人二传，甚至拿去二传商用了。</p>
+            <p>开源、提供文件，是为了方便大家部署和正常使用。也是因为不想为了少部分人的行为影响其他正常使用的人，而不是因为我默许二传。</p>
+            <p>希望大家互相尊重一下，也麻烦不要利用我为了方便大家留下的便利，反过来做我明确不希望发生的事情。</p>
+            <p>如果真的有特殊情况、确实有转载或传播需求，可以先来找我沟通，正常说明情况即可。</p>
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+    setTimeout(() => overlay.classList.add('show'), 10);
+    overlay.addEventListener('click', (event) => {
+      if (event.target === overlay) {
         overlay.classList.remove('show');
         setTimeout(() => overlay.remove(), 300);
       }
@@ -580,7 +685,8 @@ style.textContent = `
   }
 
   /* 声明弹窗样式 */
-  #declaration-modal-overlay {
+  #declaration-modal-overlay,
+  .declaration-modal-overlay {
     position: fixed;
     top: 0;
     left: 0;
@@ -596,7 +702,8 @@ style.textContent = `
     transition: opacity 0.3s ease;
   }
 
-  #declaration-modal-overlay.show {
+  #declaration-modal-overlay.show,
+  .declaration-modal-overlay.show {
     opacity: 1;
   }
 
@@ -605,14 +712,17 @@ style.textContent = `
     border-radius: 20px;
     max-width: 500px;
     width: 90%;
-    max-height: 80vh;
+    max-height: calc(100dvh - 32px);
     overflow: hidden;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
     transform: scale(0.9);
     transition: transform 0.3s ease;
+    display: flex;
+    flex-direction: column;
   }
 
-  #declaration-modal-overlay.show .declaration-modal {
+  #declaration-modal-overlay.show .declaration-modal,
+  .declaration-modal-overlay.show .declaration-modal {
     transform: scale(1);
   }
 
@@ -655,7 +765,11 @@ style.textContent = `
   .declaration-content {
     padding: 25px;
     overflow-y: auto;
-    max-height: calc(80vh - 80px);
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
   }
 
   .declaration-section {

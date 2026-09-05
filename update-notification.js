@@ -2,7 +2,7 @@
 class UpdateNotification {
   constructor() {
     this.storageKey = 'update_notification_dismissed';
-    this.currentVersion = '0.0.35'; // 当前更新版本号
+    this.currentVersion = '0.0.36'; // 当前更新版本号
     this.countdownSeconds = 5;
     this.countdownInterval = null;
   }
@@ -22,27 +22,25 @@ class UpdateNotification {
       <div class="update-item important-note">强烈建议：安装到主屏幕以获得最佳体验</div>
       <div class="update-item important-note">注意：首次打开最好使用魔法</div>
       <div class="update-item tips">有任何问题请通过DC私信联系 <a href="https://discord.com/users/1353222930875551804" target="_blank" style="color: #4A9EFF;">点击前往</a>，其他渠道可能无法及时回复</div>
-      <div class="update-divider">本次更新内容</div>
-      <div class="update-item">1. 新增绿江可以导出TXT</div>
-      <div class="update-item">2. 删除作者追更这个功能</div>
-      <div class="update-item">3. 新增豆瓣可以选择绑定USER人设</div>
-      <div class="update-item">4. 新增豆瓣可以选择绑定世界书</div>
-      <div class="update-item">5. 优化豆瓣生成报错的功能</div>
-      <div class="update-item">6. 优化了一下豆瓣如果生图失败会恢复默认头像，新增USER可以设置自己的头像/昵称</div>
-      <div class="update-item">7. 新增豆瓣可以增量生成/新增豆瓣可以删除</div>
-      <div class="update-item">8. 新增导出记录可以为TXT和HTML，HTML主要用于观赏</div>
-      <div class="update-item">9. 新增美化没保存的时候切换或者覆盖会显示提醒弹窗</div>
-      <div class="update-item">10. 新增优化群聊双语可以选择</div>
-      <div class="update-item">11. 优化查找聊天记录过多转跳不过去的BUG，现在可以实时转跳了，点击按钮可以回到最新</div>
-      <div class="update-item" style="color: #ff4757; font-weight: bold; background: #ffeaa7; padding: 5px; border-radius: 4px; line-height: 1.4;">12. 新增思维链，感谢 <a href="https://discord.com/channels/1291925535324110879/1436589419074424882" target="_blank" style="color: #0984e3; text-decoration: underline;">老师们的指导</a>，思维链功能灵感来源1900老师，感谢授权。默认预设是330老师写在提示词里面的思维链，我提取出来做成符合当前版本的了。</div>
+      <div class="update-item important-note">使用提示：请留意 API 设置页面的小人菜单，新增功能入口都在这里哦。</div>
+      <div class="update-divider">9.4 本次更新内容</div>
+      <div class="update-item">1. 新增 GPT 生图：支持独立配置 API、模型、尺寸、质量、格式、透明背景和内容过滤。</div>
+      <div class="update-item">2. GPT 图片现可用于私聊、群聊、线下互动与动态；支持查看、下载、重新生成和转发。</div>
+      <div class="update-item">3. 编辑消息新增“谷歌图”和“GPT 图”快捷格式；转发图片会保留图片与提示词。</div>
+      <div class="update-item">4. 优化谷歌生图模型筛选和请求方式，优化 NovelAI 生成流程并新增超时提醒。</div>
+      <div class="update-item">5. 优化音乐播放器控制栏、深色模式与播放列表布局，常用操作收纳至“更多”菜单。</div>
+      <div class="update-item">6. 新增网络音频批量导入；本地批量导入会从文件名识别歌名与歌手。</div>
+      <div class="update-item">7. 优化本地歌曲保存和空播放列表提示，导入失败时会自动回退为本地保存。</div>
+      <div class="update-item">8. 优化聊天列表点击、长按交互、功能页加载、图片显示与自动相册定时任务的稳定性。</div>
+      <div class="update-item important-note">致谢：角色手机与“我的手机”播放器中的本地歌曲 Blob URL 回收逻辑，参考并改写自穗穗 / 笨蛋小姐的 <a href="https://github.com/yxlforever/YYY/commit/ece2d6bec633ced55c89af3871f96c97ebf3aa7e" target="_blank" rel="noopener noreferrer" style="color: #4A9EFF;">yxlforever/YYY ece2d6b 提交</a>。详见项目内《致谢与第三方引用说明》。</div>
     `;
 
     return `
       <div id="update-notification-overlay">
         <div id="update-notification-modal">
-          <img src="https://i.postimg.cc/hGh6rJ5r/retouch-2026013121094970.png" class="update-decoration-img">
+          <img src="https://img.baibai.cv/f/mwOEhK/retouch-2026013121094970.png" class="update-decoration-img">
           <div class="update-notification-header">
-            <div class="update-title">6.27更新</div>
+            <div class="update-title">9.4 更新</div>
           </div>
           
           <div class="update-notification-body">
